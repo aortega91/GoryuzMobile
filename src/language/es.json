@@ -1,0 +1,26 @@
+{
+  "auth": {
+    "loginTitle": "Bienvenido a Goryuz",
+    "loginSubtitle": "De la frustración a ser",
+    "loginSubtitleAccent": "Gorgeous",
+    "loginSubtitleSuffix": "(Magnífica) en 5 minutos. Organiza, combina y planifica.",
+    "loginButton": "Continuar con Google",
+    "loginLoading": "Iniciando sesión...",
+    "loginErrorGeneric": "Algo salió mal. Por favor intenta de nuevo.",
+    "loginErrorNetwork": "Sin conexión. Verifica tu red e intenta de nuevo.",
+    "loginErrorCancelled": "Inicio de sesión cancelado.",
+    "loginErrorAccountExists": "Esta cuenta ya existe con un método de inicio de sesión diferente."
+  },
+  "home": {
+    "welcome": "¡Bienvenida!",
+    "welcomeMessage": "Has iniciado sesión exitosamente.",
+    "signOut": "Cerrar sesión"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "retry": "Reintentar",
+    "ok": "Aceptar",
+    "cancel": "Cancelar",
+    "error": "Error"
+  }
+}

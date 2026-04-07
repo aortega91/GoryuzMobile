@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "718649973201",
+    "project_id": "goryuz",
+    "storage_bucket": "goryuz.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:718649973201:android:fa7bafe25181c1268028f0",
+        "android_client_info": {
+          "package_name": "com.goryuzmobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "718649973201-s5bp0c1tp6kdi2ivlur4idfb9uu45f0t.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.goryuzmobile",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "718649973201-60v4sucjanl44grg77r9psqgjo2in5b4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBP_EH0pjcfsgr18OXveCAdsRcLZKCVhy8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "718649973201-60v4sucjanl44grg77r9psqgjo2in5b4.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "718649973201-f93gt9rdsljf2j2u223j5e1q4s3khrba.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.goryuzmobile"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

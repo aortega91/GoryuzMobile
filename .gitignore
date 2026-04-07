@@ -73,3 +73,70 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# TypeScript
+*.tsbuildinfo
+
+# Firebase
+google-services.json
+GoogleService-Info.plist
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Logs
+logs/
+*.log
+
+# React Native CodePush / OTA updates
+.cpresource/
+
+# Flipper
+ios/Pods/
+
+# Sentry
+.sentryclirc
+
+# Editor specific
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# macOS extended attributes
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Lock files (keep yarn.lock, ignore others if using Yarn)
+package-lock.json
+
+# Jest snapshots (optional — remove if you want to commit them)
+# **/__snapshots__/
+
+# Android release signing
+android/app/release/
+android/keystores/
+
+# iOS build artifacts
+ios/build/
+ios/*.xcworkspace/xcuserdata/
+
+# Storybook
+storybook-static/
+
+# Detox E2E
+artifacts/

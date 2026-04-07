@@ -1,0 +1,26 @@
+{
+  "auth": {
+    "loginTitle": "Welcome to Goryuz",
+    "loginSubtitle": "From frustration to being",
+    "loginSubtitleAccent": "Gorgeous",
+    "loginSubtitleSuffix": "in 5 minutes. Organize, combine and plan.",
+    "loginButton": "Continue with Google",
+    "loginLoading": "Signing in...",
+    "loginErrorGeneric": "Something went wrong. Please try again.",
+    "loginErrorNetwork": "No connection. Check your network and try again.",
+    "loginErrorCancelled": "Sign-in cancelled.",
+    "loginErrorAccountExists": "This account already exists with a different sign-in method."
+  },
+  "home": {
+    "welcome": "Welcome!",
+    "welcomeMessage": "You have successfully signed in.",
+    "signOut": "Sign out"
+  },
+  "common": {
+    "loading": "Loading...",
+    "retry": "Retry",
+    "ok": "OK",
+    "cancel": "Cancel",
+    "error": "Error"
+  }
+}
