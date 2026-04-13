@@ -3,12 +3,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSelector } from 'react-redux';
 
 import { RootState } from '@utilities/store';
-import { RootStackParamList } from './types';
-
-// Screens
 import Login from '@features/auth/screens/Login';
-import Loading from '@features/auth/screens/Loading';
 import Home from '@features/home/screens/Home';
+import { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 

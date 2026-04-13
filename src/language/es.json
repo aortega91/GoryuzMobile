@@ -12,15 +12,35 @@
     "loginErrorAccountExists": "Esta cuenta ya existe con un método de inicio de sesión diferente."
   },
   "home": {
+    "greeting": "Hola, {{name}}",
+    "defaultName": "Usuario",
+    "greetingSubtitle": "¿Lista para elevar tu estilo?",
+    "greetingQuestion": "¿Qué hacemos hoy?",
+    "loadFirstItem": "Carga tu primera prenda",
+    "loadFirstItemDesc": "Comienza digitalizando tu armario para que GORYUZ pueda asesorarte.",
+    "myStyles": "Mis Estilos",
+    "myStylesDesc": "Gestiona tus combinaciones maestras.",
+    "addPieces": "Agregar Piezas",
+    "addPiecesDesc": "Expande tu colección.",
     "welcome": "¡Bienvenida!",
     "welcomeMessage": "Has iniciado sesión exitosamente.",
     "signOut": "Cerrar sesión"
+  },
+  "menu": {
+    "home": "Inicio",
+    "collection": "Colección",
+    "styles": "Estilos",
+    "schedule": "Agenda",
+    "discover": "Descubrir",
+    "secondLife": "Segunda Vida",
+    "community": "Comunidad"
   },
   "common": {
     "loading": "Cargando...",
     "retry": "Reintentar",
     "ok": "Aceptar",
     "cancel": "Cancelar",
-    "error": "Error"
+    "error": "Error",
+    "comingSoon": "Próximamente"
   }
 }

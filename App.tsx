@@ -1,5 +1,6 @@
 import React from 'react';
-import { StatusBar } from 'react-native';
+import { StatusBar, StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { NavigationContainer } from '@react-navigation/native';
@@ -14,6 +15,7 @@ import '@language/index';
 
 function App() {
   return (
+    <GestureHandlerRootView style={styles.root}>
     <Provider store={store}>
       {/*
        * PersistGate delays rendering until redux-persist has rehydrated
@@ -28,7 +30,12 @@ function App() {
         </SafeAreaProvider>
       </PersistGate>
     </Provider>
+    </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+});
 
 export default App;

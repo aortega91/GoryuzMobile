@@ -1,126 +1,160 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
+  ScrollView,
   StatusBar,
-  Image,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSelector, useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import auth from '@react-native-firebase/auth';
 
-import useTheme from '@hooks/useTheme';
-import GoryuzLogo from '@assets/GoryuzLogo';
-import { clearSession } from '@features/auth/sessionSlice';
+import useHomeTheme from '@hooks/useHomeTheme';
 import { RootState, AppDispatch } from '@utilities/store';
+import { RootStackParamList } from '@navigation/types';
+import { ShirtIcon, StarIcon, PlusCircleIcon } from '@assets/icons';
+import { loadProfile } from '../profileSlice';
+
+import TopBar from '../components/TopBar';
+import ActionCard from '../components/ActionCard';
+import DrawerMenu from '../components/DrawerMenu';
 
 function Home() {
-  const theme = useTheme();
-  const dispatch = useDispatch<AppDispatch>();
+  const theme = useHomeTheme();
+  const homeTokens = theme.home;
   const { t } = useTranslation();
-  const user = useSelector((state: RootState) => state.session.user);
 
-  const handleSignOut = async () => {
-    await auth().signOut();
-    dispatch(clearSession());
-  };
+  const dispatch = useDispatch<AppDispatch>();
+  const user = useSelector((state: RootState) => state.session.user);
+  const profile = useSelector((state: RootState) => state.profile.data);
+  const profileStatus = useSelector((state: RootState) => state.profile.status);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // Fetch profile once on mount; skip if already loaded
+  useEffect(() => {
+    if (profileStatus === 'idle') {
+      dispatch(loadProfile());
+    }
+  }, [dispatch, profileStatus]);
+
+  const gemCount = profile?.tokens ?? 0;
+
+  const firstName = user?.displayName?.split(' ')[0] ?? t('home.defaultName');
+
+  const handleNavigate = useCallback((_route: keyof RootStackParamList) => {
+    setIsDrawerOpen(false);
+    // TODO: navigation.navigate(_route) — wire up when each screen is built
+  }, []);
 
   return (
-    <View
-      style={[styles.container, { backgroundColor: theme.auth.background }]}
-    >
+    <View style={[styles.root, { backgroundColor: homeTokens.background }]}>
       <StatusBar
         barStyle={theme.dark ? 'light-content' : 'dark-content'}
-        backgroundColor={theme.auth.background}
+        backgroundColor={homeTokens.topBarBackground}
       />
 
+      <SafeAreaView style={styles.safeArea}>
+        {/* Top navigation bar */}
+        <TopBar
+          onMenuPress={() => setIsDrawerOpen(true)}
+          avatarUrl={user?.photoURL}
+          gemCount={gemCount}
+        />
 
-      {/* Logo */}
-      <GoryuzLogo size={64} color={theme.auth.logoColor} />
-
-      {/* Avatar */}
-      {user?.photoURL ? (
-        <Image source={{ uri: user.photoURL }} style={styles.avatar} />
-      ) : null}
-
-      {/* Welcome */}
-      <Text style={[styles.welcome, { color: theme.auth.headlineText }]}>
-        {t('home.welcome')}
-      </Text>
-      {user?.displayName ? (
-        <Text style={[styles.name, { color: theme.auth.accentText }]}>
-          {user.displayName}
-        </Text>
-      ) : null}
-      <Text style={[styles.message, { color: theme.auth.bodyText }]}>
-        {t('home.welcomeMessage')}
-      </Text>
-
-      {/* Sign out */}
-      <TouchableOpacity
-        style={[
-          styles.signOutButton,
-          {
-            backgroundColor: theme.auth.googleButtonBg,
-            borderColor: theme.auth.googleButtonBorder,
-          },
-        ]}
-        onPress={handleSignOut}
-        activeOpacity={0.85}
-      >
-        <Text
-          style={[
-            styles.signOutLabel,
-            { color: theme.auth.googleButtonText },
-          ]}
+        {/* Main scrollable content */}
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
         >
-          {t('home.signOut')}
-        </Text>
-      </TouchableOpacity>
+          {/* Greeting */}
+          <View style={styles.greetingSection}>
+            <Text style={[styles.greeting, { color: homeTokens.headlineText }]}>
+              {t('home.greeting', { name: firstName })}
+            </Text>
+            <Text style={[styles.greetingSubtitle, { color: homeTokens.subtitleText }]}>
+              {t('home.greetingSubtitle')}
+            </Text>
+            <Text style={[styles.greetingQuestion, { color: homeTokens.subtitleText }]}>
+              {t('home.greetingQuestion')}
+            </Text>
+          </View>
+
+          {/* Action cards */}
+          <View style={styles.cards}>
+            {/* CTA — shown when closet is empty */}
+            <ActionCard
+              isCta
+              icon={<ShirtIcon size={24} />}
+              title={t('home.loadFirstItem')}
+              description={t('home.loadFirstItemDesc')}
+              onPress={() => {}}
+            />
+
+            <ActionCard
+              icon={<StarIcon size={24} />}
+              title={t('home.myStyles')}
+              description={t('home.myStylesDesc')}
+              onPress={() => handleNavigate('Styles')}
+            />
+
+            <ActionCard
+              icon={<PlusCircleIcon size={24} />}
+              title={t('home.addPieces')}
+              description={t('home.addPiecesDesc')}
+              onPress={() => handleNavigate('Collection')}
+            />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+
+      {/* Drawer overlay — rendered outside SafeAreaView to cover full screen */}
+      <DrawerMenu
+        isOpen={isDrawerOpen}
+        activeRoute="Home"
+        onClose={() => setIsDrawerOpen(false)}
+        onNavigate={handleNavigate}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-    gap: 20,
   },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  safeArea: {
+    flex: 1,
   },
-  welcome: {
-    fontSize: 34,
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 28,
+    paddingBottom: 40,
+    gap: 24,
+  },
+  greetingSection: {
+    gap: 4,
+  },
+  greeting: {
+    fontSize: 32,
     fontWeight: '800',
-    textAlign: 'center',
+    letterSpacing: -0.5,
   },
-  name: {
-    fontSize: 20,
-    fontWeight: '600',
-    fontStyle: 'italic',
-  },
-  message: {
+  greetingSubtitle: {
     fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 24,
+    fontWeight: '400',
+    marginTop: 4,
   },
-  signOutButton: {
-    marginTop: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    borderWidth: 1,
+  greetingQuestion: {
+    fontSize: 16,
+    fontWeight: '400',
   },
-  signOutLabel: {
-    fontSize: 15,
-    fontWeight: '600',
+  cards: {
+    gap: 12,
   },
 });
 

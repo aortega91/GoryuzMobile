@@ -12,15 +12,35 @@
     "loginErrorAccountExists": "This account already exists with a different sign-in method."
   },
   "home": {
+    "greeting": "Hello, {{name}}",
+    "defaultName": "User",
+    "greetingSubtitle": "Ready to elevate your style?",
+    "greetingQuestion": "What are we doing today?",
+    "loadFirstItem": "Load your first piece",
+    "loadFirstItemDesc": "Start digitizing your wardrobe so GORYUZ can advise you.",
+    "myStyles": "My Styles",
+    "myStylesDesc": "Manage your master combinations.",
+    "addPieces": "Add Pieces",
+    "addPiecesDesc": "Expand your collection.",
     "welcome": "Welcome!",
     "welcomeMessage": "You have successfully signed in.",
     "signOut": "Sign out"
+  },
+  "menu": {
+    "home": "Home",
+    "collection": "Collection",
+    "styles": "Styles",
+    "schedule": "Schedule",
+    "discover": "Discover",
+    "secondLife": "Second Life",
+    "community": "Community"
   },
   "common": {
     "loading": "Loading...",
     "retry": "Retry",
     "ok": "OK",
     "cancel": "Cancel",
-    "error": "Error"
+    "error": "Error",
+    "comingSoon": "Coming soon"
   }
 }

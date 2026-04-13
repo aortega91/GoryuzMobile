@@ -1,5 +1,4 @@
-import { configureStore } from '@reduxjs/toolkit';
-import { combineReducers } from 'redux';
+import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import {
   persistStore,
   persistReducer,
@@ -11,29 +10,11 @@ import {
   REGISTER,
   type Storage,
 } from 'redux-persist';
-import { createMMKV } from 'react-native-mmkv';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Keychain from 'react-native-keychain';
 
 import sessionReducer, { SessionState } from '@features/auth/sessionSlice';
-
-// ─── MMKV instance (general-purpose fast storage) ────────────────────────────
-
-const mmkv = createMMKV({ id: 'goryuz-store' });
-
-const mmkvStorage: Storage = {
-  setItem: (key, value) => {
-    mmkv.set(key, value);
-    return Promise.resolve(true);
-  },
-  getItem: key => {
-    const value = mmkv.getString(key);
-    return Promise.resolve(value ?? null);
-  },
-  removeItem: key => {
-    mmkv.remove(key);
-    return Promise.resolve();
-  },
-};
+import profileReducer from '@features/home/profileSlice';
 
 // ─── Keychain adapter (secure storage for sensitive session data) ─────────────
 
@@ -70,18 +51,20 @@ const sessionPersistConfig = {
   version: 1,
 };
 
-/** Root persist config uses MMKV for any non-sensitive slices added in future */
+/** Root persist config uses AsyncStorage for any non-sensitive slices */
 const rootPersistConfig = {
   key: 'root',
-  storage: mmkvStorage,
+  storage: AsyncStorage,
   version: 1,
-  blacklist: ['session'], // session has its own persist config above
+  // session has its own persist config; profile is always refetched on launch
+  blacklist: ['session', 'profile'],
 };
 
 // ─── Root reducer ─────────────────────────────────────────────────────────────
 
 const rootReducer = combineReducers({
   session: persistReducer<SessionState>(sessionPersistConfig, sessionReducer),
+  profile: profileReducer,
 });
 
 const persistedReducer = persistReducer(rootPersistConfig, rootReducer);
