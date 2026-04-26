@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import auth from '@react-native-firebase/auth';
 import { useTranslation } from 'react-i18next';
 
 import useHomeTheme from '@hooks/useHomeTheme';
@@ -15,7 +17,6 @@ import GoryuzLogo from '@assets/GoryuzLogo';
 import {
   ArchiveIcon,
   CalendarIcon,
-  CloseIcon,
   HomeIcon,
   ShirtIcon,
   SparklesIcon,
@@ -83,12 +84,14 @@ interface DrawerMenuProps {
   activeRoute: DrawerRoute;
   onClose: () => void;
   onNavigate: (route: DrawerRoute) => void;
+  onLogout?: () => void;
 }
 
-function DrawerMenu({ isOpen, activeRoute, onClose, onNavigate }: DrawerMenuProps) {
+function DrawerMenu({ isOpen, activeRoute, onClose, onNavigate, onLogout }: DrawerMenuProps) {
   const theme = useHomeTheme();
   const dt = theme.home;
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   const [isVisible, setIsVisible] = useState(false);
   const translateX = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
@@ -158,15 +161,7 @@ function DrawerMenu({ isOpen, activeRoute, onClose, onNavigate }: DrawerMenuProp
             ZENITH OF STYLE
           </Text>
 
-          {/* Close button */}
-          <TouchableOpacity
-            onPress={onClose}
-            style={styles.closeButton}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            activeOpacity={0.7}
-          >
-            <CloseIcon size={20} color={dt.drawerCloseIcon} />
-          </TouchableOpacity>
+
         </View>
 
         {/* Nav items */}
@@ -196,6 +191,21 @@ function DrawerMenu({ isOpen, activeRoute, onClose, onNavigate }: DrawerMenuProp
             );
           })}
         </View>
+
+        {/* Logout button — pinned to bottom */}
+        <View style={[styles.logoutSection, { borderTopColor: dt.drawerBorder, paddingBottom: insets.bottom + 12 }]}>
+          <TouchableOpacity
+            style={styles.logoutButton}
+            activeOpacity={0.75}
+            onPress={async () => {
+              onClose();
+              await auth().signOut();
+              onLogout?.();
+            }}
+          >
+            <Text style={styles.logoutText}>{t('home.signOut')}</Text>
+          </TouchableOpacity>
+        </View>
       </Animated.View>
     </View>
   );
@@ -217,6 +227,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 16,
+    flexDirection: 'column',
   },
   header: {
     paddingTop: 56,
@@ -243,16 +254,26 @@ const styles = StyleSheet.create({
     marginLeft: 2,
     textTransform: 'uppercase',
   },
-  closeButton: {
-    position: 'absolute',
-    top: 56,
-    right: 20,
-    padding: 4,
-  },
   nav: {
+    flex: 1,
     paddingTop: 16,
     paddingHorizontal: 12,
     gap: 2,
+  },
+  logoutSection: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  logoutButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+  },
+  logoutText: {
+    color: '#EF4444',
+    fontSize: 15,
+    fontWeight: '600',
   },
   navItem: {
     flexDirection: 'row',

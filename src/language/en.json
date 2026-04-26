@@ -1,9 +1,10 @@
 {
   "auth": {
-    "loginTitle": "Welcome to Goryuz",
-    "loginSubtitle": "From frustration to being",
-    "loginSubtitleAccent": "Gorgeous",
-    "loginSubtitleSuffix": "in 5 minutes. Organize, combine and plan.",
+    "loginSubtitle": "Your Personal Fashion Advisor 24/7",
+    "loginPillar1": "AI Personal Stylist",
+    "loginPillar2": "Style Community",
+    "loginPillar3": "Circular Fashion",
+    "loginPillar4": "Exclusive Marketplace",
     "loginButton": "Continue with Google",
     "loginLoading": "Signing in...",
     "loginErrorGeneric": "Something went wrong. Please try again.",
@@ -24,7 +25,15 @@
     "addPiecesDesc": "Expand your collection.",
     "welcome": "Welcome!",
     "welcomeMessage": "You have successfully signed in.",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "tabMyVision": "My Vision",
+    "tabInspiration": "Inspiration",
+    "tabCollection": "Collection",
+    "createPost": "Create Post",
+    "noPostsYet": "No posts yet",
+    "noSavedYet": "No saved posts yet",
+    "styleDiscover": "Discover Style",
+    "marketAi": "Market AI"
   },
   "menu": {
     "home": "Home",

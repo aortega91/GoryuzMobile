@@ -11,12 +11,16 @@ export interface AuthTheme extends Theme {
     background: string;
     /** Card / surface colour */
     surface: string;
-    /** Primary headline */
+    /** Primary headline / brand text */
     headlineText: string;
     /** Body / sub-copy text */
     bodyText: string;
-    /** Accent text (e.g. "Gorgeous" italic) */
+    /** Accent text (legacy — kept for backwards compat) */
     accentText: string;
+    /** Logo card background */
+    logoCardBg: string;
+    /** Logo colour */
+    logoColor: string;
     /** Google sign-in button background */
     googleButtonBg: string;
     /** Google sign-in button text */
@@ -25,45 +29,75 @@ export interface AuthTheme extends Theme {
     googleButtonBorder: string;
     /** Error message text */
     errorText: string;
-    /** Logo colour */
-    logoColor: string;
     /** Separator line */
     separator: string;
+    /** Decorative background blob colours */
+    blob1: string;
+    blob2: string;
+    blob3: string;
+    /** Feature pillar card background */
+    pillarCardBg: string;
+    /** Feature pillar card border */
+    pillarCardBorder: string;
+    /** Feature pillar icon container background */
+    pillarIconBg: string;
+    /** Feature pillar icon colour */
+    pillarIconColor: string;
+    /** Feature pillar label text */
+    pillarText: string;
   };
 }
 
-// ─── Light variant (Clear background, dark text/buttons) ─────────────────────
+// ─── Light variant ────────────────────────────────────────────────────────────
 export const authLightTheme: AuthTheme = {
   ...lightTheme,
   auth: {
-    background: commonColors.white,
-    surface: commonColors.offWhite,
-    headlineText: commonColors.navyDark,
-    bodyText: 'rgba(15,30,53,0.70)',
+    background: commonColors.slateBackground,
+    surface: commonColors.white,
+    headlineText: commonColors.indigo,
+    bodyText: '#6B7280',
     accentText: commonColors.gold,
-    googleButtonBg: commonColors.navy,
-    googleButtonText: commonColors.white,
-    googleButtonBorder: commonColors.navyLight,
+    logoCardBg: commonColors.white,
+    logoColor: commonColors.indigo,
+    googleButtonBg: commonColors.white,
+    googleButtonText: '#374151',
+    googleButtonBorder: '#E5E7EB',
     errorText: commonColors.errorRed,
-    logoColor: commonColors.navyDark,
     separator: 'rgba(0,0,0,0.10)',
+    blob1: 'rgba(99,102,241,0.15)',
+    blob2: 'rgba(168,85,247,0.15)',
+    blob3: 'rgba(244,114,182,0.15)',
+    pillarCardBg: commonColors.white,
+    pillarCardBorder: commonColors.grayLight,
+    pillarIconBg: commonColors.indigoSoft,
+    pillarIconColor: commonColors.indigo,
+    pillarText: '#1F2937',
   },
 };
 
-// ─── Dark variant (Navy background, clear text/buttons) ───────────────────────
+// ─── Dark variant ─────────────────────────────────────────────────────────────
 export const authDarkTheme: AuthTheme = {
   ...darkTheme,
   auth: {
-    background: commonColors.navy,
+    background: commonColors.navyDark,
     surface: commonColors.navyMid,
     headlineText: commonColors.white,
     bodyText: 'rgba(255,255,255,0.75)',
     accentText: commonColors.goldLight,
+    logoCardBg: commonColors.navy,
+    logoColor: commonColors.white,
     googleButtonBg: commonColors.white,
     googleButtonText: commonColors.navyDark,
     googleButtonBorder: commonColors.grayLight,
     errorText: '#FF6B6B',
-    logoColor: commonColors.white,
     separator: 'rgba(255,255,255,0.15)',
+    blob1: 'rgba(99,102,241,0.10)',
+    blob2: 'rgba(168,85,247,0.10)',
+    blob3: 'rgba(244,114,182,0.10)',
+    pillarCardBg: 'rgba(27,42,74,0.85)',
+    pillarCardBorder: 'rgba(46,74,128,0.50)',
+    pillarIconBg: commonColors.navyMid,
+    pillarIconColor: commonColors.white,
+    pillarText: commonColors.white,
   },
 };

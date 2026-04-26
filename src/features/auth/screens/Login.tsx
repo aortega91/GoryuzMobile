@@ -18,13 +18,20 @@ import {
 
 import useTheme from '@hooks/useTheme';
 import GoryuzLogo from '@assets/GoryuzLogo';
+import {
+  SparklesIcon,
+  UsersIcon,
+  RefreshCwIcon,
+  ShoppingBagIcon,
+} from '@assets/icons';
 import { setSession } from '@features/auth/sessionSlice';
 import { AppDispatch } from '@utilities/store';
+import { AuthTheme } from '@features/auth/theme';
+import BlobBackground from '../components/BlobBackground';
 
-// Configure Google Sign-In once (Web Client ID comes from google-services.json /
-// GoogleService-Info.plist; set it in the Firebase Console).
 GoogleSignin.configure({
-  webClientId: '718649973201-60v4sucjanl44grg77r9psqgjo2in5b4.apps.googleusercontent.com',
+  webClientId:
+    '718649973201-60v4sucjanl44grg77r9psqgjo2in5b4.apps.googleusercontent.com',
   offlineAccess: true,
 });
 
@@ -52,10 +59,21 @@ function getErrorKey(error: any): string {
   return 'auth.loginErrorGeneric';
 }
 
+// ─── Feature pillars ──────────────────────────────────────────────────────────
+
+type PillarIcon = React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
+
+const PILLARS: { Icon: PillarIcon; labelKey: string }[] = [
+  { Icon: SparklesIcon, labelKey: 'auth.loginPillar1' },
+  { Icon: UsersIcon, labelKey: 'auth.loginPillar2' },
+  { Icon: RefreshCwIcon, labelKey: 'auth.loginPillar3' },
+  { Icon: ShoppingBagIcon, labelKey: 'auth.loginPillar4' },
+];
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 function Login() {
-  const theme = useTheme();
+  const theme = useTheme() as AuthTheme;
   const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
@@ -65,23 +83,14 @@ function Login() {
     setErrorKey(null);
     setIsLoading(true);
     try {
-      // Check Play Services availability (Android)
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-
-      // Open the Google account picker
       const signInResult = await GoogleSignin.signIn();
       const idToken = signInResult.data?.idToken;
-
       if (!idToken) {
         throw new Error('No ID token returned from Google Sign-In');
       }
-
-      // Create a Firebase credential with the Google ID token
       const googleCredential = auth.GoogleAuthProvider.credential(idToken);
-
-      // Sign in to Firebase with the credential
       const { user } = await auth().signInWithCredential(googleCredential);
-
       dispatch(
         setSession({
           uid: user.uid,
@@ -104,69 +113,132 @@ function Login() {
         backgroundColor={theme.auth.background}
       />
 
+      <BlobBackground />
 
-      {/* ── Logo + App name ── */}
-      <View style={styles.logoSection}>
-        <GoryuzLogo size={80} color={theme.auth.logoColor} />
-        <Text style={[styles.appName, { color: theme.auth.headlineText }]}>
-          GORYUZ
-        </Text>
-      </View>
+      {/* ── Content ── */}
+      <View style={styles.content}>
 
-      {/* ── Headline copy ── */}
-      <View style={styles.headlineSection}>
-        <Text style={[styles.headline, { color: theme.auth.headlineText }]}>
-          {t('auth.loginTitle')}
-        </Text>
-
-        <Text style={[styles.subCopy, { color: theme.auth.bodyText }]}>
-          {t('auth.loginSubtitle')}{' '}
-          <Text style={[styles.accentText, { color: theme.auth.accentText }]}>
-            {t('auth.loginSubtitleAccent')}
+        {/* Header: logo card + brand + tagline */}
+        <View style={styles.headerSection}>
+          <View
+            style={[
+              styles.logoCard,
+              { backgroundColor: theme.auth.logoCardBg },
+            ]}
+          >
+            <GoryuzLogo size={64} color={theme.auth.logoColor} />
+          </View>
+          <Text style={[styles.brandName, { color: theme.auth.headlineText }]}>
+            GORYUZ
           </Text>
-          {'\n'}
-          {t('auth.loginSubtitleSuffix')}
-        </Text>
-      </View>
+          <Text style={[styles.tagline, { color: theme.auth.bodyText }]}>
+            {t('auth.loginSubtitle')}
+          </Text>
+        </View>
 
-      {/* ── Inline error ── */}
-      {errorKey ? (
-        <Text style={[styles.errorText, { color: theme.auth.errorText }]}>
-          {t(errorKey)}
-        </Text>
-      ) : null}
+        {/* Center: button + pillars */}
+        <View style={styles.centerSection}>
+          {errorKey ? (
+            <Text style={[styles.errorText, { color: theme.auth.errorText }]}>
+              {t(errorKey)}
+            </Text>
+          ) : null}
 
-      {/* ── Google sign-in button ── */}
-      <View style={styles.ctaSection}>
-        <TouchableOpacity
-          style={[
-            styles.googleButton,
-            {
-              backgroundColor: theme.auth.googleButtonBg,
-              borderColor: theme.auth.googleButtonBorder,
-            },
-            isLoading && styles.googleButtonDisabled,
-          ]}
-          onPress={handleGoogleSignIn}
-          disabled={isLoading}
-          activeOpacity={0.85}
-        >
-          {isLoading ? (
-            <ActivityIndicator size="small" color={theme.auth.googleButtonText} />
-          ) : (
-            <>
-              <Text style={styles.googleG}>G</Text>
-              <Text
+          {/* Google sign-in button */}
+          <TouchableOpacity
+            style={[
+              styles.googleButton,
+              {
+                backgroundColor: theme.auth.googleButtonBg,
+                borderColor: theme.auth.googleButtonBorder,
+              },
+              isLoading && styles.googleButtonDisabled,
+            ]}
+            onPress={handleGoogleSignIn}
+            disabled={isLoading}
+            activeOpacity={0.85}
+          >
+            {isLoading ? (
+              <ActivityIndicator
+                size="small"
+                color={theme.auth.googleButtonText}
+              />
+            ) : (
+              <>
+                <Text style={styles.googleG}>G</Text>
+                <Text
+                  style={[
+                    styles.googleButtonLabel,
+                    { color: theme.auth.googleButtonText },
+                  ]}
+                >
+                  {t('auth.loginButton')}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          {/* Feature pillar grid */}
+          <View style={styles.pillarsRow}>
+            {PILLARS.slice(0, 2).map(({ Icon, labelKey }) => (
+              <View
+                key={labelKey}
                 style={[
-                  styles.googleButtonLabel,
-                  { color: theme.auth.googleButtonText },
+                  styles.pillarCard,
+                  {
+                    backgroundColor: theme.auth.pillarCardBg,
+                    borderColor: theme.auth.pillarCardBorder,
+                  },
                 ]}
               >
-                {t('auth.loginButton')}
-              </Text>
-            </>
-          )}
-        </TouchableOpacity>
+                <View
+                  style={[
+                    styles.pillarIconWrap,
+                    { backgroundColor: theme.auth.pillarIconBg },
+                  ]}
+                >
+                  <Icon size={22} color={theme.auth.pillarIconColor} strokeWidth={2.5} />
+                </View>
+                <Text
+                  style={[styles.pillarLabel, { color: theme.auth.pillarText }]}
+                  numberOfLines={2}
+                >
+                  {t(labelKey)}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          <View style={[styles.pillarsRow, styles.pillarsRowGap]}>
+            {PILLARS.slice(2, 4).map(({ Icon, labelKey }) => (
+              <View
+                key={labelKey}
+                style={[
+                  styles.pillarCard,
+                  {
+                    backgroundColor: theme.auth.pillarCardBg,
+                    borderColor: theme.auth.pillarCardBorder,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.pillarIconWrap,
+                    { backgroundColor: theme.auth.pillarIconBg },
+                  ]}
+                >
+                  <Icon size={22} color={theme.auth.pillarIconColor} strokeWidth={2.5} />
+                </View>
+                <Text
+                  style={[styles.pillarLabel, { color: theme.auth.pillarText }]}
+                  numberOfLines={2}
+                >
+                  {t(labelKey)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
       </View>
     </View>
   );
@@ -177,38 +249,45 @@ function Login() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 28,
-    paddingTop: Platform.OS === 'ios' ? 80 : 60,
-    paddingBottom: 48,
   },
-  logoSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 40,
-    gap: 12,
-  },
-  appName: {
-    fontSize: 22,
-    fontWeight: '700',
-    letterSpacing: 3,
-  },
-  headlineSection: {
+  // Main layout
+  content: {
     flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: Platform.OS === 'ios' ? 44 : 24,
+    paddingBottom: Platform.OS === 'ios' ? 60 : 48,
+  },
+  headerSection: {
+    flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  headline: {
-    fontSize: 38,
-    fontWeight: '800',
-    lineHeight: 46,
+  logoCard: {
+    padding: 16,
+    borderRadius: 24,
     marginBottom: 20,
+    // Shadow
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  subCopy: {
-    fontSize: 17,
-    lineHeight: 26,
+  brandName: {
+    fontSize: 40,
+    fontWeight: '800',
+    letterSpacing: 4,
+    marginBottom: 6,
   },
-  accentText: {
-    fontStyle: 'italic',
-    fontWeight: '600',
+  tagline: {
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  // Center section
+  centerSection: {
+    flex: 1,
+    justifyContent: 'center',
   },
   errorText: {
     fontSize: 14,
@@ -216,18 +295,22 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 8,
   },
-  ctaSection: {
-    paddingTop: 24,
-  },
+  // Google button
   googleButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 14,
+    borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderWidth: 1,
     gap: 10,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
   googleButtonDisabled: {
     opacity: 0.7,
@@ -239,7 +322,40 @@ const styles = StyleSheet.create({
   },
   googleButtonLabel: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
+  },
+  // Pillars grid
+  pillarsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  pillarsRowGap: {
+    marginTop: 12,
+  },
+  pillarCard: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  pillarIconWrap: {
+    padding: 10,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  pillarLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
+    lineHeight: 16,
   },
 });
 

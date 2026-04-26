@@ -16,6 +16,11 @@ export interface HomeTheme extends Theme {
     topBarText: string;
     topBarIcon: string;
 
+    // Location pill
+    locationPillBg: string;
+    locationPillBorder: string;
+    locationPinColor: string;
+
     // Gem badge
     gemBadgeBg: string;
     gemBadgeText: string;
@@ -33,6 +38,18 @@ export interface HomeTheme extends Theme {
     ctaCardBackground: string;
     ctaCardBorder: string;
     ctaCardIcon: string;
+
+    // Bottom tab bar
+    tabBarBackground: string;
+    tabBarBorder: string;
+    tabBarIcon: string;
+    tabBarText: string;
+    tabBarActiveIcon: string;
+    tabBarActiveText: string;
+
+    // FAB (create post button)
+    fabBackground: string;
+    fabIcon: string;
 
     // Drawer (always dark-navy regardless of device theme)
     drawerBackground: string;
@@ -62,6 +79,10 @@ export const homeLightTheme: HomeTheme = {
     topBarText: commonColors.navyDark,
     topBarIcon: commonColors.grayDark,
 
+    locationPillBg: commonColors.offWhite,
+    locationPillBorder: '#F3F4F6',
+    locationPinColor: '#6366F1',
+
     gemBadgeBg: '#EDE9F7',
     gemBadgeText: '#5B21B6',
     gemBadgeBorder: '#C4B5FD',
@@ -77,7 +98,16 @@ export const homeLightTheme: HomeTheme = {
     ctaCardBorder: '#6366F1',
     ctaCardIcon: '#6366F1',
 
-    // Drawer is always dark
+    tabBarBackground: commonColors.white,
+    tabBarBorder: commonColors.grayLight,
+    tabBarIcon: commonColors.gray,
+    tabBarText: commonColors.gray,
+    tabBarActiveIcon: '#4F46E5',
+    tabBarActiveText: '#4F46E5',
+
+    fabBackground: commonColors.navyDark,
+    fabIcon: commonColors.white,
+
     drawerBackground: commonColors.navyDark,
     drawerBorder: 'rgba(255,255,255,0.08)',
     drawerText: 'rgba(255,255,255,0.80)',
@@ -105,6 +135,10 @@ export const homeDarkTheme: HomeTheme = {
     topBarText: commonColors.white,
     topBarIcon: 'rgba(255,255,255,0.60)',
 
+    locationPillBg: commonColors.darkCard,
+    locationPillBorder: commonColors.darkBorder,
+    locationPinColor: '#818CF8',
+
     gemBadgeBg: '#2D1B69',
     gemBadgeText: '#C4B5FD',
     gemBadgeBorder: '#4C1D95',
@@ -120,7 +154,16 @@ export const homeDarkTheme: HomeTheme = {
     ctaCardBorder: '#6366F1',
     ctaCardIcon: '#818CF8',
 
-    // Drawer stays the same in both themes
+    tabBarBackground: commonColors.darkCard,
+    tabBarBorder: commonColors.darkBorder,
+    tabBarIcon: 'rgba(255,255,255,0.40)',
+    tabBarText: 'rgba(255,255,255,0.40)',
+    tabBarActiveIcon: '#818CF8',
+    tabBarActiveText: '#818CF8',
+
+    fabBackground: '#4F46E5',
+    fabIcon: commonColors.white,
+
     drawerBackground: commonColors.navyDark,
     drawerBorder: 'rgba(255,255,255,0.08)',
     drawerText: 'rgba(255,255,255,0.80)',

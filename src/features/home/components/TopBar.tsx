@@ -25,6 +25,7 @@ interface TopBarProps {
   onNotificationPress?: () => void;
   avatarUrl?: string | null;
   onAvatarPress?: () => void;
+  unreadMessages?: number;
 }
 
 function TopBar({
@@ -36,6 +37,7 @@ function TopBar({
   onNotificationPress,
   avatarUrl,
   onAvatarPress,
+  unreadMessages = 0,
 }: TopBarProps) {
   const theme = useHomeTheme();
   const t = theme.home;
@@ -60,10 +62,19 @@ function TopBar({
         <MenuIcon size={22} color={t.topBarIcon} />
       </TouchableOpacity>
 
-      {/* Center — location */}
+      {/* Center — location pill */}
       {location ? (
-        <TouchableOpacity style={styles.locationRow} activeOpacity={0.7}>
-          <MapPinIcon size={14} color={t.topBarIcon} />
+        <TouchableOpacity
+          style={[
+            styles.locationPill,
+            {
+              backgroundColor: t.locationPillBg,
+              borderColor: t.locationPillBorder,
+            },
+          ]}
+          activeOpacity={0.7}
+        >
+          <MapPinIcon size={13} color={t.locationPinColor} />
           <Text
             style={[styles.locationText, { color: t.topBarText }]}
             numberOfLines={1}
@@ -72,7 +83,7 @@ function TopBar({
           </Text>
         </TouchableOpacity>
       ) : (
-        <View style={styles.locationRow} />
+        <View style={styles.locationPill} />
       )}
 
       {/* Right — gem counter + message + bell + avatar */}
@@ -103,6 +114,13 @@ function TopBar({
           hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
         >
           <MessageIcon size={20} color={t.topBarIcon} />
+          {unreadMessages > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>
+                {unreadMessages > 9 ? '9+' : String(unreadMessages)}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
 
         {/* Bell */}
@@ -150,22 +168,29 @@ const styles = StyleSheet.create({
   iconButton: {
     padding: 4,
   },
-  locationRow: {
+  locationPill: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    marginHorizontal: 8,
+    marginHorizontal: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+    maxWidth: 160,
+    alignSelf: 'center',
   },
   locationText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
+    flexShrink: 1,
   },
   rightRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   gemBadge: {
     flexDirection: 'row',
@@ -180,10 +205,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
+  badge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: '#ffffff',
+  },
+  badgeText: {
+    color: '#ffffff',
+    fontSize: 9,
+    fontWeight: '800',
+  },
   avatar: {
     width: 32,
     height: 32,
     borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#ffffff',
   },
   avatarPlaceholder: {
     opacity: 0.4,

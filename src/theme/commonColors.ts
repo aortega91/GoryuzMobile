@@ -34,6 +34,13 @@ const commonColors = {
   successGreen: '#3CB371',
   warningAmber: '#F5A623',
 
+  // Indigo accent (login screen, primary CTA)
+  indigo: '#4F46E5',
+  indigoSoft: '#EEF2FF',
+
+  // Slate background
+  slateBackground: '#F8FAFC',
+
   // Transparent / overlay
   overlayDark: 'rgba(0,0,0,0.55)',
   overlayLight: 'rgba(255,255,255,0.15)',

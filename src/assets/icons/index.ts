@@ -1,4 +1,7 @@
 export { default as ArchiveIcon } from './ArchiveIcon';
+export { default as BookmarkIcon } from './BookmarkIcon';
+export { default as EyeIcon } from './EyeIcon';
+export { default as FlameIcon } from './FlameIcon';
 export { default as BellIcon } from './BellIcon';
 export { default as CalendarIcon } from './CalendarIcon';
 export { default as ChevronRightIcon } from './ChevronRightIcon';
@@ -10,6 +13,9 @@ export { default as MenuIcon } from './MenuIcon';
 export { default as MessageIcon } from './MessageIcon';
 export { default as PlusCircleIcon } from './PlusCircleIcon';
 export { default as ShirtIcon } from './ShirtIcon';
+export { default as RefreshCwIcon } from './RefreshCwIcon';
+export { default as Share2Icon } from './Share2Icon';
+export { default as ShoppingBagIcon } from './ShoppingBagIcon';
 export { default as SparklesIcon } from './SparklesIcon';
 export { default as StarIcon } from './StarIcon';
 export { default as UsersIcon } from './UsersIcon';
