@@ -24,6 +24,9 @@ const BASE_URL = (Config.API_URL ?? 'https://preview.goryuz.com/api').replace(
   '',
 );
 
+// Origin without the /api suffix — used to build absolute image URLs from relative paths
+const ORIGIN = BASE_URL.replace(/\/api$/, '');
+
 // ─── Fallback token (from zena/Untitled-1.json — used while backend auth is
 //     being aligned with Firebase ID tokens) ──────────────────────────────────
 
@@ -118,6 +121,11 @@ export async function apiRequest<T>(
   });
 
   if (!response.ok) {
+    let responseBody = '<unreadable>';
+    try {
+      responseBody = await response.text();
+    } catch { /* ignore */ }
+    console.error(`[API] ${response.status} ${endpoint}`, { responseBody });
     const apiError = new ApiError(
       response.status,
       endpoint,
@@ -136,6 +144,28 @@ export async function apiRequest<T>(
   }
 }
 
+// ─── Image source helper ─────────────────────────────────────────────────────
+
+/**
+ * Builds the correct RN Image `source` prop for any imageData value stored in
+ * the backend:
+ *  - Base64 data URLs → returned as-is (no auth needed)
+ *  - Relative paths (/api/images/...) → prefixed with ORIGIN + session cookie
+ *  - Absolute network URLs → passed through + session cookie (private R2 proxy)
+ */
+export function getImageSource(
+  imageData: string,
+): { uri: string; headers?: Record<string, string> } {
+  if (imageData.startsWith('data:')) {
+    return { uri: imageData };
+  }
+  const authHeaders = resolveAuthHeaders() as Record<string, string>;
+  const uri = imageData.startsWith('/')
+    ? `${ORIGIN}${imageData}`
+    : imageData;
+  return { uri, headers: authHeaders };
+}
+
 // ─── Convenience methods ──────────────────────────────────────────────────────
 
 export const apiGet = <T>(path: string) =>
@@ -150,6 +180,12 @@ export const apiPost = <T>(path: string, body: unknown) =>
 export const apiPatch = <T>(path: string, body: unknown) =>
   apiRequest<T>(path, {
     method: 'PATCH',
+    body: JSON.stringify(body),
+  });
+
+export const apiPut = <T>(path: string, body: unknown) =>
+  apiRequest<T>(path, {
+    method: 'PUT',
     body: JSON.stringify(body),
   });
 

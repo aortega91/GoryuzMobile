@@ -11,6 +11,8 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import useHomeTheme from '@hooks/useHomeTheme';
 import { RootState, AppDispatch } from '@utilities/store';
@@ -28,6 +30,7 @@ import FeedPost from '../components/FeedPost';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type HomeTab = 'feed' | 'my_posts' | 'saved';
+type HomeNavProp = NativeStackNavigationProp<RootStackParamList>;
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -42,6 +45,7 @@ function Home() {
   const profileStatus = useSelector((state: RootState) => state.profile.status);
 
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<HomeNavProp>();
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<HomeTab>('feed');
@@ -57,9 +61,15 @@ function Home() {
   const firstName = user?.displayName?.split(' ')[0] ?? t('home.defaultName');
   const location = profile?.country ?? undefined;
 
-  const handleNavigate = useCallback((_route: keyof RootStackParamList) => {
-    setIsDrawerOpen(false);
-  }, []);
+  const handleNavigate = useCallback(
+    (route: keyof RootStackParamList) => {
+      setIsDrawerOpen(false);
+      if (route !== 'Home') {
+        navigation.navigate(route as never);
+      }
+    },
+    [navigation],
+  );
 
   // ─── Tab content ────────────────────────────────────────────────────────────
 
@@ -111,7 +121,7 @@ function Home() {
           icon={<ShirtIcon size={24} />}
           title={t('home.loadFirstItem')}
           description={t('home.loadFirstItemDesc')}
-          onPress={() => {}}
+          onPress={() => handleNavigate('Collection')}
         />
         <ActionCard
           icon={<StarIcon size={24} />}

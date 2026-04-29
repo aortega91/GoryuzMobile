@@ -15,6 +15,7 @@ import * as Keychain from 'react-native-keychain';
 
 import sessionReducer, { SessionState } from '@features/auth/sessionSlice';
 import profileReducer from '@features/home/profileSlice';
+import collectionReducer from '@features/collection/collectionSlice';
 
 // ─── Keychain adapter (secure storage for sensitive session data) ─────────────
 
@@ -56,8 +57,8 @@ const rootPersistConfig = {
   key: 'root',
   storage: AsyncStorage,
   version: 1,
-  // session has its own persist config; profile is always refetched on launch
-  blacklist: ['session', 'profile'],
+  // session has its own persist config; profile/collection are always refetched on launch
+  blacklist: ['session', 'profile', 'collection'],
 };
 
 // ─── Root reducer ─────────────────────────────────────────────────────────────
@@ -65,6 +66,7 @@ const rootPersistConfig = {
 const rootReducer = combineReducers({
   session: persistReducer<SessionState>(sessionPersistConfig, sessionReducer),
   profile: profileReducer,
+  collection: collectionReducer,
 });
 
 const persistedReducer = persistReducer(rootPersistConfig, rootReducer);

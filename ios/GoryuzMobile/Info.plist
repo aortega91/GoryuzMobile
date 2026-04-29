@@ -44,6 +44,10 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>GORYUZ needs camera access to photograph your clothing for your digital wardrobe.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>GORYUZ needs photo library access to add clothing images to your digital wardrobe.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Goryuz uses your location to provide personalized style recommendations based on local weather.</string>
 	<key>RCTNewArchEnabled</key>
