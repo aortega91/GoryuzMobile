@@ -3,11 +3,11 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import Touchable from '@components/Touchable';
 import useCollectionTheme from '@hooks/useCollectionTheme';
 import { ClothingCategory, CLOTHING_CATEGORIES } from '../types';
 
@@ -53,10 +53,10 @@ function CategoryTabs({ selected, onSelect }: CategoryTabsProps) {
         {ALL_TABS.map(category => {
           const isActive = selected === category;
           return (
-            <TouchableOpacity
+            <Touchable
               key={category}
               onPress={() => onSelect(category)}
-              activeOpacity={0.75}
+              borderRadius={20}
               style={[
                 styles.tab,
                 {
@@ -80,7 +80,7 @@ function CategoryTabs({ selected, onSelect }: CategoryTabsProps) {
               >
                 {t(CATEGORY_KEY_MAP[category])}
               </Text>
-            </TouchableOpacity>
+            </Touchable>
           );
         })}
       </ScrollView>

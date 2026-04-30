@@ -3,11 +3,11 @@ import {
   Modal,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import Touchable from '@components/Touchable';
 import useCollectionTheme from '@hooks/useCollectionTheme';
 import { ClothingItem } from '../types';
 
@@ -46,8 +46,9 @@ function DeleteConfirmModal({ item, onClose, onConfirm }: DeleteConfirmModalProp
             {t('collection.deleteMessage', { name: item.name })}
           </Text>
           <View style={styles.buttons}>
-            <TouchableOpacity
+            <Touchable
               onPress={onClose}
+              borderRadius={8}
               style={[
                 styles.btn,
                 {
@@ -59,9 +60,10 @@ function DeleteConfirmModal({ item, onClose, onConfirm }: DeleteConfirmModalProp
               <Text style={[styles.btnText, { color: tokens.buttonSecondaryText }]}>
                 {t('common.cancel')}
               </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+            </Touchable>
+            <Touchable
               onPress={onConfirm}
+              borderRadius={8}
               style={[
                 styles.btn,
                 styles.btnDanger,
@@ -71,7 +73,7 @@ function DeleteConfirmModal({ item, onClose, onConfirm }: DeleteConfirmModalProp
               <Text style={[styles.btnText, { color: tokens.buttonDangerText }]}>
                 {t('collection.deleteConfirm')}
               </Text>
-            </TouchableOpacity>
+            </Touchable>
           </View>
         </View>
       </View>

@@ -1,11 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   FlatList,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
+import Touchable from '@components/Touchable';
 import useHomeTheme from '@hooks/useHomeTheme';
 import { RootState, AppDispatch } from '@utilities/store';
 import { RootStackParamList } from '@navigation/types';
@@ -24,7 +24,7 @@ import { MOCK_FEED_POSTS } from '../mockFeedData';
 
 import TopBar from '../components/TopBar';
 import ActionCard from '../components/ActionCard';
-import DrawerMenu from '../components/DrawerMenu';
+import DrawerMenu, { DrawerMenuHandle } from '../components/DrawerMenu';
 import FeedPost from '../components/FeedPost';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -48,6 +48,7 @@ function Home() {
   const navigation = useNavigation<HomeNavProp>();
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const drawerRef = useRef<DrawerMenuHandle>(null);
   const [activeTab, setActiveTab] = useState<HomeTab>('feed');
   const [tabContentHeight, setTabContentHeight] = useState(0);
 
@@ -169,7 +170,7 @@ function Home() {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Top navigation bar */}
         <TopBar
-          onMenuPress={() => setIsDrawerOpen(true)}
+          onMenuPress={() => { drawerRef.current?.open(); setIsDrawerOpen(true); }}
           avatarUrl={user?.photoURL}
           gemCount={gemCount}
           location={location}
@@ -186,13 +187,13 @@ function Home() {
 
           {/* FAB — only on Inspiración tab */}
           {activeTab === 'feed' && (
-            <TouchableOpacity
+            <Touchable
               style={[styles.fab, { backgroundColor: homeTokens.fabBackground }]}
-              activeOpacity={0.85}
               onPress={() => {}}
+              borderRadius={26}
             >
               <Text style={[styles.fabIcon, { color: homeTokens.fabIcon }]}>+</Text>
-            </TouchableOpacity>
+            </Touchable>
           )}
         </View>
 
@@ -210,11 +211,10 @@ function Home() {
           {TABS.map(({ id, labelKey, Icon }) => {
             const isActive = activeTab === id;
             return (
-              <TouchableOpacity
+              <Touchable
                 key={id}
                 style={styles.tabItem}
                 onPress={() => setActiveTab(id)}
-                activeOpacity={0.7}
               >
                 <Icon
                   size={22}
@@ -234,7 +234,7 @@ function Home() {
                 >
                   {t(labelKey)}
                 </Text>
-              </TouchableOpacity>
+              </Touchable>
             );
           })}
         </View>
@@ -242,8 +242,8 @@ function Home() {
 
       {/* Drawer overlay */}
       <DrawerMenu
+        ref={drawerRef}
         isOpen={isDrawerOpen}
-        activeRoute="Home"
         onClose={() => setIsDrawerOpen(false)}
         onNavigate={handleNavigate}
         onLogout={() => dispatch(clearSession())}

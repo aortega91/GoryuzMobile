@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
 import {
   Animated,
   Dimensions,
@@ -12,12 +12,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import auth from '@react-native-firebase/auth';
 import { useTranslation } from 'react-i18next';
 
+import Touchable from '@components/Touchable';
 import useHomeTheme from '@hooks/useHomeTheme';
 import GoryuzLogo from '@assets/GoryuzLogo';
 import {
   ArchiveIcon,
   CalendarIcon,
-  HomeIcon,
   ShirtIcon,
   SparklesIcon,
   StarIcon,
@@ -40,11 +40,6 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  {
-    route: 'Home',
-    labelKey: 'menu.home',
-    icon: color => <HomeIcon size={20} color={color} />,
-  },
   {
     route: 'Collection',
     labelKey: 'menu.collection',
@@ -79,60 +74,68 @@ const NAV_ITEMS: NavItem[] = [
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+export interface DrawerMenuHandle {
+  open: () => void;
+  close: () => void;
+}
+
 interface DrawerMenuProps {
   isOpen: boolean;
-  activeRoute: DrawerRoute;
   onClose: () => void;
   onNavigate: (route: DrawerRoute) => void;
   onLogout?: () => void;
 }
 
-function DrawerMenu({ isOpen, activeRoute, onClose, onNavigate, onLogout }: DrawerMenuProps) {
+const DrawerMenu = forwardRef<DrawerMenuHandle, DrawerMenuProps>(
+  ({ isOpen, onClose, onNavigate, onLogout }, ref) => {
   const theme = useHomeTheme();
   const dt = theme.home;
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
-  const [isVisible, setIsVisible] = useState(false);
   const translateX = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    if (isOpen) {
-      setIsVisible(true);
-      Animated.parallel([
-        Animated.timing(translateX, {
-          toValue: 0,
-          duration: 280,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(backdropOpacity, {
-          toValue: 1,
-          duration: 280,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(translateX, {
-          toValue: -DRAWER_WIDTH,
-          duration: 240,
-          easing: Easing.in(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(backdropOpacity, {
-          toValue: 0,
-          duration: 240,
-          useNativeDriver: true,
-        }),
-      ]).start(() => setIsVisible(false));
-    }
-  }, [isOpen, translateX, backdropOpacity]);
+  const animateOpen = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(translateX, {
+        toValue: 0,
+        duration: 200,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(backdropOpacity, {
+        toValue: 1,
+        duration: 200,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [translateX, backdropOpacity]);
 
-  if (!isVisible) {
-    return null;
-  }
+  const animateClose = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(translateX, {
+        toValue: -DRAWER_WIDTH,
+        duration: 150,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(backdropOpacity, {
+        toValue: 0,
+        duration: 150,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [translateX, backdropOpacity]);
+
+  useImperativeHandle(ref, () => ({ open: animateOpen, close: animateClose }));
+
+  useEffect(() => {
+    if (isOpen) animateOpen();
+    else animateClose();
+  }, [isOpen, animateOpen, animateClose]);
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
@@ -141,15 +144,16 @@ function DrawerMenu({ isOpen, activeRoute, onClose, onNavigate, onLogout }: Draw
         style={[styles.backdrop, { opacity: backdropOpacity }]}
         pointerEvents={isOpen ? 'auto' : 'none'}
       >
-        <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onClose} activeOpacity={1} />
+        <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => { animateClose(); onClose(); }} activeOpacity={1} />
       </Animated.View>
 
-      {/* Drawer panel */}
+      {/* Drawer panel — always in the native view tree so animation starts instantly */}
       <Animated.View
         style={[
           styles.drawer,
           { backgroundColor: dt.drawerBackground, transform: [{ translateX }] },
         ]}
+        pointerEvents={isOpen ? 'auto' : 'none'}
       >
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: dt.drawerBorder }]}>
@@ -166,50 +170,40 @@ function DrawerMenu({ isOpen, activeRoute, onClose, onNavigate, onLogout }: Draw
 
         {/* Nav items */}
         <View style={styles.nav}>
-          {NAV_ITEMS.map(item => {
-            const isActive = activeRoute === item.route;
-            const iconColor = isActive ? dt.drawerActiveIcon : dt.drawerIcon;
-            const textColor = isActive ? dt.drawerActiveText : dt.drawerText;
-
-            return (
-              <TouchableOpacity
-                key={item.route}
-                onPress={() => onNavigate(item.route)}
-                activeOpacity={0.75}
-                style={[
-                  styles.navItem,
-                  isActive && {
-                    backgroundColor: dt.drawerActiveBackground,
-                  },
-                ]}
-              >
-                {item.icon(iconColor)}
-                <Text style={[styles.navLabel, { color: textColor }]}>
-                  {t(item.labelKey)}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+          {NAV_ITEMS.map(item => (
+            <Touchable
+              key={item.route}
+              onPress={() => { animateClose(); onNavigate(item.route); }}
+              borderRadius={10}
+              style={styles.navItem}
+            >
+              {item.icon(dt.drawerIcon)}
+              <Text style={[styles.navLabel, { color: dt.drawerText }]}>
+                {t(item.labelKey)}
+              </Text>
+            </Touchable>
+          ))}
         </View>
 
         {/* Logout button — pinned to bottom */}
         <View style={[styles.logoutSection, { borderTopColor: dt.drawerBorder, paddingBottom: insets.bottom + 12 }]}>
-          <TouchableOpacity
+          <Touchable
             style={styles.logoutButton}
-            activeOpacity={0.75}
+            borderRadius={10}
             onPress={async () => {
+              animateClose();
               onClose();
               await auth().signOut();
               onLogout?.();
             }}
           >
             <Text style={styles.logoutText}>{t('home.signOut')}</Text>
-          </TouchableOpacity>
+          </Touchable>
         </View>
       </Animated.View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   backdrop: {
@@ -230,7 +224,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   header: {
-    paddingTop: 56,
+    paddingTop: 72,
     paddingBottom: 20,
     paddingHorizontal: 24,
     borderBottomWidth: StyleSheet.hairlineWidth,

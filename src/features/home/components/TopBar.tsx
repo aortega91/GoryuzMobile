@@ -2,10 +2,11 @@ import React from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   Image,
   StyleSheet,
 } from 'react-native';
+
+import Touchable from '@components/Touchable';
 
 import useHomeTheme from '@hooks/useHomeTheme';
 import {
@@ -53,18 +54,13 @@ function TopBar({
       ]}
     >
       {/* Left — hamburger */}
-      <TouchableOpacity
-        onPress={onMenuPress}
-        style={styles.iconButton}
-        activeOpacity={0.7}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
+      <Touchable onPress={onMenuPress} style={styles.iconButton}>
         <MenuIcon size={22} color={t.topBarIcon} />
-      </TouchableOpacity>
+      </Touchable>
 
       {/* Center — location pill */}
       {location ? (
-        <TouchableOpacity
+        <Touchable
           style={[
             styles.locationPill,
             {
@@ -72,7 +68,7 @@ function TopBar({
               borderColor: t.locationPillBorder,
             },
           ]}
-          activeOpacity={0.7}
+          borderRadius={20}
         >
           <MapPinIcon size={13} color={t.locationPinColor} />
           <Text
@@ -81,7 +77,7 @@ function TopBar({
           >
             {location}
           </Text>
-        </TouchableOpacity>
+        </Touchable>
       ) : (
         <View style={styles.locationPill} />
       )}
@@ -89,7 +85,7 @@ function TopBar({
       {/* Right — gem counter + message + bell + avatar */}
       <View style={styles.rightRow}>
         {/* Gem badge */}
-        <TouchableOpacity
+        <Touchable
           onPress={onGemPress}
           style={[
             styles.gemBadge,
@@ -98,19 +94,18 @@ function TopBar({
               borderColor: t.gemBadgeBorder,
             },
           ]}
-          activeOpacity={0.8}
+          borderRadius={20}
         >
           <GemIcon size={14} color={t.gemBadgeText} strokeWidth={2} />
           <Text style={[styles.gemCount, { color: t.gemBadgeText }]}>
             {gemCount}
           </Text>
-        </TouchableOpacity>
+        </Touchable>
 
         {/* Message */}
-        <TouchableOpacity
+        <Touchable
           onPress={onMessagePress}
           style={styles.iconButton}
-          activeOpacity={0.7}
           hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
         >
           <MessageIcon size={20} color={t.topBarIcon} />
@@ -121,23 +116,22 @@ function TopBar({
               </Text>
             </View>
           )}
-        </TouchableOpacity>
+        </Touchable>
 
         {/* Bell */}
-        <TouchableOpacity
+        <Touchable
           onPress={onNotificationPress}
           style={styles.iconButton}
-          activeOpacity={0.7}
           hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
         >
           <BellIcon size={20} color={t.topBarIcon} />
-        </TouchableOpacity>
+        </Touchable>
 
         {/* Avatar */}
-        <TouchableOpacity
+        <Touchable
           onPress={onAvatarPress}
-          activeOpacity={0.8}
           hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+          borderRadius={16}
         >
           {avatarUrl ? (
             <Image source={{ uri: avatarUrl }} style={styles.avatar} />
@@ -150,7 +144,7 @@ function TopBar({
               ]}
             />
           )}
-        </TouchableOpacity>
+        </Touchable>
       </View>
     </View>
   );

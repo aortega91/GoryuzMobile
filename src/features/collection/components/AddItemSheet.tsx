@@ -4,13 +4,13 @@ import {
   Image,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import BottomSheet from '@components/BottomSheet';
 import PermissionModal from '@components/PermissionModal';
+import Touchable from '@components/Touchable';
 import useCollectionTheme from '@hooks/useCollectionTheme';
 import useCameraPermission from '@hooks/useCameraPermission';
 import { logError } from '@utilities/crashlytics';
@@ -199,9 +199,9 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
       </Text>
 
       <View style={styles.pickOptions}>
-        <TouchableOpacity
+        <Touchable
           onPress={handlePickCamera}
-          activeOpacity={0.8}
+          borderRadius={14}
           style={[
             styles.pickOption,
             {
@@ -217,11 +217,11 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
           <Text style={[styles.pickDesc, { color: tokens.modalSubtitle }]}>
             {t('collection.addFromCameraDesc')}
           </Text>
-        </TouchableOpacity>
+        </Touchable>
 
-        <TouchableOpacity
+        <Touchable
           onPress={handlePickGallery}
-          activeOpacity={0.8}
+          borderRadius={14}
           style={[
             styles.pickOption,
             {
@@ -237,7 +237,7 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
           <Text style={[styles.pickDesc, { color: tokens.modalSubtitle }]}>
             {t('collection.addFromGalleryDesc')}
           </Text>
-        </TouchableOpacity>
+        </Touchable>
       </View>
 
       <View style={styles.notices}>
@@ -320,10 +320,10 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
           const isSelected = selected.has(index);
           const dotColor = CATEGORY_COLORS[item.category] ?? '#9CA3AF';
           return (
-            <TouchableOpacity
+            <Touchable
               key={`${item.name}-${item.category}`}
               onPress={() => toggleItem(index)}
-              activeOpacity={0.8}
+              borderRadius={12}
               style={[
                 styles.itemRow,
                 {
@@ -359,7 +359,7 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
                   <CheckIcon size={12} color="#FFFFFF" strokeWidth={3} />
                 </View>
               )}
-            </TouchableOpacity>
+            </Touchable>
           );
         })}
       </View>
@@ -371,14 +371,15 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
       <Text style={[styles.errorText, { color: theme.common.errorRed }]}>
         {errorMsg}
       </Text>
-      <TouchableOpacity
+      <Touchable
         onPress={() => setStage('pick')}
+        borderRadius={8}
         style={[styles.retryBtn, { backgroundColor: tokens.buttonPrimary }]}
       >
         <Text style={[styles.btnText, { color: tokens.buttonPrimaryText }]}>
           {t('common.retry')}
         </Text>
-      </TouchableOpacity>
+      </Touchable>
     </View>
   );
 
@@ -396,8 +397,9 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
 
           {showFooter && (
             <View style={styles.footer}>
-              <TouchableOpacity
+              <Touchable
                 onPress={onClose}
+                borderRadius={10}
                 style={[
                   styles.footerBtn,
                   {
@@ -409,12 +411,13 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
                 <Text style={[styles.btnText, { color: tokens.buttonSecondaryText }]}>
                   {t('common.cancel')}
                 </Text>
-              </TouchableOpacity>
+              </Touchable>
 
               {stage === 'confirm' && (
-                <TouchableOpacity
+                <Touchable
                   onPress={handleConfirm}
                   disabled={selected.size === 0 || !canAfford}
+                  borderRadius={10}
                   style={[
                     styles.footerBtn,
                     styles.footerBtnPrimary,
@@ -436,7 +439,7 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
                   >
                     {t('collection.confirmAndAdd')}
                   </Text>
-                </TouchableOpacity>
+                </Touchable>
               )}
             </View>
           )}

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   StatusBar,
   ActivityIndicator,
@@ -16,6 +15,7 @@ import {
   statusCodes,
 } from '@react-native-google-signin/google-signin';
 
+import Touchable from '@components/Touchable';
 import useTheme from '@hooks/useTheme';
 import GoryuzLogo from '@assets/GoryuzLogo';
 import {
@@ -145,7 +145,7 @@ function Login() {
           ) : null}
 
           {/* Google sign-in button */}
-          <TouchableOpacity
+          <Touchable
             style={[
               styles.googleButton,
               {
@@ -156,7 +156,7 @@ function Login() {
             ]}
             onPress={handleGoogleSignIn}
             disabled={isLoading}
-            activeOpacity={0.85}
+            borderRadius={16}
           >
             {isLoading ? (
               <ActivityIndicator
@@ -176,7 +176,7 @@ function Login() {
                 </Text>
               </>
             )}
-          </TouchableOpacity>
+          </Touchable>
 
           {/* Feature pillar grid */}
           <View style={styles.pillarsRow}>

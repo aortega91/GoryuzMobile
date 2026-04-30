@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import {
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import BottomSheet from '@components/BottomSheet';
+import Touchable from '@components/Touchable';
 import useCollectionTheme from '@hooks/useCollectionTheme';
 import { ShoppingBagIcon, GiftIcon, RefreshCwIcon } from '@assets/icons';
 import { ClothingItem, SecondLifeMode } from '../types';
@@ -76,10 +76,10 @@ function SecondLifeSheet({ item, onClose, onContinue }: SecondLifeSheetProps) {
           {OPTIONS.map(({ mode, labelKey, descKey, Icon }) => {
             const isActive = selected === mode;
             return (
-              <TouchableOpacity
+              <Touchable
                 key={mode}
                 onPress={() => setSelected(mode)}
-                activeOpacity={0.8}
+                borderRadius={12}
                 style={[
                   styles.option,
                   {
@@ -108,14 +108,15 @@ function SecondLifeSheet({ item, onClose, onContinue }: SecondLifeSheetProps) {
                     {t(descKey)}
                   </Text>
                 </View>
-              </TouchableOpacity>
+              </Touchable>
             );
           })}
         </View>
 
         <View style={styles.buttons}>
-          <TouchableOpacity
+          <Touchable
             onPress={onClose}
+            borderRadius={10}
             style={[
               styles.btn,
               {
@@ -127,10 +128,11 @@ function SecondLifeSheet({ item, onClose, onContinue }: SecondLifeSheetProps) {
             <Text style={[styles.btnText, { color: tokens.buttonSecondaryText }]}>
               {t('common.cancel')}
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Touchable>
+          <Touchable
             onPress={() => selected && onContinue(selected)}
             disabled={!selected}
+            borderRadius={10}
             style={[
               styles.btn,
               styles.btnPrimary,
@@ -141,7 +143,7 @@ function SecondLifeSheet({ item, onClose, onContinue }: SecondLifeSheetProps) {
             <Text style={[styles.btnText, { color: tokens.buttonPrimaryText }]}>
               {t('collection.secondLifeContinue')}
             </Text>
-          </TouchableOpacity>
+          </Touchable>
         </View>
       </View>
     </BottomSheet>

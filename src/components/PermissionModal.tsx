@@ -3,12 +3,12 @@ import {
   Modal,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { CameraIcon, ImageIcon } from '@assets/icons';
+import Touchable from '@components/Touchable';
 import useCollectionTheme from '@hooks/useCollectionTheme';
 
 export type PermissionType = 'camera' | 'photo';
@@ -58,20 +58,21 @@ function PermissionModal({ type, onOpenSettings, onDismiss }: PermissionModalPro
             {t(isCamera ? 'permissions.cameraMessage' : 'permissions.photoMessage')}
           </Text>
 
-          <TouchableOpacity
+          <Touchable
             onPress={onOpenSettings}
+            borderRadius={12}
             style={[styles.primaryBtn, { backgroundColor: tokens.buttonPrimary }]}
           >
             <Text style={[styles.primaryBtnText, { color: tokens.buttonPrimaryText }]}>
               {t('permissions.openSettings')}
             </Text>
-          </TouchableOpacity>
+          </Touchable>
 
-          <TouchableOpacity onPress={onDismiss} style={styles.secondaryBtn}>
+          <Touchable onPress={onDismiss} style={styles.secondaryBtn}>
             <Text style={[styles.secondaryBtnText, { color: tokens.modalSubtitle }]}>
               {t('permissions.notNow')}
             </Text>
-          </TouchableOpacity>
+          </Touchable>
         </View>
       </View>
     </Modal>

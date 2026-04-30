@@ -3,9 +3,10 @@ import {
   View,
   Text,
   Image,
-  TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+
+import Touchable from '@components/Touchable';
 
 import {
   FlameIcon,
@@ -39,12 +40,12 @@ interface ActionBtnProps {
 
 function ActionBtn({ children, count, onPress }: ActionBtnProps) {
   return (
-    <TouchableOpacity style={styles.actionItem} onPress={onPress} activeOpacity={0.7}>
+    <Touchable style={styles.actionItem} onPress={onPress} borderRadius={22}>
       <View style={styles.actionIconBg}>{children}</View>
       {count !== undefined && (
         <Text style={styles.actionCount}>{formatCount(count)}</Text>
       )}
-    </TouchableOpacity>
+    </Touchable>
   );
 }
 
@@ -56,12 +57,12 @@ interface GemBtnProps {
 
 function GemBtn({ children, gemCost, onPress }: GemBtnProps) {
   return (
-    <TouchableOpacity style={styles.actionItem} onPress={onPress} activeOpacity={0.7}>
+    <Touchable style={styles.actionItem} onPress={onPress} borderRadius={22}>
       <View style={styles.actionIconBg}>{children}</View>
       <View style={styles.gemBadge}>
         <Text style={styles.gemBadgeText}>{gemCost}</Text>
       </View>
-    </TouchableOpacity>
+    </Touchable>
   );
 }
 

@@ -2,10 +2,10 @@ import React from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
 } from 'react-native';
 
+import Touchable from '@components/Touchable';
 import useHomeTheme from '@hooks/useHomeTheme';
 import { ChevronRightIcon } from '@assets/icons';
 
@@ -27,9 +27,9 @@ function ActionCard({ icon, title, description, onPress, isCta = false }: Action
   const iconColor = isCta ? t.ctaCardIcon : t.cardIcon;
 
   return (
-    <TouchableOpacity
+    <Touchable
       onPress={onPress}
-      activeOpacity={0.75}
+      borderRadius={12}
       style={[
         styles.card,
         {
@@ -71,7 +71,7 @@ function ActionCard({ icon, title, description, onPress, isCta = false }: Action
 
       {/* Arrow */}
       <ChevronRightIcon size={18} color={t.cardArrow} strokeWidth={2.5} />
-    </TouchableOpacity>
+    </Touchable>
   );
 }
 

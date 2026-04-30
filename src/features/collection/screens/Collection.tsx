@@ -7,7 +7,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,6 +14,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 
+import Touchable from '@components/Touchable';
 import useCollectionTheme from '@hooks/useCollectionTheme';
 import { RootState, AppDispatch } from '@utilities/store';
 import { ArrowLeftIcon, SearchIcon, ShirtIcon } from '@assets/icons';
@@ -159,12 +159,12 @@ function Collection() {
             },
           ]}
         >
-          <TouchableOpacity
+          <Touchable
             onPress={() => navigation.goBack()}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <ArrowLeftIcon size={22} color={tokens.headerTitle} />
-          </TouchableOpacity>
+          </Touchable>
           <Text style={[styles.headerTitle, { color: tokens.headerTitle }]}>
             {t('collection.title')}
           </Text>
@@ -221,9 +221,9 @@ function Collection() {
         />
 
         {/* FAB */}
-        <TouchableOpacity
+        <Touchable
           onPress={() => setShowAdd(true)}
-          activeOpacity={0.85}
+          borderRadius={28}
           style={[
             styles.fab,
             {
@@ -233,7 +233,7 @@ function Collection() {
           ]}
         >
           <Text style={[styles.fabIcon, { color: tokens.fabIcon }]}>+</Text>
-        </TouchableOpacity>
+        </Touchable>
       </SafeAreaView>
 
       {/* Modals */}

@@ -3,13 +3,13 @@ import {
   Image,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { getImageSource } from '@api/client';
 import BottomSheet from '@components/BottomSheet';
+import Touchable from '@components/Touchable';
 import useCollectionTheme from '@hooks/useCollectionTheme';
 import { MoreVerticalIcon, PencilIcon, GiftIcon, TrashIcon } from '@assets/icons';
 import { ClothingItem } from '../types';
@@ -59,13 +59,14 @@ function ItemCard({ item, onRename, onSecondLife, onDelete }: ItemCardProps) {
             style={styles.image}
             resizeMode="cover"
           />
-          <TouchableOpacity
+          <Touchable
             onPress={() => setMenuOpen(true)}
             style={styles.menuBtn}
             hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+            borderRadius={14}
           >
             <MoreVerticalIcon size={16} color="#FFFFFF" />
-          </TouchableOpacity>
+          </Touchable>
         </View>
         <View style={styles.info}>
           <Text
@@ -87,7 +88,7 @@ function ItemCard({ item, onRename, onSecondLife, onDelete }: ItemCardProps) {
               {item.name}
             </Text>
 
-            <TouchableOpacity
+            <Touchable
               onPress={handleRename}
               style={[styles.actionRow, { borderBottomColor: tokens.cardBorder }]}
             >
@@ -97,9 +98,9 @@ function ItemCard({ item, onRename, onSecondLife, onDelete }: ItemCardProps) {
               <Text style={[styles.actionLabel, { color: tokens.cardName }]}>
                 {t('collection.renameTitle')}
               </Text>
-            </TouchableOpacity>
+            </Touchable>
 
-            <TouchableOpacity
+            <Touchable
               onPress={handleSecondLife}
               style={[styles.actionRow, { borderBottomColor: tokens.cardBorder }]}
             >
@@ -109,16 +110,16 @@ function ItemCard({ item, onRename, onSecondLife, onDelete }: ItemCardProps) {
               <Text style={[styles.actionLabel, { color: tokens.cardName }]}>
                 {t('collection.secondLifeTitle')}
               </Text>
-            </TouchableOpacity>
+            </Touchable>
 
-            <TouchableOpacity onPress={handleDelete} style={styles.actionRow}>
+            <Touchable onPress={handleDelete} style={styles.actionRow}>
               <View style={[styles.actionIcon, styles.actionIconRed]}>
                 <TrashIcon size={16} color={theme.common.errorRed} />
               </View>
               <Text style={[styles.actionLabel, { color: theme.common.errorRed }]}>
                 {t('collection.deleteConfirm')}
               </Text>
-            </TouchableOpacity>
+            </Touchable>
           </View>
         </BottomSheet>
       )}

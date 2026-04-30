@@ -6,11 +6,11 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import Touchable from '@components/Touchable';
 import useCollectionTheme from '@hooks/useCollectionTheme';
 import { ClothingItem } from '../types';
 
@@ -78,8 +78,9 @@ function RenameItemModal({ item, onClose, onSave }: RenameItemModalProps) {
             />
 
             <View style={styles.buttons}>
-              <TouchableOpacity
+              <Touchable
                 onPress={onClose}
+                borderRadius={8}
                 style={[
                   styles.btn,
                   {
@@ -91,10 +92,11 @@ function RenameItemModal({ item, onClose, onSave }: RenameItemModalProps) {
                 <Text style={[styles.btnText, { color: tokens.buttonSecondaryText }]}>
                   {t('common.cancel')}
                 </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
+              </Touchable>
+              <Touchable
                 onPress={handleSave}
                 disabled={!name.trim()}
+                borderRadius={8}
                 style={[
                   styles.btn,
                   styles.btnPrimary,
@@ -105,7 +107,7 @@ function RenameItemModal({ item, onClose, onSave }: RenameItemModalProps) {
                 <Text style={[styles.btnText, { color: tokens.buttonPrimaryText }]}>
                   {t('collection.renameSave')}
                 </Text>
-              </TouchableOpacity>
+              </Touchable>
             </View>
           </View>
         </View>

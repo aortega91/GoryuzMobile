@@ -9,6 +9,7 @@ import React, {
 import {
   Animated,
   Dimensions,
+  Easing,
   Modal,
   PanResponder,
   StyleSheet,
@@ -51,10 +52,12 @@ function BottomSheet({
   const slideY = useRef(new Animated.Value(maxHeight)).current;
 
   const slideIn = useCallback(() => {
-    Animated.timing(slideY, {
+    Animated.spring(slideY, {
       toValue: 0,
+      damping: 24,
+      mass: 0.9,
+      stiffness: 260,
       useNativeDriver: true,
-      duration: 320,
     }).start();
   }, [slideY]);
 
@@ -62,7 +65,8 @@ function BottomSheet({
     Animated.timing(slideY, {
       toValue: maxHeight,
       useNativeDriver: true,
-      duration: 280,
+      duration: 200,
+      easing: Easing.in(Easing.quad),
     }).start(() => {
       setIsVisible(false);
       onClose();
