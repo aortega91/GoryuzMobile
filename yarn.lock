@@ -2035,17 +2035,17 @@
     prompts "^2.4.2"
     semver "^7.5.2"
 
-"@react-native-firebase/app@^23.8.8":
-  version "23.8.8"
-  resolved "https://registry.yarnpkg.com/@react-native-firebase/app/-/app-23.8.8.tgz#a96aadde079b5c90e5814e94937c1083159c8894"
-  integrity sha512-9KeKToqsEPhaL+KlTYIdUB0bsXYAcKk0Zzpu608zf2qsXbyTscuYs1caLWxk8AdGtt3+j7ZsoOFt/8qnlo4Ugg==
+"@react-native-firebase/app@^24.0.0":
+  version "24.0.0"
+  resolved "https://registry.yarnpkg.com/@react-native-firebase/app/-/app-24.0.0.tgz#b9400ac3c13617811b0375d1335d24edeec986bf"
+  integrity sha512-rLWNd8/4FjKYV7PeDR9uiT5vwYWdJ7dJ1yiIIaZ/eL+Y56Ij2iXbqRCUu4zWkvu/ZrJfaGOyT12Vhy1SLy0NMg==
   dependencies:
     firebase "12.10.0"
 
-"@react-native-firebase/auth@^23.8.8":
-  version "23.8.8"
-  resolved "https://registry.yarnpkg.com/@react-native-firebase/auth/-/auth-23.8.8.tgz#5ed684cec4e363a9ccc2ddfaecb06d5518588283"
-  integrity sha512-2X067hMAW07O1vKvQh5LtnvlCNfgoKOFXeStTurhnA3+BslkASJwKzjs0qUvnE8RJ7R2YltiF/E+nJfplOKDuQ==
+"@react-native-firebase/auth@^24.0.0":
+  version "24.0.0"
+  resolved "https://registry.yarnpkg.com/@react-native-firebase/auth/-/auth-24.0.0.tgz#fe48932592d0205a0d8323f356f8479e34a102e0"
+  integrity sha512-LvjVouoTLx2yCkCSy5ZxfDrbZgxMIE5QIFfm2uqWXeP1L1+NVV3MkBMdKruhwIrF0nuLOuzvGdf545rUqRgN6Q==
   dependencies:
     plist "^3.1.0"
 

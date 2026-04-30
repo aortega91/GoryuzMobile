@@ -2077,7 +2077,7 @@ PODS:
     - ReactNativeDependencies
   - ReactNativeDependencies (0.84.1)
   - RecaptchaInterop (101.0.0)
-  - RNFBApp (23.8.8):
+  - RNFBApp (24.0.0):
     - Firebase/CoreOnly (= 12.10.0)
     - hermes-engine
     - RCTRequired
@@ -2100,7 +2100,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - RNFBAuth (23.8.8):
+  - RNFBAuth (24.0.0):
     - Firebase/Auth (= 12.10.0)
     - hermes-engine
     - RCTRequired
@@ -2731,8 +2731,8 @@ SPEC CHECKSUMS:
   ReactCommon: 07572bf9e687c8a52fbe4a3641e9e3a1a477c78e
   ReactNativeDependencies: 997cd4cd69ee3dfac43384dfe33b7e3520022194
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
-  RNFBApp: c4621b9a69ef5520ec8841afbc77bc33176945c1
-  RNFBAuth: 141f26b1c986b49b2e166765a497acd5a74904f8
+  RNFBApp: a600bd13799bb4d8268a1d9b37b032e6e3a3f2e2
+  RNFBAuth: 26934b47202729a4398f63b1596eb05d76d1af39
   RNFBCrashlytics: 8b981e70c25345b32f3f58160c68d2e6c05ef2fb
   RNGestureHandler: 386dfc6830f0620bbed15b271479b672a3407750
   RNGoogleSignin: 4590097b5c265e55e01bf2e824e0f5f5f66d2dfd
@@ -2742,6 +2742,6 @@ SPEC CHECKSUMS:
   RNSVG: 68baaafbd26ef58405193d56290537362fa8e6e4
   Yoga: 846fbe6f595136be802ad81d05688ff748839764
 
-PODFILE CHECKSUM: 5e0a15efb7578b25af9371696b01f8857e1a0362
+PODFILE CHECKSUM: 2b2f757dba78d26b6160fb01ed4804ec7af95164
 
 COCOAPODS: 1.15.2

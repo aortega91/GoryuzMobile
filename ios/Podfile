@@ -25,7 +25,6 @@ use_frameworks! :linkage => linkage
 
 target 'GoryuzMobile' do
   config = use_native_modules!
-  use_modular_headers!
 
   use_react_native!(
     :path => config[:reactNativePath],
@@ -43,9 +42,26 @@ target 'GoryuzMobile' do
 
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
-        if target.name.start_with?('RNFB') || target.name.start_with?('RNGoogleSignin')
-          config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
-        end
+        config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+      end
+    end
+
+    # RNFBCrashlyticsModule.h imports <React/RCTBridgeModule.h> via a non-modular
+    # header search path. When RNFBApp (compiled first as a static framework) textually
+    # includes that same header, Clang claims RCTBridgeModule as belonging to
+    # RNFBApp.RNFBAppModule. Subsequent compilation of RNFBCrashlytics then fails.
+    # Fix: import through the RNFBApp framework module directly, which already exposes
+    # RCTBridgeModule via its umbrella, so the symbol is accessed through the proper module.
+    crashlytics_header = "#{Pod::Config.instance.installation_root}/../node_modules/@react-native-firebase/crashlytics/ios/RNFBCrashlytics/RNFBCrashlyticsModule.h"
+    if File.exist?(crashlytics_header)
+      content = File.read(crashlytics_header)
+      patched = content.gsub(
+        "#import <React/RCTBridgeModule.h>",
+        "#import <RNFBApp/RNFBAppModule.h>"
+      )
+      if patched != content
+        File.write(crashlytics_header, patched)
+        Pod::UI.puts "Patched RNFBCrashlyticsModule.h: replaced <React/RCTBridgeModule.h> with <RNFBApp/RNFBAppModule.h>".green
       end
     end
 
