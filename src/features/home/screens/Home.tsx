@@ -16,7 +16,9 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import Touchable from '@components/Touchable';
+import PermissionModal from '@components/PermissionModal';
 import useHomeTheme from '@hooks/useHomeTheme';
+import useLocation from '@hooks/useLocation';
 import { RootState, AppDispatch } from '@utilities/store';
 import { RootStackParamList } from '@navigation/types';
 import { ShirtIcon, StarIcon, PlusCircleIcon, EyeIcon, SparklesIcon, BookmarkIcon } from '@assets/icons';
@@ -45,6 +47,9 @@ function Home() {
   const user = useSelector((state: RootState) => state.session.user);
   const profile = useSelector((state: RootState) => state.profile.data);
   const profileStatus = useSelector((state: RootState) => state.profile.status);
+  const cityName = useSelector((state: RootState) => state.location.cityName);
+
+  const { detectLocation, locationBlocked, handleOpenLocationSettings, dismissLocationBlocked } = useLocation();
 
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<HomeNavProp>();
@@ -60,6 +65,11 @@ function Home() {
       dispatch(loadProfile());
     }
   }, [dispatch, profileStatus]);
+
+  useEffect(() => {
+    detectLocation();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (profile?.language && profile.language !== i18n.language) {
@@ -78,7 +88,7 @@ function Home() {
 
   const gemCount = profile?.tokens ?? 0;
   const firstName = user?.displayName?.split(' ')[0] ?? t('home.defaultName');
-  const location = profile?.country ?? undefined;
+  const location = cityName ?? undefined;
 
   const handleNavigate = useCallback(
     (route: keyof RootStackParamList) => {
@@ -206,6 +216,7 @@ function Home() {
           avatarUrl={profile?.avatarUrl ?? user?.photoURL}
           gemCount={gemCount}
           location={location}
+          onLocationPress={detectLocation}
           onAvatarPress={() => navigation.navigate('Profile' as never)}
         />
 
@@ -281,6 +292,14 @@ function Home() {
         onNavigate={handleNavigate}
         onLogout={() => dispatch(clearSession())}
       />
+
+      {locationBlocked && (
+        <PermissionModal
+          type="location"
+          onOpenSettings={handleOpenLocationSettings}
+          onDismiss={dismissLocationBlocked}
+        />
+      )}
     </View>
   );
 }

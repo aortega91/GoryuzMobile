@@ -50,6 +50,8 @@
     "cameraMessage": "GORYUZ needs camera access to photograph your clothing. Please allow access in your device settings.",
     "photoTitle": "Photo Library Access Required",
     "photoMessage": "GORYUZ needs photo library access to select clothing images. Please allow access in your device settings.",
+    "locationTitle": "Location Access Required",
+    "locationMessage": "GORYUZ uses your location to show your city in the top bar. Please allow access in your device settings.",
     "openSettings": "Open Settings",
     "notNow": "Not Now"
   },

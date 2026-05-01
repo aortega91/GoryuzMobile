@@ -3,6 +3,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  type TextStyle,
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -52,32 +53,22 @@ function CategoryTabs({ selected, onSelect }: CategoryTabsProps) {
       >
         {ALL_TABS.map(category => {
           const isActive = selected === category;
+          const tabActiveStyle = {
+            backgroundColor: isActive ? tokens.tabActiveBackground : 'transparent',
+            borderColor: isActive ? tokens.tabActiveBorder : tokens.tabBorder,
+          };
+          const tabTextActiveStyle: TextStyle = {
+            color: isActive ? tokens.tabActiveText : tokens.tabText,
+            fontWeight: isActive ? '700' : '500',
+          };
           return (
             <Touchable
               key={category}
               onPress={() => onSelect(category)}
               borderRadius={20}
-              style={[
-                styles.tab,
-                {
-                  backgroundColor: isActive
-                    ? tokens.tabActiveBackground
-                    : 'transparent',
-                  borderColor: isActive
-                    ? tokens.tabActiveBorder
-                    : tokens.tabBorder,
-                },
-              ]}
+              style={[styles.tab, tabActiveStyle]}
             >
-              <Text
-                style={[
-                  styles.tabText,
-                  {
-                    color: isActive ? tokens.tabActiveText : tokens.tabText,
-                    fontWeight: isActive ? '700' : '500',
-                  },
-                ]}
-              >
+              <Text style={[styles.tabText, tabTextActiveStyle]}>
                 {t(CATEGORY_KEY_MAP[category])}
               </Text>
             </Touchable>

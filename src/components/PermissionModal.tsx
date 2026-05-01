@@ -7,11 +7,11 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { CameraIcon, ImageIcon } from '@assets/icons';
+import { CameraIcon, ImageIcon, MapPinOffIcon } from '@assets/icons';
 import Touchable from '@components/Touchable';
 import useCollectionTheme from '@hooks/useCollectionTheme';
 
-export type PermissionType = 'camera' | 'photo';
+export type PermissionType = 'camera' | 'photo' | 'location';
 
 interface PermissionModalProps {
   type: PermissionType;
@@ -24,7 +24,15 @@ function PermissionModal({ type, onOpenSettings, onDismiss }: PermissionModalPro
   const tokens = theme.collection;
   const { t } = useTranslation();
 
-  const isCamera = type === 'camera';
+  const titleKey =
+    type === 'camera' ? 'permissions.cameraTitle' :
+    type === 'photo'  ? 'permissions.photoTitle' :
+                        'permissions.locationTitle';
+
+  const messageKey =
+    type === 'camera' ? 'permissions.cameraMessage' :
+    type === 'photo'  ? 'permissions.photoMessage' :
+                        'permissions.locationMessage';
 
   return (
     <Modal
@@ -44,18 +52,16 @@ function PermissionModal({ type, onOpenSettings, onDismiss }: PermissionModalPro
           ]}
         >
           <View style={[styles.iconWrapper, { backgroundColor: tokens.noticeBackground }]}>
-            {isCamera ? (
-              <CameraIcon size={28} color={tokens.noticeText} />
-            ) : (
-              <ImageIcon size={28} color={tokens.noticeText} />
-            )}
+            {type === 'camera'   && <CameraIcon size={28} color={tokens.noticeText} />}
+            {type === 'photo'    && <ImageIcon size={28} color={tokens.noticeText} />}
+            {type === 'location' && <MapPinOffIcon size={28} color={tokens.noticeText} strokeWidth={1.75} />}
           </View>
 
           <Text style={[styles.title, { color: tokens.modalTitle }]}>
-            {t(isCamera ? 'permissions.cameraTitle' : 'permissions.photoTitle')}
+            {t(titleKey)}
           </Text>
           <Text style={[styles.message, { color: tokens.modalSubtitle }]}>
-            {t(isCamera ? 'permissions.cameraMessage' : 'permissions.photoMessage')}
+            {t(messageKey)}
           </Text>
 
           <Touchable

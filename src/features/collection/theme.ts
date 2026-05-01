@@ -71,6 +71,8 @@ export interface CollectionTheme extends Theme {
     secondLifeActiveBackground: string;
     secondLifeActiveBorder: string;
     secondLifeActiveIcon: string;
+
+    itemSelectedAccent: string;
   };
 }
 
@@ -144,6 +146,8 @@ export const collectionLightTheme: CollectionTheme = {
     secondLifeActiveBackground: '#F0FDF4',
     secondLifeActiveBorder: '#059669',
     secondLifeActiveIcon: '#059669',
+
+    itemSelectedAccent: '#6366F1',
   },
 };
 
@@ -217,5 +221,7 @@ export const collectionDarkTheme: CollectionTheme = {
     secondLifeActiveBackground: 'rgba(16,185,129,0.15)',
     secondLifeActiveBorder: '#34D399',
     secondLifeActiveIcon: '#34D399',
+
+    itemSelectedAccent: '#818CF8',
   },
 };

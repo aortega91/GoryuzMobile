@@ -1,9 +1,9 @@
 import React from 'react';
 import {
-  View,
   Text,
   Image,
   StyleSheet,
+  View,
 } from 'react-native';
 
 import Touchable from '@components/Touchable';
@@ -13,6 +13,7 @@ import useHomeTheme from '@hooks/useHomeTheme';
 import {
   MenuIcon,
   MapPinIcon,
+  MapPinOffIcon,
   GemIcon,
   MessageIcon,
   BellIcon,
@@ -21,6 +22,7 @@ import {
 interface TopBarProps {
   onMenuPress: () => void;
   location?: string;
+  onLocationPress?: () => void;
   gemCount?: number;
   onGemPress?: () => void;
   onMessagePress?: () => void;
@@ -33,6 +35,7 @@ interface TopBarProps {
 function TopBar({
   onMenuPress,
   location,
+  onLocationPress,
   gemCount = 0,
   onGemPress,
   onMessagePress,
@@ -80,7 +83,17 @@ function TopBar({
           </Text>
         </Touchable>
       ) : (
-        <View style={styles.locationPill} />
+        <Touchable
+          onPress={onLocationPress}
+          style={[
+            styles.locationPill,
+            styles.locationPillDenied,
+            { borderColor: t.locationPillBorder },
+          ]}
+          borderRadius={20}
+        >
+          <MapPinOffIcon size={16} color={t.topBarIcon} strokeWidth={1.75} />
+        </Touchable>
       )}
 
       {/* Right — gem counter + message + bell + avatar */}
@@ -176,6 +189,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     maxWidth: 160,
     alignSelf: 'center',
+  },
+  locationPillDenied: {
+    maxWidth: 56,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
   locationText: {
     fontSize: 11,

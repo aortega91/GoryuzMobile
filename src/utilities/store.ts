@@ -17,6 +17,7 @@ import sessionReducer, { SessionState } from '@features/auth/sessionSlice';
 import profileReducer from '@features/home/profileSlice';
 import collectionReducer from '@features/collection/collectionSlice';
 import appThemeReducer from './appThemeSlice';
+import locationReducer from './locationSlice';
 
 // ─── Keychain adapter (secure storage for sensitive session data) ─────────────
 
@@ -60,6 +61,7 @@ const rootPersistConfig = {
   version: 1,
   // session has its own persist config; profile/collection are always refetched on launch
   blacklist: ['session', 'profile', 'collection'],
+  // location persists so cached city name shows instantly on cold start
 };
 
 // ─── Root reducer ─────────────────────────────────────────────────────────────
@@ -69,6 +71,7 @@ const rootReducer = combineReducers({
   profile: profileReducer,
   collection: collectionReducer,
   appTheme: appThemeReducer,
+  location: locationReducer,
 });
 
 const persistedReducer = persistReducer(rootPersistConfig, rootReducer);

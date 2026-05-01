@@ -50,6 +50,8 @@
     "cameraMessage": "GORYUZ necesita acceso a la cámara para fotografiar tu ropa. Por favor permite el acceso en la configuración de tu dispositivo.",
     "photoTitle": "Acceso a la Galería Requerido",
     "photoMessage": "GORYUZ necesita acceso a la galería para seleccionar imágenes de ropa. Por favor permite el acceso en la configuración de tu dispositivo.",
+    "locationTitle": "Acceso a la Ubicación Requerido",
+    "locationMessage": "GORYUZ usa tu ubicación para mostrar tu ciudad en la barra superior. Por favor permite el acceso en la configuración de tu dispositivo.",
     "openSettings": "Abrir Configuración",
     "notNow": "Ahora No"
   },

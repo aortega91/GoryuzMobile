@@ -14,6 +14,7 @@ export { default as GiftIcon } from './GiftIcon';
 export { default as HomeIcon } from './HomeIcon';
 export { default as ImageIcon } from './ImageIcon';
 export { default as MapPinIcon } from './MapPinIcon';
+export { default as MapPinOffIcon } from './MapPinOffIcon';
 export { default as MenuIcon } from './MenuIcon';
 export { default as MessageIcon } from './MessageIcon';
 export { default as MoreVerticalIcon } from './MoreVerticalIcon';

@@ -319,20 +319,17 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
         {identifiedItems.map((item, index) => {
           const isSelected = selected.has(index);
           const dotColor = CATEGORY_COLORS[item.category] ?? '#9CA3AF';
+          const itemRowActiveStyle = {
+            backgroundColor: isSelected ? tokens.secondLifeOptionBackground : tokens.cardBackground,
+            borderColor: isSelected ? tokens.itemSelectedAccent : tokens.cardBorder,
+          };
+          const checkCircleStyle = { backgroundColor: tokens.itemSelectedAccent };
           return (
             <Touchable
               key={`${item.name}-${item.category}`}
               onPress={() => toggleItem(index)}
               borderRadius={12}
-              style={[
-                styles.itemRow,
-                {
-                  backgroundColor: isSelected
-                    ? tokens.secondLifeOptionBackground
-                    : tokens.cardBackground,
-                  borderColor: isSelected ? '#6366F1' : tokens.cardBorder,
-                },
-              ]}
+              style={[styles.itemRow, itemRowActiveStyle]}
             >
               {item.imageData ? (
                 <Image
@@ -355,7 +352,7 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
                 </Text>
               </View>
               {isSelected && (
-                <View style={[styles.checkCircle, { backgroundColor: '#6366F1' }]}>
+                <View style={[styles.checkCircle, checkCircleStyle]}>
                   <CheckIcon size={12} color="#FFFFFF" strokeWidth={3} />
                 </View>
               )}
