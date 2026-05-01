@@ -22,6 +22,7 @@ import {
   SparklesIcon,
   StarIcon,
   UsersIcon,
+  UserIcon,
 } from '@assets/icons';
 import { RootStackParamList } from '@navigation/types';
 
@@ -40,6 +41,11 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
+  {
+    route: 'Profile',
+    labelKey: 'menu.profile',
+    icon: color => <UserIcon size={20} color={color} />,
+  },
   {
     route: 'Collection',
     labelKey: 'menu.collection',

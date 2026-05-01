@@ -1,13 +1,8 @@
-import { useColorScheme } from 'react-native';
 import { HomeTheme, homeLightTheme, homeDarkTheme } from '@features/home/theme';
+import useAppColorScheme from './useAppColorScheme';
 
-/**
- * useHomeTheme
- *
- * Returns the home-module theme that matches the device's current colour scheme.
- */
 function useHomeTheme(): HomeTheme {
-  const colorScheme = useColorScheme();
+  const colorScheme = useAppColorScheme();
   return colorScheme === 'dark' ? homeDarkTheme : homeLightTheme;
 }
 

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   FlatList,
+  RefreshControl,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -10,6 +11,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
+import i18n from '@language/index';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -51,12 +53,28 @@ function Home() {
   const drawerRef = useRef<DrawerMenuHandle>(null);
   const [activeTab, setActiveTab] = useState<HomeTab>('feed');
   const [tabContentHeight, setTabContentHeight] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     if (profileStatus === 'idle') {
       dispatch(loadProfile());
     }
   }, [dispatch, profileStatus]);
+
+  useEffect(() => {
+    if (profile?.language && profile.language !== i18n.language) {
+      i18n.changeLanguage(profile.language);
+    }
+  }, [profile?.language]);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await dispatch(loadProfile());
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [dispatch]);
 
   const gemCount = profile?.tokens ?? 0;
   const firstName = user?.displayName?.split(' ')[0] ?? t('home.defaultName');
@@ -92,6 +110,13 @@ function Home() {
           offset: tabContentHeight * index,
           index,
         })}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={homeTokens.headlineText}
+          />
+        }
       />
     );
   };
@@ -101,6 +126,13 @@ function Home() {
       style={styles.scroll}
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefreshing}
+          onRefresh={handleRefresh}
+          tintColor={homeTokens.headlineText}
+        />
+      }
     >
       {/* Greeting */}
       <View style={styles.greetingSection}>
@@ -171,9 +203,10 @@ function Home() {
         {/* Top navigation bar */}
         <TopBar
           onMenuPress={() => { drawerRef.current?.open(); setIsDrawerOpen(true); }}
-          avatarUrl={user?.photoURL}
+          avatarUrl={profile?.avatarUrl ?? user?.photoURL}
           gemCount={gemCount}
           location={location}
+          onAvatarPress={() => navigation.navigate('Profile' as never)}
         />
 
         {/* Tab content area */}

@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 
 import Touchable from '@components/Touchable';
+import { getImageSource } from '@api/client';
 
 import useHomeTheme from '@hooks/useHomeTheme';
 import {
@@ -134,7 +135,7 @@ function TopBar({
           borderRadius={16}
         >
           {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+            <Image source={getImageSource(avatarUrl)} style={styles.avatar} />
           ) : (
             <View
               style={[

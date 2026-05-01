@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   FlatList,
   ListRenderItemInfo,
+  RefreshControl,
   StatusBar,
   StyleSheet,
   Text,
@@ -54,11 +55,22 @@ function Collection() {
   const [deleting, setDeleting] = useState<ClothingItem | null>(null);
   const [secondLife, setSecondLife] = useState<ClothingItem | null>(null);
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   useEffect(() => {
     if (status === 'idle') {
       dispatch(loadCollection());
     }
   }, [dispatch, status]);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await dispatch(loadCollection());
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [dispatch]);
 
   const filteredItems = useMemo(() => {
     let result = items;
@@ -218,6 +230,13 @@ function Collection() {
           ]}
           ListEmptyComponent={renderEmpty}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              tintColor={tokens.textPrimary}
+            />
+          }
         />
 
         {/* FAB */}

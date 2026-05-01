@@ -9,4 +9,5 @@ export type RootStackParamList = {
   Discover: undefined;
   SecondLife: undefined;
   Community: undefined;
+  Profile: undefined;
 };

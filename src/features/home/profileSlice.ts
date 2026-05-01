@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 
 import { clearSession } from '@features/auth/sessionSlice';
 import { fetchProfile, UserProfile } from './api/profileApi';
@@ -34,11 +34,15 @@ const profileSlice = createSlice({
   name: 'profile',
   initialState,
   reducers: {
-    /** Reset profile on sign-out so the next user starts clean */
     clearProfile(state) {
       state.data = null;
       state.status = 'idle';
       state.error = null;
+    },
+    updateProfileLocally(state, action: PayloadAction<Partial<UserProfile>>) {
+      if (state.data) {
+        state.data = { ...state.data, ...action.payload };
+      }
     },
   },
   extraReducers: builder => {
@@ -65,5 +69,5 @@ const profileSlice = createSlice({
   },
 });
 
-export const { clearProfile } = profileSlice.actions;
+export const { clearProfile, updateProfileLocally } = profileSlice.actions;
 export default profileSlice.reducer;
