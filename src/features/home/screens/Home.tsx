@@ -12,19 +12,21 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useSelector, useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import i18n from '@language/index';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import Touchable from '@components/Touchable';
 import PermissionModal from '@components/PermissionModal';
 import useHomeTheme from '@hooks/useHomeTheme';
 import useLocation from '@hooks/useLocation';
 import { RootState, AppDispatch } from '@utilities/store';
-import { RootStackParamList } from '@navigation/types';
 import { ShirtIcon, StarIcon, PlusCircleIcon, EyeIcon, SparklesIcon, BookmarkIcon } from '@assets/icons';
 import { clearSession } from '@features/auth/sessionSlice';
+import Collection from '@features/collection/screens/Collection';
+import Styles from '@features/styles/screens/Styles';
+import Schedule from '@features/schedule/screens/Schedule';
+import Profile from '@features/profile/screens/Profile';
 import { loadProfile } from '../profileSlice';
 import { MOCK_FEED_POSTS } from '../mockFeedData';
+import { ActiveModule } from '../types';
 
 import TopBar from '../components/TopBar';
 import ActionCard from '../components/ActionCard';
@@ -34,7 +36,6 @@ import FeedPost from '../components/FeedPost';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type HomeTab = 'feed' | 'my_posts' | 'saved';
-type HomeNavProp = NativeStackNavigationProp<RootStackParamList>;
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -52,8 +53,8 @@ function Home() {
   const { detectLocation, locationBlocked, handleOpenLocationSettings, dismissLocationBlocked } = useLocation();
 
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation<HomeNavProp>();
 
+  const [activeModule, setActiveModule] = useState<ActiveModule>('home');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const drawerRef = useRef<DrawerMenuHandle>(null);
   const [activeTab, setActiveTab] = useState<HomeTab>('feed');
@@ -74,8 +75,9 @@ function Home() {
   useEffect(() => {
     if (profile?.language && profile.language !== i18n.language) {
       i18n.changeLanguage(profile.language);
+      detectLocation();
     }
-  }, [profile?.language]);
+  }, [profile?.language]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -86,21 +88,16 @@ function Home() {
     }
   }, [dispatch]);
 
+  const handleNavigate = useCallback((module: ActiveModule) => {
+    setIsDrawerOpen(false);
+    setActiveModule(module);
+  }, []);
+
   const gemCount = profile?.tokens ?? 0;
   const firstName = user?.displayName?.split(' ')[0] ?? t('home.defaultName');
   const location = cityName ?? undefined;
 
-  const handleNavigate = useCallback(
-    (route: keyof RootStackParamList) => {
-      setIsDrawerOpen(false);
-      if (route !== 'Home') {
-        navigation.navigate(route as never);
-      }
-    },
-    [navigation],
-  );
-
-  // ─── Tab content ────────────────────────────────────────────────────────────
+  // ─── Home panel tabs ─────────────────────────────────────────────────────────
 
   const renderInspirationTab = () => {
     if (tabContentHeight === 0) {
@@ -164,25 +161,25 @@ function Home() {
           icon={<ShirtIcon size={24} />}
           title={t('home.loadFirstItem')}
           description={t('home.loadFirstItemDesc')}
-          onPress={() => handleNavigate('Collection')}
+          onPress={() => setActiveModule('closet')}
         />
         <ActionCard
           icon={<StarIcon size={24} />}
           title={t('home.myStyles')}
           description={t('home.myStylesDesc')}
-          onPress={() => handleNavigate('Styles')}
+          onPress={() => setActiveModule('styles')}
         />
         <ActionCard
           icon={<PlusCircleIcon size={24} />}
           title={t('home.addPieces')}
           description={t('home.addPiecesDesc')}
-          onPress={() => handleNavigate('Collection')}
+          onPress={() => setActiveModule('closet')}
         />
       </View>
     </ScrollView>
   );
 
-  const renderCollectionTab = () => (
+  const renderSavedTab = () => (
     <View style={styles.emptyState}>
       <BookmarkIcon size={48} color={homeTokens.subtitleText} strokeWidth={1.5} />
       <Text style={[styles.emptyTitle, { color: homeTokens.headlineText }]}>
@@ -194,7 +191,7 @@ function Home() {
     </View>
   );
 
-  // ─── Bottom tab bar ──────────────────────────────────────────────────────────
+  // ─── Bottom tab bar (home panel only) ────────────────────────────────────────
 
   const TABS: { id: HomeTab; labelKey: string; Icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }> }[] = [
     { id: 'my_posts', labelKey: 'home.tabMyVision', Icon: EyeIcon },
@@ -202,92 +199,119 @@ function Home() {
     { id: 'saved', labelKey: 'home.tabCollection', Icon: BookmarkIcon },
   ];
 
+  // ─── Coming soon placeholder ──────────────────────────────────────────────────
+
+  const renderComingSoon = () => (
+    <View style={styles.comingSoon}>
+      <SparklesIcon size={48} color={homeTokens.subtitleText} strokeWidth={1.5} />
+      <Text style={[styles.comingSoonText, { color: homeTokens.headlineText }]}>
+        {t('common.comingSoon')}
+      </Text>
+    </View>
+  );
+
+  const statusBarDark = activeModule === 'home' && activeTab === 'feed';
+
   return (
     <View style={[styles.root, { backgroundColor: homeTokens.background }]}>
       <StatusBar
-        barStyle={theme.dark ? 'light-content' : 'dark-content'}
-        backgroundColor={activeTab === 'feed' ? '#000000' : homeTokens.topBarBackground}
+        barStyle={theme.dark || statusBarDark ? 'light-content' : 'dark-content'}
+        backgroundColor={statusBarDark ? '#000000' : homeTokens.topBarBackground}
       />
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Top navigation bar */}
+        {/* Top navigation bar — always visible */}
         <TopBar
           onMenuPress={() => { drawerRef.current?.open(); setIsDrawerOpen(true); }}
           avatarUrl={profile?.avatarUrl ?? user?.photoURL}
           gemCount={gemCount}
           location={location}
           onLocationPress={detectLocation}
-          onAvatarPress={() => navigation.navigate('Profile' as never)}
+          onAvatarPress={() => setActiveModule('profile')}
         />
 
-        {/* Tab content area */}
+        {/* Module content area */}
         <View
-          style={styles.tabContent}
+          style={styles.content}
           onLayout={e => setTabContentHeight(e.nativeEvent.layout.height)}
         >
-          {activeTab === 'feed' && renderInspirationTab()}
-          {activeTab === 'my_posts' && renderMyVisionTab()}
-          {activeTab === 'saved' && renderCollectionTab()}
+          {activeModule === 'home' && (
+            <>
+              {activeTab === 'feed' && renderInspirationTab()}
+              {activeTab === 'my_posts' && renderMyVisionTab()}
+              {activeTab === 'saved' && renderSavedTab()}
 
-          {/* FAB — only on Inspiración tab */}
-          {activeTab === 'feed' && (
-            <Touchable
-              style={[styles.fab, { backgroundColor: homeTokens.fabBackground }]}
-              onPress={() => {}}
-              borderRadius={26}
-            >
-              <Text style={[styles.fabIcon, { color: homeTokens.fabIcon }]}>+</Text>
-            </Touchable>
-          )}
-        </View>
-
-        {/* Bottom tab bar */}
-        <View
-          style={[
-            styles.tabBar,
-            {
-              backgroundColor: homeTokens.tabBarBackground,
-              borderTopColor: homeTokens.tabBarBorder,
-              paddingBottom: insets.bottom + 8,
-            },
-          ]}
-        >
-          {TABS.map(({ id, labelKey, Icon }) => {
-            const isActive = activeTab === id;
-            return (
-              <Touchable
-                key={id}
-                style={styles.tabItem}
-                onPress={() => setActiveTab(id)}
-              >
-                <Icon
-                  size={22}
-                  color={isActive ? homeTokens.tabBarActiveIcon : homeTokens.tabBarIcon}
-                  strokeWidth={isActive ? 2.5 : 2}
-                />
-                <Text
-                  style={[
-                    styles.tabLabel,
-                    isActive ? styles.tabLabelActive : styles.tabLabelInactive,
-                    {
-                      color: isActive
-                        ? homeTokens.tabBarActiveText
-                        : homeTokens.tabBarText,
-                    },
-                  ]}
+              {activeTab === 'feed' && (
+                <Touchable
+                  style={[styles.fab, { backgroundColor: homeTokens.fabBackground }]}
+                  onPress={() => {}}
+                  borderRadius={26}
                 >
-                  {t(labelKey)}
-                </Text>
-              </Touchable>
-            );
-          })}
+                  <Text style={[styles.fabIcon, { color: homeTokens.fabIcon }]}>+</Text>
+                </Touchable>
+              )}
+            </>
+          )}
+
+          {activeModule === 'closet' && <Collection />}
+          {activeModule === 'styles' && <Styles />}
+          {activeModule === 'schedule' && <Schedule />}
+          {activeModule === 'profile' && <Profile />}
+          {activeModule === 'discover' && renderComingSoon()}
+          {activeModule === 'second_life' && renderComingSoon()}
+          {activeModule === 'community' && renderComingSoon()}
         </View>
+
+        {/* Bottom tab bar — home panel only */}
+        {activeModule === 'home' && (
+          <View
+            style={[
+              styles.tabBar,
+              {
+                backgroundColor: homeTokens.tabBarBackground,
+                borderTopColor: homeTokens.tabBarBorder,
+                paddingBottom: insets.bottom + 8,
+              },
+            ]}
+          >
+            {TABS.map(({ id, labelKey, Icon }) => {
+              const isActive = activeTab === id;
+              return (
+                <Touchable
+                  key={id}
+                  style={styles.tabItem}
+                  onPress={() => setActiveTab(id)}
+                >
+                  <Icon
+                    size={22}
+                    color={isActive ? homeTokens.tabBarActiveIcon : homeTokens.tabBarIcon}
+                    strokeWidth={isActive ? 2.5 : 2}
+                  />
+                  <Text
+                    style={[
+                      styles.tabLabel,
+                      isActive ? styles.tabLabelActive : styles.tabLabelInactive,
+                      {
+                        color: isActive
+                          ? homeTokens.tabBarActiveText
+                          : homeTokens.tabBarText,
+                      },
+                    ]}
+                  >
+                    {t(labelKey)}
+                  </Text>
+                </Touchable>
+              );
+            })}
+          </View>
+        )}
       </SafeAreaView>
 
       {/* Drawer overlay */}
       <DrawerMenu
         ref={drawerRef}
         isOpen={isDrawerOpen}
+        activeModule={activeModule}
         onClose={() => setIsDrawerOpen(false)}
         onNavigate={handleNavigate}
         onLogout={() => dispatch(clearSession())}
@@ -313,10 +337,10 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  tabContent: {
+  content: {
     flex: 1,
   },
-  // My Vision tab
+  // Home panel
   scroll: {
     flex: 1,
   },
@@ -346,7 +370,6 @@ const styles = StyleSheet.create({
   cards: {
     gap: 12,
   },
-  // Collection tab empty state
   emptyState: {
     flex: 1,
     alignItems: 'center',
@@ -384,7 +407,7 @@ const styles = StyleSheet.create({
     fontWeight: '300',
     lineHeight: 32,
   },
-  // Bottom tab bar — paddingBottom is dynamic (insets.bottom + 8) set inline
+  // Bottom tab bar
   tabBar: {
     flexDirection: 'row',
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -406,6 +429,17 @@ const styles = StyleSheet.create({
   },
   tabLabelInactive: {
     fontWeight: '500',
+  },
+  // Coming soon placeholder
+  comingSoon: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  comingSoonText: {
+    fontSize: 18,
+    fontWeight: '700',
   },
 });
 

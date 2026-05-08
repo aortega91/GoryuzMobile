@@ -18,13 +18,13 @@ import GoryuzLogo from '@assets/GoryuzLogo';
 import {
   ArchiveIcon,
   CalendarIcon,
+  HomeIcon,
   ShirtIcon,
   SparklesIcon,
   StarIcon,
   UsersIcon,
-  UserIcon,
 } from '@assets/icons';
-import { RootStackParamList } from '@navigation/types';
+import { ActiveModule } from '../types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -32,47 +32,45 @@ const DRAWER_WIDTH = Dimensions.get('window').width * 0.75;
 
 // ─── Nav items definition ─────────────────────────────────────────────────────
 
-type DrawerRoute = keyof RootStackParamList;
-
 interface NavItem {
-  route: DrawerRoute;
+  module: ActiveModule;
   labelKey: string;
   icon: (color: string) => React.ReactNode;
 }
 
 const NAV_ITEMS: NavItem[] = [
   {
-    route: 'Profile',
-    labelKey: 'menu.profile',
-    icon: color => <UserIcon size={20} color={color} />,
+    module: 'home',
+    labelKey: 'menu.home',
+    icon: color => <HomeIcon size={20} color={color} />,
   },
   {
-    route: 'Collection',
-    labelKey: 'menu.collection',
+    module: 'closet',
+    labelKey: 'menu.closet',
     icon: color => <ShirtIcon size={20} color={color} />,
   },
   {
-    route: 'Styles',
+    module: 'styles',
     labelKey: 'menu.styles',
     icon: color => <StarIcon size={20} color={color} />,
   },
   {
-    route: 'Schedule',
+    module: 'schedule',
     labelKey: 'menu.schedule',
     icon: color => <CalendarIcon size={20} color={color} />,
   },
   {
-    route: 'Discover',
+    module: 'discover',
     labelKey: 'menu.discover',
     icon: color => <SparklesIcon size={20} color={color} />,
   },
   {
-    route: 'SecondLife',
+    module: 'second_life',
     labelKey: 'menu.secondLife',
     icon: color => <ArchiveIcon size={20} color={color} />,
   },
   {
-    route: 'Community',
+    module: 'community',
     labelKey: 'menu.community',
     icon: color => <UsersIcon size={20} color={color} />,
   },
@@ -87,13 +85,14 @@ export interface DrawerMenuHandle {
 
 interface DrawerMenuProps {
   isOpen: boolean;
+  activeModule: ActiveModule;
   onClose: () => void;
-  onNavigate: (route: DrawerRoute) => void;
+  onNavigate: (module: ActiveModule) => void;
   onLogout?: () => void;
 }
 
 const DrawerMenu = forwardRef<DrawerMenuHandle, DrawerMenuProps>(
-  ({ isOpen, onClose, onNavigate, onLogout }, ref) => {
+  ({ isOpen, activeModule, onClose, onNavigate, onLogout }, ref) => {
   const theme = useHomeTheme();
   const dt = theme.home;
   const { t } = useTranslation();
@@ -153,7 +152,7 @@ const DrawerMenu = forwardRef<DrawerMenuHandle, DrawerMenuProps>(
         <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => { animateClose(); onClose(); }} activeOpacity={1} />
       </Animated.View>
 
-      {/* Drawer panel — always in the native view tree so animation starts instantly */}
+      {/* Drawer panel */}
       <Animated.View
         style={[
           styles.drawer,
@@ -162,7 +161,7 @@ const DrawerMenu = forwardRef<DrawerMenuHandle, DrawerMenuProps>(
         pointerEvents={isOpen ? 'auto' : 'none'}
       >
         {/* Header */}
-        <View style={[styles.header, { borderBottomColor: dt.drawerBorder }]}>
+        <View style={[styles.header, { borderBottomColor: dt.drawerBorder, paddingTop: insets.top + 24 }]}>
           <View style={styles.logoRow}>
             <GoryuzLogo size={40} color="#FFFFFF" />
             <Text style={styles.logoText}>GORYUZ</Text>
@@ -170,25 +169,33 @@ const DrawerMenu = forwardRef<DrawerMenuHandle, DrawerMenuProps>(
           <Text style={[styles.tagline, { color: dt.drawerSubtitle }]}>
             ZENITH OF STYLE
           </Text>
-
-
         </View>
 
         {/* Nav items */}
         <View style={styles.nav}>
-          {NAV_ITEMS.map(item => (
-            <Touchable
-              key={item.route}
-              onPress={() => { animateClose(); onNavigate(item.route); }}
-              borderRadius={10}
-              style={styles.navItem}
-            >
-              {item.icon(dt.drawerIcon)}
-              <Text style={[styles.navLabel, { color: dt.drawerText }]}>
-                {t(item.labelKey)}
-              </Text>
-            </Touchable>
-          ))}
+          {NAV_ITEMS.map(item => {
+            const isActive = activeModule === item.module;
+            return (
+              <Touchable
+                key={item.module}
+                onPress={() => { animateClose(); onNavigate(item.module); }}
+                borderRadius={10}
+                style={[
+                  styles.navItem,
+                  isActive && { backgroundColor: dt.drawerActiveBackground },
+                ]}
+              >
+                {item.icon(isActive ? dt.drawerActiveText : dt.drawerIcon)}
+                <Text style={[
+                  styles.navLabel,
+                  { color: isActive ? dt.drawerActiveText : dt.drawerText },
+                  isActive && styles.navLabelActive,
+                ]}>
+                  {t(item.labelKey)}
+                </Text>
+              </Touchable>
+            );
+          })}
         </View>
 
         {/* Logout button — pinned to bottom */}
@@ -230,7 +237,6 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   header: {
-    paddingTop: 72,
     paddingBottom: 20,
     paddingHorizontal: 24,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -287,6 +293,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
     letterSpacing: 0.2,
+  },
+  navLabelActive: {
+    fontWeight: '700',
   },
 });
 

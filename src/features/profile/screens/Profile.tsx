@@ -13,17 +13,15 @@ import {
   Platform,
   RefreshControl,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { useNavigation } from '@react-navigation/native';
 import auth from '@react-native-firebase/auth';
 
 import Touchable from '@components/Touchable';
@@ -35,7 +33,6 @@ import { updateProfileLocally, loadProfile } from '@features/home/profileSlice';
 import { setThemePreference, AppThemePreference } from '@utilities/appThemeSlice';
 import useCameraPermission from '@hooks/useCameraPermission';
 import {
-  ArrowLeftIcon,
   CameraIcon,
   CheckIcon,
   CrownIcon,
@@ -366,9 +363,10 @@ interface PickerRowProps {
   value: string;
   onPress: () => void;
   colors: ReturnType<typeof useProfileTheme>['profile'];
+  disabled?: boolean;
 }
 
-function PickerRow({ label, value, onPress, colors }: PickerRowProps) {
+function PickerRow({ label, value, onPress, colors, disabled }: PickerRowProps) {
   return (
     <View style={fieldStyles.wrapper}>
       <Text style={[fieldStyles.label, { color: colors.fieldLabel }]}>{label}</Text>
@@ -376,8 +374,10 @@ function PickerRow({ label, value, onPress, colors }: PickerRowProps) {
         style={[
           fieldStyles.pickerRow,
           { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder },
+          disabled && styles.disabled,
         ]}
         onPress={onPress}
+        disabled={disabled}
         borderRadius={10}
       >
         <Text style={[fieldStyles.pickerValue, { color: colors.textPrimary }]}>
@@ -465,7 +465,7 @@ function Profile() {
   const theme = useProfileTheme();
   const pt = theme.profile;
   const { t, i18n } = useTranslation();
-  const navigation = useNavigation();
+
   const dispatch = useDispatch<AppDispatch>();
   const insets = useSafeAreaInsets();
 
@@ -756,18 +756,12 @@ function Profile() {
 
   return (
     <View style={[styles.root, { backgroundColor: pt.background }]}>
-      <StatusBar
-        barStyle={theme.dark ? 'light-content' : 'dark-content'}
-        backgroundColor={pt.headerBackground}
-      />
-
       {/* Save toast */}
       <Animated.View
         style={[
           styles.toast,
           {
             backgroundColor: pt.toastBackground,
-            top: insets.top + 60,
             opacity: toastOpacity,
             transform: [{ translateY: toastY }],
           },
@@ -780,7 +774,7 @@ function Profile() {
         </Text>
       </Animated.View>
 
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <View style={styles.safeArea}>
         {/* Header */}
         <View
           style={[
@@ -791,17 +785,9 @@ function Profile() {
             },
           ]}
         >
-          <Touchable
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <ArrowLeftIcon size={22} color={pt.headerIcon} />
-          </Touchable>
           <Text style={[styles.headerTitle, { color: pt.headerTitle }]}>
             {t('profile.title')}
           </Text>
-          <View style={styles.headerSpacer} />
         </View>
 
         <KeyboardAvoidingView
@@ -892,11 +878,12 @@ function Profile() {
                 >
                   <Text style={[styles.atSign, { color: pt.iconSecondary }]}>@</Text>
                   <TextInput
-                    style={[styles.textInput, { color: pt.inputText }]}
+                    style={[styles.textInput, { color: pt.inputText }, isSaving && styles.disabled]}
                     value={nickname}
                     onChangeText={text =>
                       setNickname(text.replace(/[^a-zA-Z0-9_]/g, ''))
                     }
+                    editable={!isSaving}
                     placeholder="usuario_unico"
                     placeholderTextColor={pt.iconSecondary}
                     autoCapitalize="none"
@@ -917,9 +904,11 @@ function Profile() {
                       backgroundColor: pt.inputBackground,
                       borderColor: pt.inputBorder,
                     },
+                    isSaving && styles.disabled,
                   ]}
                   value={phone}
                   onChangeText={setPhone}
+                  editable={!isSaving}
                   placeholder="+1 555 000 0000"
                   placeholderTextColor={pt.iconSecondary}
                   keyboardType="phone-pad"
@@ -930,6 +919,7 @@ function Profile() {
                 label={t('profile.gender')}
                 value={getLabelForValue(genderOptions, gender)}
                 onPress={() => setActivePicker('gender')}
+                disabled={isSaving}
                 colors={pt}
               />
 
@@ -945,8 +935,10 @@ function Profile() {
                       backgroundColor: pt.inputBackground,
                       borderColor: pt.inputBorder,
                     },
+                    isSaving && styles.disabled,
                   ]}
                   value={frequencyText}
+                  editable={!isSaving}
                   onChangeText={val => {
                     setFrequencyText(val);
                     const n = parseInt(val, 10);
@@ -1060,9 +1052,11 @@ function Profile() {
                       backgroundColor: pt.inputBackground,
                       borderColor: pt.inputBorder,
                     },
+                    isSaving && styles.disabled,
                   ]}
                   value={aiName}
                   onChangeText={setAiName}
+                  editable={!isSaving}
                   placeholder="GORYUZ"
                   placeholderTextColor={pt.iconSecondary}
                 />
@@ -1072,6 +1066,7 @@ function Profile() {
                 label={t('profile.language')}
                 value={getLabelForValue(languageOptions, language)}
                 onPress={() => setActivePicker('language')}
+                disabled={isSaving}
                 colors={pt}
               />
 
@@ -1079,6 +1074,7 @@ function Profile() {
                 label={t('profile.currency')}
                 value={getLabelForValue(currencyOptions, currency)}
                 onPress={() => setActivePicker('currency')}
+                disabled={isSaving}
                 colors={pt}
               />
             </SectionCard>
@@ -1196,7 +1192,7 @@ function Profile() {
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
-      </SafeAreaView>
+      </View>
 
       {/* ── Pickers ── */}
       <PickerModal
@@ -1274,6 +1270,7 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
+  disabled: { opacity: 0.6 },
   flex: {
     flex: 1,
   },
@@ -1281,24 +1278,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  backButton: {
-    padding: 4,
-  },
   headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: 0.2,
-  },
-  headerSpacer: {
-    width: 30,
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: -0.3,
   },
   scroll: {
     flex: 1,
@@ -1493,6 +1480,7 @@ const styles = StyleSheet.create({
   // Toast
   toast: {
     position: 'absolute',
+    top: 16,
     right: 16,
     zIndex: 100,
     flexDirection: 'row',

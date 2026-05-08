@@ -1,3 +1,13 @@
+export type ActiveModule =
+  | 'home'
+  | 'closet'
+  | 'styles'
+  | 'schedule'
+  | 'profile'
+  | 'discover'
+  | 'second_life'
+  | 'community';
+
 export interface FeedUser {
   id: string;
   name: string;
