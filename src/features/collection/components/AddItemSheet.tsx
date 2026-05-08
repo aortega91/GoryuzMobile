@@ -18,7 +18,6 @@ import { CameraIcon, ImageIcon, GemIcon, CheckIcon } from '@assets/icons';
 import { identifyItems, extractItem } from '../api/aiApi';
 import { ClothingCategory, ScannedItem } from '../types';
 
-const SCAN_COST = 3;   // charged by /gemini/identify regardless of how many items are saved
 const COST_PER_ITEM = 3; // charged by POST /closet per saved item
 
 // Identify + extract during scan → show previews → save selected
@@ -240,36 +239,19 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
         </Touchable>
       </View>
 
-      <View style={styles.notices}>
-        <View
-          style={[
-            styles.notice,
-            {
-              backgroundColor: tokens.noticeBackground,
-              borderColor: tokens.noticeBorder,
-            },
-          ]}
-        >
-          <GemIcon size={14} color={tokens.noticeText} />
-          <Text style={[styles.noticeText, { color: tokens.noticeText }]}>
-            {t('collection.gemScanCostNotice', { cost: SCAN_COST })}
-          </Text>
-        </View>
-
-        <View
-          style={[
-            styles.notice,
-            {
-              backgroundColor: tokens.noticeBackground,
-              borderColor: tokens.noticeBorder,
-            },
-          ]}
-        >
-          <GemIcon size={14} color={tokens.noticeText} />
-          <Text style={[styles.noticeText, { color: tokens.noticeText }]}>
-            {t('collection.gemCostNotice', { cost: COST_PER_ITEM })}
-          </Text>
-        </View>
+      <View
+        style={[
+          styles.notice,
+          {
+            backgroundColor: tokens.noticeBackground,
+            borderColor: tokens.noticeBorder,
+          },
+        ]}
+      >
+        <GemIcon size={14} color={tokens.noticeText} />
+        <Text style={[styles.noticeText, { color: tokens.noticeText }]}>
+          {t('collection.gemCostNotice', { cost: COST_PER_ITEM })}
+        </Text>
       </View>
     </>
   );
@@ -495,9 +477,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textAlign: 'center',
     lineHeight: 16,
-  },
-  notices: {
-    gap: 8,
   },
   notice: {
     flexDirection: 'row',

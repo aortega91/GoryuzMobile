@@ -52,11 +52,10 @@ function BottomSheet({
   const slideY = useRef(new Animated.Value(maxHeight)).current;
 
   const slideIn = useCallback(() => {
-    Animated.spring(slideY, {
+    Animated.timing(slideY, {
       toValue: 0,
-      damping: 24,
-      mass: 0.9,
-      stiffness: 260,
+      duration: 280,
+      easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start();
   }, [slideY]);
@@ -131,7 +130,6 @@ function BottomSheet({
               maxHeight,
               backgroundColor,
               transform: [{ translateY: slideY }],
-              paddingBottom: insets.bottom,
             },
           ]}
         >
@@ -144,20 +142,26 @@ function BottomSheet({
 
           {/* Content — constrained to keep it inside the sheet */}
           <View
-            style={{
-              maxHeight:
-                maxHeight -
-                insets.bottom -
-                (draggable ? HANDLE_AREA_HEIGHT : 0),
-            }}
+            style={[
+              styles.contentWrapper,
+              {
+                maxHeight:
+                  maxHeight -
+                  insets.bottom -
+                  (draggable ? HANDLE_AREA_HEIGHT : 0),
+              },
+            ]}
             onLayout={({ nativeEvent: { layout } }) =>
               setContentHeight(
-                layout.height + (draggable ? HANDLE_AREA_HEIGHT : 0),
+                layout.height + (draggable ? HANDLE_AREA_HEIGHT : 0) + insets.bottom,
               )
             }
           >
             {children}
           </View>
+
+          {/* Safe-area spacer — solid background, never clipped */}
+          {insets.bottom > 0 && <View style={{ height: insets.bottom }} />}
         </Animated.View>
       </View>
     </Modal>
@@ -175,6 +179,8 @@ const styles = StyleSheet.create({
   sheet: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+  },
+  contentWrapper: {
     overflow: 'hidden',
   },
   handleArea: {

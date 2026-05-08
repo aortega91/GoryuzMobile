@@ -20,6 +20,11 @@ export interface CollectionTheme extends Theme {
     tabActiveBackground: string;
     tabActiveBorder: string;
     tabActiveText: string;
+    tabIndicator: string;
+    tabBadgeBackground: string;
+    tabBadgeText: string;
+    tabBadgeActiveBackground: string;
+    tabBadgeActiveText: string;
 
     cardBackground: string;
     cardBorder: string;
@@ -95,7 +100,12 @@ export const collectionLightTheme: CollectionTheme = {
     tabText: commonColors.grayDark,
     tabActiveBackground: commonColors.navyDark,
     tabActiveBorder: commonColors.navyDark,
-    tabActiveText: commonColors.white,
+    tabActiveText: commonColors.navyDark,
+    tabIndicator: commonColors.navyDark,
+    tabBadgeBackground: '#F3F4F6',
+    tabBadgeText: commonColors.grayDark,
+    tabBadgeActiveBackground: '#E8EAF0',
+    tabBadgeActiveText: commonColors.navyDark,
 
     cardBackground: commonColors.white,
     cardBorder: commonColors.grayLight,
@@ -170,7 +180,12 @@ export const collectionDarkTheme: CollectionTheme = {
     tabText: 'rgba(255,255,255,0.55)',
     tabActiveBackground: commonColors.white,
     tabActiveBorder: commonColors.white,
-    tabActiveText: commonColors.navyDark,
+    tabActiveText: commonColors.white,
+    tabIndicator: commonColors.white,
+    tabBadgeBackground: '#2C2C2C',
+    tabBadgeText: 'rgba(255,255,255,0.40)',
+    tabBadgeActiveBackground: 'rgba(255,255,255,0.15)',
+    tabBadgeActiveText: commonColors.white,
 
     cardBackground: commonColors.darkCard,
     cardBorder: commonColors.darkBorder,

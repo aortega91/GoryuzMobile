@@ -4,21 +4,18 @@ import {
   FlatList,
   ListRenderItemInfo,
   RefreshControl,
-  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { useNavigation } from '@react-navigation/native';
-
 import Touchable from '@components/Touchable';
 import useCollectionTheme from '@hooks/useCollectionTheme';
 import { RootState, AppDispatch } from '@utilities/store';
-import { ArrowLeftIcon, SearchIcon, ShirtIcon } from '@assets/icons';
+import { AlertCircleIcon, SearchIcon, ShirtIcon } from '@assets/icons';
 import {
   loadCollection,
   addItems,
@@ -40,7 +37,6 @@ function Collection() {
   const tokens = theme.collection;
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
-  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
 
   const items = useSelector((state: RootState) => state.collection.items);
@@ -155,33 +151,43 @@ function Collection() {
 
   return (
     <View style={[styles.root, { backgroundColor: tokens.background }]}>
-      <StatusBar
-        barStyle={theme.dark ? 'light-content' : 'dark-content'}
-        backgroundColor={tokens.headerBackground}
-      />
-
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Header */}
+      {/* Header */}
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: tokens.headerBackground,
+            borderBottomColor: tokens.headerBorder,
+          },
+        ]}
+      >
+        <Text style={[styles.headerTitle, { color: tokens.headerTitle }]}>
+          {t('collection.title')}
+        </Text>
+        <Text style={[styles.headerSubtitle, { color: tokens.emptySubtitle }]}>
+          {t('collection.subtitle')}{' '}
+          <Text style={[styles.headerSubtitleLink, { color: tokens.buttonPrimary }]}>
+            {t('collection.subtitleSecondLife')}
+          </Text>
+        </Text>
         <View
           style={[
-            styles.header,
+            styles.aiNotice,
             {
-              backgroundColor: tokens.headerBackground,
-              borderBottomColor: tokens.headerBorder,
+              backgroundColor: tokens.noticeBackground,
+              borderColor: tokens.noticeBorder,
             },
           ]}
         >
-          <Touchable
-            onPress={() => navigation.goBack()}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <ArrowLeftIcon size={22} color={tokens.headerTitle} />
-          </Touchable>
-          <Text style={[styles.headerTitle, { color: tokens.headerTitle }]}>
-            {t('collection.title')}
+          <AlertCircleIcon size={14} color={tokens.noticeText} strokeWidth={2} />
+          <Text style={[styles.aiNoticeText, { color: tokens.noticeText }]}>
+            {t('collection.aiDisclaimer')}{' '}
+            <Text style={styles.aiNoticeWarning}>
+              {t('collection.aiDisclaimerWarning')}
+            </Text>
           </Text>
-          <View style={styles.headerSpacer} />
         </View>
+      </View>
 
         {/* Search bar */}
         <View
@@ -216,6 +222,7 @@ function Collection() {
         <CategoryTabs
           selected={activeCategory}
           onSelect={setActiveCategory}
+          items={items}
         />
 
         {/* Items grid */}
@@ -253,7 +260,6 @@ function Collection() {
         >
           <Text style={[styles.fabIcon, { color: tokens.fabIcon }]}>+</Text>
         </Touchable>
-      </SafeAreaView>
 
       {/* Modals */}
       {showAdd && (
@@ -294,25 +300,44 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
-  safeArea: {
-    flex: 1,
-  },
   // Header
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 12,
+    gap: 4,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    flex: 1,
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
-  headerSpacer: {
-    width: 22,
+  headerSubtitle: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  headerSubtitleLink: {
+    fontWeight: '700',
+  },
+  aiNotice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  aiNoticeText: {
+    flex: 1,
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  aiNoticeWarning: {
+    fontWeight: '700',
   },
   // Search
   searchBar: {
