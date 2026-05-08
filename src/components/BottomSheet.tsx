@@ -44,8 +44,6 @@ function BottomSheet({
   const insets = useSafeAreaInsets();
   const maxHeight = SCREEN_HEIGHT * maxHeightRatio;
 
-  // Modal visibility tracks whether the native Modal layer is shown.
-  // We keep it true until the slide-out animation is done.
   const [isVisible, setIsVisible] = useState(true);
   const [contentHeight, setContentHeight] = useState(0);
 
@@ -72,7 +70,6 @@ function BottomSheet({
     });
   }, [slideY, maxHeight, onClose]);
 
-  // Slide in as soon as the component mounts
   useEffect(() => {
     slideIn();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -81,7 +78,6 @@ function BottomSheet({
   const panResponder = useMemo(
     () =>
       PanResponder.create({
-        // Only respond when draggable and content has been measured
         onStartShouldSetPanResponder: () => draggable && contentHeight > 0,
         onPanResponderMove: (_e, gesture) => {
           if (!draggable || gesture.dy <= 0) {
@@ -116,71 +112,59 @@ function BottomSheet({
       animationType="none"
       onRequestClose={slideOut}
     >
-      {/* Backdrop — stays fixed, does NOT participate in the slide animation */}
-      <View style={[styles.root, { backgroundColor: backdropColor }]}>
-        <TouchableWithoutFeedback onPress={slideOut}>
-          <View style={styles.backdropTouchable} />
-        </TouchableWithoutFeedback>
+      {/* Full-screen backdrop */}
+      <TouchableWithoutFeedback onPress={slideOut}>
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: backdropColor }]} />
+      </TouchableWithoutFeedback>
 
-        {/* Sliding sheet */}
-        <Animated.View
-          style={[
-            styles.sheet,
-            {
-              maxHeight,
-              backgroundColor,
-              transform: [{ translateY: slideY }],
-            },
-          ]}
-        >
-          {/* Draggable handle area */}
-          {draggable && (
-            <View style={styles.handleArea} {...panResponder.panHandlers}>
-              <View style={styles.handle} />
-            </View>
-          )}
-
-          {/* Content — constrained to keep it inside the sheet */}
-          <View
-            style={[
-              styles.contentWrapper,
-              {
-                maxHeight:
-                  maxHeight -
-                  insets.bottom -
-                  (draggable ? HANDLE_AREA_HEIGHT : 0),
-              },
-            ]}
-            onLayout={({ nativeEvent: { layout } }) =>
-              setContentHeight(
-                layout.height + (draggable ? HANDLE_AREA_HEIGHT : 0) + insets.bottom,
-              )
-            }
-          >
-            {children}
+      {/* Sheet — absolutely anchored to the screen bottom so it always covers the full bottom edge */}
+      <Animated.View
+        style={[
+          styles.sheet,
+          {
+            maxHeight,
+            backgroundColor,
+            paddingBottom: insets.bottom,
+            transform: [{ translateY: slideY }],
+          },
+        ]}
+      >
+        {/* Draggable handle area */}
+        {draggable && (
+          <View style={styles.handleArea} {...panResponder.panHandlers}>
+            <View style={styles.handle} />
           </View>
+        )}
 
-          {/* Safe-area spacer — solid background, never clipped */}
-          {insets.bottom > 0 && <View style={{ height: insets.bottom }} />}
-        </Animated.View>
-      </View>
+        {/* Content */}
+        <View
+          style={{
+            maxHeight:
+              maxHeight -
+              insets.bottom -
+              (draggable ? HANDLE_AREA_HEIGHT : 0),
+          }}
+          onLayout={({ nativeEvent: { layout } }) =>
+            setContentHeight(
+              layout.height + (draggable ? HANDLE_AREA_HEIGHT : 0) + insets.bottom,
+            )
+          }
+        >
+          {children}
+        </View>
+      </Animated.View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-end',
-  },
-  backdropTouchable: {
-    flex: 1,
-  },
   sheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-  },
-  contentWrapper: {
     overflow: 'hidden',
   },
   handleArea: {
