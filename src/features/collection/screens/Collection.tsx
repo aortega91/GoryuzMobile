@@ -16,6 +16,7 @@ import Touchable from '@components/Touchable';
 import useCollectionTheme from '@hooks/useCollectionTheme';
 import { RootState, AppDispatch } from '@utilities/store';
 import { AlertCircleIcon, SearchIcon, ShirtIcon } from '@assets/icons';
+import { loadProfile } from '@features/home/profileSlice';
 import {
   loadCollection,
   addItems,
@@ -81,8 +82,9 @@ function Collection() {
   }, [items, activeCategory, search]);
 
   const handleAdd = useCallback(
-    (scannedItems: ScannedItem[]) => {
-      dispatch(addItems(scannedItems));
+    async (scannedItems: ScannedItem[]) => {
+      await dispatch(addItems(scannedItems)).unwrap();
+      dispatch(loadProfile());
     },
     [dispatch],
   );
