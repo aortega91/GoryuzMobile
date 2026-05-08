@@ -20,6 +20,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const HANDLE_AREA_HEIGHT = 32;
+// Minimum bottom padding to cover the home-indicator / nav-bar area.
+// useSafeAreaInsets can report 0 inside a transparent Modal even on devices
+// that have a home indicator, so we enforce a safe floor.
+const MIN_BOTTOM_PADDING = 34;
 
 interface BottomSheetProps {
   /** Called after the slide-out animation completes — parent should unmount the sheet */
@@ -43,6 +47,9 @@ function BottomSheet({
 }: BottomSheetProps) {
   const insets = useSafeAreaInsets();
   const maxHeight = SCREEN_HEIGHT * maxHeightRatio;
+  // Use the larger of the reported inset and the safe floor so the sheet
+  // background always covers the home-indicator / navigation-bar area.
+  const bottomPadding = Math.max(insets.bottom, MIN_BOTTOM_PADDING);
 
   const [isVisible, setIsVisible] = useState(true);
   const [contentHeight, setContentHeight] = useState(0);
@@ -110,6 +117,7 @@ function BottomSheet({
       visible={isVisible}
       transparent
       animationType="none"
+      statusBarTranslucent
       onRequestClose={slideOut}
     >
       {/* Full-screen backdrop */}
@@ -117,36 +125,44 @@ function BottomSheet({
         <View style={[StyleSheet.absoluteFillObject, { backgroundColor: backdropColor }]} />
       </TouchableWithoutFeedback>
 
-      {/* Sheet — absolutely anchored to the screen bottom so it always covers the full bottom edge */}
+      {/* Sheet — absolutely anchored to the screen bottom.
+          No overflow:hidden here: on iOS it clips paddingBottom which is
+          needed to cover the home-indicator area. Border radius is top-only
+          so no content clips against the rounded corners. */}
       <Animated.View
         style={[
           styles.sheet,
           {
             maxHeight,
             backgroundColor,
-            paddingBottom: insets.bottom,
+            paddingBottom: bottomPadding,
             transform: [{ translateY: slideY }],
           },
         ]}
       >
-        {/* Draggable handle area */}
+        {/* Draggable handle */}
         {draggable && (
           <View style={styles.handleArea} {...panResponder.panHandlers}>
             <View style={styles.handle} />
           </View>
         )}
 
-        {/* Content */}
+        {/* Content — capped so it never overflows into the bottom padding */}
         <View
-          style={{
-            maxHeight:
-              maxHeight -
-              insets.bottom -
-              (draggable ? HANDLE_AREA_HEIGHT : 0),
-          }}
+          style={[
+            styles.contentWrapper,
+            {
+              maxHeight:
+                maxHeight -
+                bottomPadding -
+                (draggable ? HANDLE_AREA_HEIGHT : 0),
+            },
+          ]}
           onLayout={({ nativeEvent: { layout } }) =>
             setContentHeight(
-              layout.height + (draggable ? HANDLE_AREA_HEIGHT : 0) + insets.bottom,
+              layout.height +
+                (draggable ? HANDLE_AREA_HEIGHT : 0) +
+                bottomPadding,
             )
           }
         >
@@ -165,6 +181,8 @@ const styles = StyleSheet.create({
     right: 0,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+  },
+  contentWrapper: {
     overflow: 'hidden',
   },
   handleArea: {
