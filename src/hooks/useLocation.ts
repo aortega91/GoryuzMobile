@@ -5,8 +5,9 @@ import { check, request, openSettings, PERMISSIONS, RESULTS } from 'react-native
 import { useDispatch } from 'react-redux';
 
 import { AppDispatch } from '@utilities/store';
-import { setCityName } from '@utilities/locationSlice';
+import { setCityName, setCoordinates } from '@utilities/locationSlice';
 import { logError } from '@utilities/crashlytics';
+import i18n from '@language/index';
 
 const LOCATION_PERMISSION =
   Platform.OS === 'ios'
@@ -16,7 +17,8 @@ const LOCATION_PERMISSION =
 async function reverseGeocode(lat: number, lon: number): Promise<string | null> {
   // TODO: swap URL for Google Maps when billing is set up:
   // `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${GOOGLE_MAPS_API_KEY}`
-  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
+  const lang = i18n.language ?? 'en';
+  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=${lang}`;
   const res = await fetch(url, {
     headers: { 'User-Agent': 'GoryuzMobile/1.0' },
   });
@@ -64,6 +66,7 @@ function useLocation() {
       Geolocation.getCurrentPosition(
         async position => {
           const { latitude, longitude } = position.coords;
+          dispatch(setCoordinates({ latitude, longitude }));
           const city = await reverseGeocode(latitude, longitude);
           dispatch(setCityName(city));
         },

@@ -2,6 +2,7 @@ import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import {
   persistStore,
   persistReducer,
+  createTransform,
   FLUSH,
   REHYDRATE,
   PAUSE,
@@ -16,6 +17,8 @@ import * as Keychain from 'react-native-keychain';
 import sessionReducer, { SessionState } from '@features/auth/sessionSlice';
 import profileReducer from '@features/home/profileSlice';
 import collectionReducer from '@features/collection/collectionSlice';
+import scheduleReducer from '@features/schedule/scheduleSlice';
+import stylesReducer from '@features/styles/stylesSlice';
 import appThemeReducer from './appThemeSlice';
 import locationReducer from './locationSlice';
 
@@ -54,14 +57,23 @@ const sessionPersistConfig = {
   version: 1,
 };
 
+// Strip cityName before writing location to AsyncStorage — it is language-dependent
+// and must be re-fetched each session. Coordinates persist for weather on cold start.
+const locationTransform = createTransform(
+  (state: { cityName: string | null; latitude: number | null; longitude: number | null }) =>
+    ({ ...state, cityName: null }),
+  inbound => inbound,
+  { whitelist: ['location'] },
+);
+
 /** Root persist config uses AsyncStorage for any non-sensitive slices */
 const rootPersistConfig = {
   key: 'root',
   storage: AsyncStorage,
   version: 1,
-  // session has its own persist config; profile/collection are always refetched on launch
-  blacklist: ['session', 'profile', 'collection'],
-  // location persists so cached city name shows instantly on cold start
+  // session has its own persist config; profile/collection/schedule/styles are always refetched on launch
+  blacklist: ['session', 'profile', 'collection', 'schedule', 'styles'],
+  transforms: [locationTransform],
 };
 
 // ─── Root reducer ─────────────────────────────────────────────────────────────
@@ -70,6 +82,8 @@ const rootReducer = combineReducers({
   session: persistReducer<SessionState>(sessionPersistConfig, sessionReducer),
   profile: profileReducer,
   collection: collectionReducer,
+  schedule: scheduleReducer,
+  styles: stylesReducer,
   appTheme: appThemeReducer,
   location: locationReducer,
 });
