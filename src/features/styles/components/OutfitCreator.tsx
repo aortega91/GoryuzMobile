@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 
 import Touchable from '@components/Touchable';
 import useStylesTheme from '@hooks/useStylesTheme';
+import { getImageSource } from '@api/client';
 import { ShirtIcon, SparklesIcon } from '@assets/icons';
 import {
   ClothingItem,
@@ -156,7 +157,7 @@ function OutfitCreator({ closetItems, closetLoading, saving, onSave }: OutfitCre
             >
               {item.imageData ? (
                 <Image
-                  source={{ uri: item.imageData }}
+                  source={getImageSource(item.imageData)}
                   style={styles.gridImage}
                   resizeMode="cover"
                 />

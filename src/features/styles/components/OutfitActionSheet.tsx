@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import BottomSheet from '@components/BottomSheet';
 import Touchable from '@components/Touchable';
 import useStylesTheme from '@hooks/useStylesTheme';
+import { getImageSource } from '@api/client';
 import {
   CalendarIcon,
   Share2Icon,
@@ -88,7 +89,7 @@ function OutfitActionSheet({
         <View style={styles.header}>
           <View style={[styles.previewThumb, { backgroundColor: s.outfitCardMosaicBackground }]}>
             {previewImage ? (
-              <Image source={{ uri: previewImage }} style={styles.previewImage} resizeMode="cover" />
+              <Image source={getImageSource(previewImage)} style={styles.previewImage} resizeMode="cover" />
             ) : (
               <ShirtIcon size={24} color={s.emptyIcon} />
             )}

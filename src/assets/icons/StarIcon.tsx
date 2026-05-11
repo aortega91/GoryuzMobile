@@ -5,15 +5,16 @@ interface IconProps {
   size?: number;
   color?: string;
   strokeWidth?: number;
+  fill?: string;
 }
 
-function StarIcon({ size = 24, color = '#000000', strokeWidth = 2 }: IconProps) {
+function StarIcon({ size = 24, color = '#000000', strokeWidth = 2, fill = 'none' }: IconProps) {
   return (
     <Svg
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="none"
+      fill={fill}
       stroke={color}
       strokeWidth={strokeWidth}
       strokeLinecap="round"

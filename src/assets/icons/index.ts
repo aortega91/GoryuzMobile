@@ -45,3 +45,6 @@ export { default as CloudRainIcon } from './CloudRainIcon';
 export { default as ChevronLeftIcon } from './ChevronLeftIcon';
 export { default as ColumnsIcon } from './ColumnsIcon';
 export { default as ListIcon } from './ListIcon';
+export { default as FilterIcon } from './FilterIcon';
+export { default as ScissorsIcon } from './ScissorsIcon';
+export { default as HandIcon } from './HandIcon';

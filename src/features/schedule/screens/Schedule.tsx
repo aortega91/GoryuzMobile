@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { getImageSource } from '@api/client';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
@@ -45,13 +46,6 @@ import OutfitPickerSheet from '../components/OutfitPickerSheet';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getWeekStart(date: Date): Date {
-  const d = new Date(date);
-  d.setDate(d.getDate() - d.getDay());
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
 function addDays(date: Date, days: number): Date {
   const d = new Date(date);
   d.setDate(d.getDate() + days);
@@ -62,9 +56,37 @@ function toDateStr(date: Date): string {
   return date.toISOString().split('T')[0];
 }
 
+function getMonthDays(date: Date): Date[] {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const days: Date[] = [];
+
+  for (let i = firstDay.getDay() - 1; i >= 0; i--) {
+    days.push(new Date(year, month, -i));
+  }
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    days.push(new Date(year, month, d));
+  }
+  const remaining = (7 - (days.length % 7)) % 7;
+  for (let i = 1; i <= remaining; i++) {
+    days.push(new Date(year, month + 1, i));
+  }
+  return days;
+}
+
+function chunk<T>(arr: T[], size: number): T[][] {
+  const result: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    result.push(arr.slice(i, i + size));
+  }
+  return result;
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
-type ViewMode = 'week' | 'day';
+type ViewMode = 'month' | 'day';
 
 const DAY_NAMES_SHORT = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 const MAX_EVENTS_PER_DAY = 3;
@@ -84,7 +106,7 @@ function Schedule() {
   const longitude = useSelector((state: RootState) => state.location.longitude);
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<ViewMode>('week');
+  const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [locationWeather, setLocationWeather] = useState<Record<string, DailyWeather>>({});
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isTripModalOpen, setIsTripModalOpen] = useState(false);
@@ -114,10 +136,10 @@ function Schedule() {
 
   // ─── Derived data ─────────────────────────────────────────────────────────
 
-  const weekDays = useMemo(() => {
-    const start = getWeekStart(currentDate);
-    return Array.from({ length: 7 }, (_, i) => addDays(start, i));
-  }, [currentDate]);
+  const monthDays = useMemo(
+    () => (viewMode === 'month' ? getMonthDays(currentDate) : []),
+    [currentDate, viewMode],
+  );
 
   const eventsByDate = useMemo(() => {
     const map: Record<string, CalendarEvent[]> = {};
@@ -145,10 +167,16 @@ function Schedule() {
 
   const navigateDate = (offset: number) => {
     setCurrentDate(prev => {
-      const d = new Date(prev);
-      d.setDate(d.getDate() + (viewMode === 'week' ? offset * 7 : offset));
-      return d;
+      if (viewMode === 'month') {
+        return new Date(prev.getFullYear(), prev.getMonth() + offset, 1);
+      }
+      return addDays(prev, offset);
     });
+  };
+
+  const handleSelectDay = (date: Date) => {
+    setCurrentDate(date);
+    setViewMode('day');
   };
 
   const handleAddOutfit = (dateStr: string) => {
@@ -213,125 +241,105 @@ function Schedule() {
 
   const today = toDateStr(new Date());
 
-  const renderDayHeader = (date: Date, compact: boolean) => {
-    const dateStr = toDateStr(date);
-    const isToday = dateStr === today;
-    const dayWeather = locationWeather[dateStr];
-    const trip = tripForDate(dateStr);
+  const renderMonthGrid = () => {
+    const weeks = chunk(monthDays, 7);
+    const currentMonth = currentDate.getMonth();
 
     return (
-      <View
-        style={[
-          styles.dayHeader,
-          {
-            backgroundColor: s.columnHeaderBackground,
-            borderBottomColor: s.columnBorder,
-          },
-        ]}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.monthContainer, { paddingBottom: insets.bottom + 16 }]}
       >
-        <Text style={[styles.dayName, { color: s.columnDayName }]}>
-          {DAY_NAMES_SHORT[date.getDay()]}
-        </Text>
-        <View
-          style={[
-            styles.dayCircle,
-            isToday && { backgroundColor: s.columnTodayBackground },
-          ]}
-        >
-          <Text
-            style={[
-              styles.dayNum,
-              { color: isToday ? s.columnTodayText : s.columnDayNumber },
-            ]}
-          >
-            {date.getDate()}
-          </Text>
-        </View>
-        {dayWeather && (
-          <WeatherBadge
-            weatherCode={dayWeather.weatherCode}
-            tempMax={dayWeather.tempMax}
-            tempMin={dayWeather.tempMin}
-            minimal={compact}
-          />
-        )}
-        {trip && (
-          <Touchable onPress={() => handleOpenTrip(trip)} hitSlop={4}>
-            <PlaneIcon size={10} color={s.tripBadgeText} />
-          </Touchable>
-        )}
-      </View>
-    );
-  };
-
-  const renderEventThumbnail = (event: CalendarEvent) => {
-    const firstItem = event.outfit?.items[0];
-    return (
-      <Touchable
-        key={event.id}
-        onPress={() => setSelectedEvent(event)}
-        borderRadius={8}
-        style={[
-          styles.eventThumb,
-          { backgroundColor: s.eventCardBackground, borderColor: s.eventCardBorder },
-        ]}
-      >
-        {firstItem?.imageData ? (
-          <Image
-            source={{ uri: firstItem.imageData }}
-            style={styles.thumbImage}
-            resizeMode="cover"
-          />
-        ) : (
-          <ShirtIcon size={16} color={s.emptyIcon} />
-        )}
-        {event.outfit && (
-          <Text
-            style={[styles.thumbName, { color: s.eventCardName }]}
-            numberOfLines={1}
-          >
-            {event.outfit.name}
-          </Text>
-        )}
-      </Touchable>
-    );
-  };
-
-  const renderWeekView = () => (
-    <ScrollView horizontal={false} style={styles.weekContainer}>
-      <View style={styles.weekRow}>
-        {weekDays.map(date => {
-          const dateStr = toDateStr(date);
-          const dayEvents = eventsByDate[dateStr] ?? [];
-          const isMaxed = dayEvents.length >= MAX_EVENTS_PER_DAY;
-
-          return (
-            <View
-              key={dateStr}
-              style={[
-                styles.dayColumn,
-                { backgroundColor: s.columnBackground, borderColor: s.columnBorder },
-              ]}
-            >
-              {renderDayHeader(date, true)}
-              <View style={styles.dayContent}>
-                {!isMaxed && (
-                  <Touchable
-                    onPress={() => handleAddOutfit(dateStr)}
-                    borderRadius={6}
-                    style={[styles.addBtn, { borderColor: s.addButtonBorder }]}
-                  >
-                    <PlusCircleIcon size={14} color={s.addButtonIcon} />
-                  </Touchable>
-                )}
-                {dayEvents.map(event => renderEventThumbnail(event))}
-              </View>
+        {/* Day name headers */}
+        <View style={styles.monthHeaderRow}>
+          {DAY_NAMES_SHORT.map(name => (
+            <View key={name} style={styles.monthHeaderCell}>
+              <Text style={[styles.monthHeaderText, { color: s.columnDayName }]}>{name}</Text>
             </View>
-          );
-        })}
-      </View>
-    </ScrollView>
-  );
+          ))}
+        </View>
+
+        {/* Week rows */}
+        {weeks.map(week => (
+          <View key={toDateStr(week[0])} style={styles.monthWeekRow}>
+            {week.map(date => {
+              const dateStr = toDateStr(date);
+              const dayEvents = eventsByDate[dateStr] ?? [];
+              const isToday = dateStr === today;
+              const isCurrentMonth = date.getMonth() === currentMonth;
+              const trip = tripForDate(dateStr);
+              const outfitImg = dayEvents[0]?.outfit?.items[0]?.imageData;
+
+              return (
+                <Touchable
+                  key={dateStr}
+                  onPress={() => handleSelectDay(date)}
+                  borderRadius={8}
+                  style={[
+                    styles.monthCell,
+                    {
+                      backgroundColor: s.columnBackground,
+                      borderColor: s.columnBorder,
+                      opacity: isCurrentMonth ? 1 : 0.35,
+                    },
+                  ]}
+                >
+                  {outfitImg != null && (
+                    <Image
+                      source={getImageSource(outfitImg)}
+                      style={StyleSheet.absoluteFill}
+                      resizeMode="cover"
+                    />
+                  )}
+                  {outfitImg != null && (
+                    <View style={[StyleSheet.absoluteFill, styles.monthCellOverlay]} />
+                  )}
+
+                  {/* Date + trip indicator */}
+                  <View style={styles.monthCellTop}>
+                    <View
+                      style={[
+                        styles.monthDateCircle,
+                        isToday && { backgroundColor: s.columnTodayBackground },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.monthDateText,
+                          {
+                            color: isToday
+                              ? s.columnTodayText
+                              : outfitImg != null
+                              ? s.columnTodayText
+                              : s.columnDayNumber,
+                          },
+                        ]}
+                      >
+                        {date.getDate()}
+                      </Text>
+                    </View>
+                    {trip != null && (
+                      <PlaneIcon
+                        size={8}
+                        color={outfitImg != null ? s.columnTodayText : s.tripBadgeText}
+                      />
+                    )}
+                  </View>
+
+                  {/* Dot indicator when there's an event but no image */}
+                  {dayEvents.length > 0 && outfitImg == null && (
+                    <View
+                      style={[styles.monthEventDot, { backgroundColor: s.buttonPrimary }]}
+                    />
+                  )}
+                </Touchable>
+              );
+            })}
+          </View>
+        ))}
+      </ScrollView>
+    );
+  };
 
   const renderDayView = () => {
     const dateStr = toDateStr(currentDate);
@@ -411,13 +419,13 @@ function Schedule() {
               <View style={styles.eventCardImageWrap}>
                 {event.outfit?.imageData ? (
                   <Image
-                    source={{ uri: event.outfit.imageData }}
+                    source={getImageSource(event.outfit.imageData)}
                     style={styles.eventCardImage}
                     resizeMode="cover"
                   />
                 ) : event.outfit?.items[0]?.imageData ? (
                   <Image
-                    source={{ uri: event.outfit.items[0].imageData! }}
+                    source={getImageSource(event.outfit.items[0].imageData!)}
                     style={styles.eventCardImage}
                     resizeMode="cover"
                   />
@@ -445,7 +453,7 @@ function Schedule() {
                     <View key={item.id} style={styles.itemMini}>
                       {item.imageData ? (
                         <Image
-                          source={{ uri: item.imageData }}
+                          source={getImageSource(item.imageData)}
                           style={styles.itemMiniImage}
                           resizeMode="cover"
                         />
@@ -469,7 +477,7 @@ function Schedule() {
   };
 
   const dateLabel =
-    viewMode === 'week'
+    viewMode === 'month'
       ? currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
       : currentDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
 
@@ -487,16 +495,16 @@ function Schedule() {
         <View style={styles.headerActions}>
           <View style={[styles.toggle, { backgroundColor: s.toggleBackground }]}>
             <Touchable
-              onPress={() => setViewMode('week')}
+              onPress={() => setViewMode('month')}
               borderRadius={7}
               style={[
                 styles.toggleBtn,
-                viewMode === 'week' && { backgroundColor: s.toggleActiveBackground },
+                viewMode === 'month' && { backgroundColor: s.toggleActiveBackground },
               ]}
             >
               <ColumnsIcon
                 size={15}
-                color={viewMode === 'week' ? s.toggleActiveText : s.toggleInactiveText}
+                color={viewMode === 'month' ? s.toggleActiveText : s.toggleInactiveText}
               />
             </Touchable>
             <Touchable
@@ -547,8 +555,8 @@ function Schedule() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator color={s.buttonPrimary} />
         </View>
-      ) : viewMode === 'week' ? (
-        renderWeekView()
+      ) : viewMode === 'month' ? (
+        renderMonthGrid()
       ) : (
         renderDayView()
       )}
@@ -630,43 +638,32 @@ const styles = StyleSheet.create({
   },
   navLabel: { fontSize: 15, fontWeight: '600', textTransform: 'capitalize' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  // Week view
-  weekContainer: { flex: 1, paddingHorizontal: 4 },
-  weekRow: { flexDirection: 'row', flex: 1 },
-  dayColumn: {
+  // Month grid
+  monthContainer: { paddingHorizontal: 12 },
+  monthHeaderRow: { flexDirection: 'row', marginBottom: 4 },
+  monthHeaderCell: { flex: 1, alignItems: 'center', paddingVertical: 4 },
+  monthHeaderText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
+  monthWeekRow: { flexDirection: 'row', gap: 3, marginBottom: 3 },
+  monthCell: {
     flex: 1,
+    aspectRatio: 0.85,
+    borderRadius: 8,
     borderWidth: 1,
-    marginHorizontal: 2,
-    borderRadius: 10,
     overflow: 'hidden',
-    minHeight: 200,
+    padding: 4,
+    justifyContent: 'space-between',
   },
-  dayHeader: {
-    paddingVertical: 6,
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    gap: 2,
-  },
-  dayName: { fontSize: 9, fontWeight: '700', textTransform: 'uppercase' },
-  dayCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+  monthCellOverlay: { backgroundColor: 'rgba(0,0,0,0.30)' },
+  monthCellTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  monthDateCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dayNum: { fontSize: 13, fontWeight: '700' },
-  dayContent: { padding: 4, gap: 4 },
-  eventThumb: { borderRadius: 8, borderWidth: 1, padding: 4, alignItems: 'center' },
-  thumbImage: { width: '100%', aspectRatio: 1, borderRadius: 6 },
-  thumbName: { fontSize: 7, marginTop: 2, textAlign: 'center' },
-  addBtn: {
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderRadius: 6,
-    padding: 6,
-    alignItems: 'center',
-  },
+  monthDateText: { fontSize: 11, fontWeight: '700' },
+  monthEventDot: { width: 5, height: 5, borderRadius: 3, alignSelf: 'center' },
   // Day view
   dayViewContent: { paddingHorizontal: 20, paddingBottom: 32 },
   dayViewHeader: {

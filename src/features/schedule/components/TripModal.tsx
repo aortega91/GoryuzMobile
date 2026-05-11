@@ -21,6 +21,7 @@ import {
   TrashIcon,
   AlertTriangleIcon,
 } from '@assets/icons';
+import { getImageSource } from '@api/client';
 import { Trip, CalendarEvent, DailyWeather } from '../types';
 import { geocodeDestination, fetchWeatherForecast } from '../api/weatherApi';
 import DatePickerModal from './DatePickerModal';
@@ -368,7 +369,7 @@ function TripModal({ existingTrip, eventsInTrip = [], onClose, onSave, onDelete 
                     >
                       {item.imageData ? (
                         <Image
-                          source={{ uri: item.imageData }}
+                          source={getImageSource(item.imageData)}
                           style={styles.packingImage}
                           resizeMode="cover"
                         />

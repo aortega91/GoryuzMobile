@@ -49,6 +49,7 @@ function RateOutfitSheet({
               <StarIcon
                 size={36}
                 color={rating != null && star <= rating ? s.starFilled : s.starEmpty}
+                fill={rating != null && star <= rating ? s.starFilled : 'none'}
                 strokeWidth={rating != null && star <= rating ? 0 : 1.5}
               />
             </Touchable>

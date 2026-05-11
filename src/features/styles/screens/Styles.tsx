@@ -3,7 +3,8 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
-  ScrollView,
+  RefreshControl,
+  Share,
   StyleSheet,
   Text,
   View,
@@ -12,20 +13,33 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 
+import { getImageSource } from '@api/client';
 import Touchable from '@components/Touchable';
+import BottomSheet from '@components/BottomSheet';
 import useStylesTheme from '@hooks/useStylesTheme';
 import {
-  ShirtIcon,
   SparklesIcon,
   StarIcon,
-  PlusCircleIcon,
+  ColumnsIcon,
+  CrownIcon,
+  FilterIcon,
+  CheckIcon,
+  ShirtIcon,
+  ScissorsIcon,
+  HandIcon,
+  ArrowLeftIcon,
 } from '@assets/icons';
 import { AppDispatch, RootState } from '@utilities/store';
 import { addCalendarEvent } from '@features/schedule/api/calendarApi';
+import { loadCollection } from '@features/collection/collectionSlice';
+import HaircutCreator from '../components/HaircutCreator';
+import MakeupCreator from '../components/MakeupCreator';
+import NailCreator from '../components/NailCreator';
+import ManualOutfitCreator from '../components/ManualOutfitCreator';
+import AIOutfitCreator from '../components/AIOutfitCreator';
 
 import {
   loadOutfits,
-  loadClosetItems,
   addOutfit,
   editOutfit,
   removeOutfit,
@@ -40,8 +54,10 @@ import OutfitCreator from '../components/OutfitCreator';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Tab = 'outfits' | 'creator' | 'essence';
+type Tab = 'looks' | 'essence' | 'runway';
 type Sheet = 'action' | 'rename' | 'rate' | 'tags' | 'schedule' | null;
+
+const BOTTOM_TAB_HEIGHT = 56;
 
 // ─── Outfit card (portrait, native fashion-app style) ─────────────────────────
 
@@ -51,47 +67,65 @@ interface OutfitCardProps {
 }
 
 function OutfitCard({ outfit, onPress }: OutfitCardProps) {
-  const { t } = useTranslation();
   const { styles: s } = useStylesTheme();
-
-  const images = outfit.imageData
-    ? [outfit.imageData]
-    : (outfit.items.slice(0, 4).map(i => i.imageData).filter(Boolean) as string[]);
-
+  const items = outfit.items.slice(0, 4);
   const isAI = outfit.source === 'ai';
-  const badgeStyle = { backgroundColor: isAI ? s.outfitCardAIBadge : s.outfitCardSourceBadge };
-  const badgeTextStyle = { color: isAI ? s.outfitCardAIText : s.outfitCardSourceText };
 
   return (
-    <Touchable onPress={onPress} borderRadius={14} style={styles.card}>
-      {/* Portrait image area */}
-      <View style={[styles.cardImage, { backgroundColor: s.outfitCardMosaicBackground }]}>
-        {images.length === 0 ? (
-          <View style={styles.cardImagePlaceholder}>
-            <ShirtIcon size={36} color={s.emptyIcon} />
-          </View>
-        ) : images.length === 1 ? (
-          <Image source={{ uri: images[0] }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+    <Touchable
+      onPress={onPress}
+      borderRadius={16}
+      style={[
+        styles.card,
+        { backgroundColor: s.outfitCardBackground, borderColor: s.outfitCardBorder },
+      ]}
+    >
+      {/* Square image area */}
+      <View style={[styles.cardMedia, { backgroundColor: s.outfitCardMosaicBackground }]}>
+        {outfit.imageData ? (
+          <Image
+            source={getImageSource(outfit.imageData)}
+            style={StyleSheet.absoluteFill}
+            resizeMode="contain"
+          />
         ) : (
-          <View style={styles.mosaic}>
-            {[0, 1, 2, 3].map(i => (
-              images[i] ? (
-                <Image key={images[i]} source={{ uri: images[i] }} style={styles.mosaicCell} resizeMode="cover" />
-              ) : (
-                <View key={i} style={[styles.mosaicCell, { backgroundColor: s.outfitCardMosaicBackground }]} />
-              )
+          <View style={[styles.mosaic, { backgroundColor: s.outfitCardBorder }]}>
+            {([[0, 1], [2, 3]] as const).map((pair, rowIdx) => (
+              // eslint-disable-next-line react/no-array-index-key
+              <View key={rowIdx} style={styles.mosaicRow}>
+                {pair.map(i => (
+                  <View
+                    key={i}
+                    style={[styles.mosaicCell, { backgroundColor: s.outfitCardBackground }]}
+                  >
+                    {items[i]?.imageData ? (
+                      <Image
+                        source={getImageSource(items[i].imageData!)}
+                        style={StyleSheet.absoluteFill}
+                        resizeMode="cover"
+                      />
+                    ) : items[i] ? (
+                      <Text
+                        style={[styles.mosaicLabel, { color: s.emptySubtitle }]}
+                        numberOfLines={2}
+                      >
+                        {items[i].name}
+                      </Text>
+                    ) : (
+                      <View
+                        style={[
+                          StyleSheet.absoluteFillObject,
+                          { backgroundColor: s.outfitCardMosaicBackground },
+                        ]}
+                      />
+                    )}
+                  </View>
+                ))}
+              </View>
             ))}
           </View>
         )}
 
-        {/* Source badge — top right */}
-        <View style={[styles.sourceBadge, badgeStyle]}>
-          <Text style={[styles.sourceBadgeText, badgeTextStyle]}>
-            {isAI ? 'IA' : t('styles.sourceManual')}
-          </Text>
-        </View>
-
-        {/* Tags — top left */}
         {outfit.tags.length > 0 && (
           <View style={styles.tagsOverlay}>
             {outfit.tags.slice(0, 2).map(tag => (
@@ -101,24 +135,41 @@ function OutfitCard({ outfit, onPress }: OutfitCardProps) {
             ))}
           </View>
         )}
+      </View>
 
-        {/* Gradient-like overlay at bottom */}
-        <View style={styles.overlay}>
-          <Text style={styles.overlayName} numberOfLines={1}>
-            {outfit.name}
-          </Text>
-          {outfit.rating != null && (
-            <View style={styles.overlayStars}>
-              {[1, 2, 3, 4, 5].map(star => (
-                <StarIcon
-                  key={star}
-                  size={9}
-                  color={star <= outfit.rating! ? '#F5C842' : 'rgba(255,255,255,0.35)'}
-                  strokeWidth={0}
-                />
-              ))}
-            </View>
-          )}
+      {/* Info below image */}
+      <View style={styles.cardInfo}>
+        <View style={styles.cardRow}>
+          <View style={styles.cardNameWrap}>
+            <Text style={[styles.cardName, { color: s.outfitCardName }]} numberOfLines={1}>
+              {outfit.name}
+            </Text>
+            {outfit.rating != null ? (
+              <View style={styles.cardRatingRow}>
+                <StarIcon size={11} color={s.starFilled} fill={s.starFilled} strokeWidth={0} />
+                <Text style={[styles.cardRatingText, { color: s.emptySubtitle }]}>
+                  {outfit.rating}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+          <View
+            style={[
+              styles.sourceBadge,
+              isAI
+                ? { backgroundColor: s.outfitCardAIBadge, borderColor: s.outfitCardAIBadge }
+                : { backgroundColor: 'transparent', borderColor: s.outfitCardBorder },
+            ]}
+          >
+            <Text
+              style={[
+                styles.sourceBadgeText,
+                { color: isAI ? s.outfitCardAIText : s.outfitCardSourceText },
+              ]}
+            >
+              {isAI ? 'IA' : 'MANUAL'}
+            </Text>
+          </View>
         </View>
       </View>
     </Touchable>
@@ -135,24 +186,40 @@ function Styles() {
   const insets = useSafeAreaInsets();
 
   const outfits = useSelector((state: RootState) => state.styles.outfits);
-  const closetItems = useSelector((state: RootState) => state.styles.closetItems);
   const outfitsStatus = useSelector((state: RootState) => state.styles.outfitsStatus);
-  const closetStatus = useSelector((state: RootState) => state.styles.closetStatus);
+  const closetItems = useSelector((state: RootState) => state.collection.items);
+  const closetStatus = useSelector((state: RootState) => state.collection.status);
+  const profile = useSelector((state: RootState) => state.profile.data);
 
-  const [activeTab, setActiveTab] = useState<Tab>('outfits');
+  const [activeTab, setActiveTab] = useState<Tab>('looks');
   const [activeSheet, setActiveSheet] = useState<Sheet>(null);
   const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [starFilter, setStarFilter] = useState<number | null>(null);
+  const [filterSheet, setFilterSheet] = useState<'stars' | 'tags' | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [createStep, setCreateStep] = useState<1 | 2>(1);
   const [sheetLoading, setSheetLoading] = useState(false);
   const [creatorSaving, setCreatorSaving] = useState(false);
+  const [showHaircut, setShowHaircut] = useState(false);
+  const [showMakeup, setShowMakeup] = useState(false);
+  const [showNails, setShowNails] = useState(false);
+  const [showManualCreator, setShowManualCreator] = useState(false);
+  const [showAICreator, setShowAICreator] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // ─── Load data ───────────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (outfitsStatus === 'idle') dispatch(loadOutfits());
-    if (closetStatus === 'idle') dispatch(loadClosetItems());
+    if (closetStatus === 'idle') dispatch(loadCollection());
   }, [dispatch, outfitsStatus, closetStatus]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await dispatch(loadOutfits());
+    setRefreshing(false);
+  }, [dispatch]);
 
   // ─── Derived ─────────────────────────────────────────────────────────────────
 
@@ -169,6 +236,9 @@ function Styles() {
   }, [outfits, tagFilter, starFilter]);
 
   const hasActiveFilter = tagFilter != null || starFilter != null;
+
+  // Bottom bar height including safe area
+  const bottomBarTotalHeight = BOTTOM_TAB_HEIGHT + insets.bottom;
 
   // ─── Handlers ────────────────────────────────────────────────────────────────
 
@@ -220,83 +290,92 @@ function Styles() {
     closeSheet();
   };
 
+  const handleShare = async () => {
+    if (!selectedOutfit) return;
+    closeSheet();
+    const pieces = selectedOutfit.items.map(i => i.name).join(', ');
+    await Share.share({
+      title: selectedOutfit.name,
+      message: pieces
+        ? `${selectedOutfit.name} — ${pieces}`
+        : selectedOutfit.name,
+    });
+  };
+
   const handleCreatorSave = async (name: string, itemIds: string[]) => {
     setCreatorSaving(true);
     await dispatch(addOutfit({ name, itemIds }));
     setCreatorSaving(false);
-    setActiveTab('outfits');
+    setActiveTab('looks');
+  };
+
+  const handleManualSave = async (name: string, itemIds: string[]) => {
+    setCreatorSaving(true);
+    await dispatch(addOutfit({ name, itemIds }));
+    setCreatorSaving(false);
+    setShowManualCreator(false);
+    setActiveTab('looks');
+  };
+
+  const handleAISave = async (name: string, itemIds: string[]) => {
+    setCreatorSaving(true);
+    await dispatch(addOutfit({ name, itemIds }));
+    setCreatorSaving(false);
+    setShowAICreator(false);
+    setActiveTab('looks');
   };
 
   // ─── Render helpers ───────────────────────────────────────────────────────────
 
-  const renderOutfitsTab = () => (
+  const starFilterLabel = starFilter != null ? `${starFilter}★` : t('styles.filterStars');
+  const tagFilterLabel = tagFilter ?? t('styles.filterTags');
+
+  const renderLooksTab = () => (
     <View style={styles.tabContent}>
-      {/* Single compact filter row: "Todos" + tag chips + star chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filtersRow}
-      >
-        {/* Clear all */}
+      {/* Filter pills */}
+      <View style={styles.filterRow}>
         <Touchable
-          onPress={() => { setTagFilter(null); setStarFilter(null); }}
-          borderRadius={20}
+          onPress={() => setFilterSheet('stars')}
+          borderRadius={24}
           style={[
-            styles.filterChip,
-            { backgroundColor: !hasActiveFilter ? s.tagActiveBackground : s.tagBackground },
+            styles.filterPill,
+            starFilter != null
+              ? { backgroundColor: s.filterPillActiveBackground, borderColor: s.filterPillActiveBorder }
+              : { backgroundColor: s.filterPillBackground, borderColor: s.filterPillBorder },
           ]}
         >
-          <Text style={[styles.filterChipText, { color: !hasActiveFilter ? s.tagActiveText : s.tagText }]}>
-            {t('styles.filterAll')}
+          {starFilter == null && (
+            <StarIcon
+              size={15}
+              color={s.filterPillText}
+              strokeWidth={1.5}
+            />
+          )}
+          <Text style={[styles.filterPillText, { color: starFilter != null ? s.filterPillActiveText : s.filterPillText }]}>
+            {starFilterLabel}
           </Text>
         </Touchable>
 
-        {/* Tag chips */}
-        {allTags.length > 0 && (
-          <>
-            <View style={[styles.filterSep, { backgroundColor: s.tagBackground }]} />
-            {allTags.map(tag => (
-              <Touchable
-                key={tag}
-                onPress={() => setTagFilter(tagFilter === tag ? null : tag)}
-                borderRadius={20}
-                style={[
-                  styles.filterChip,
-                  { backgroundColor: tagFilter === tag ? s.tagActiveBackground : s.tagBackground },
-                ]}
-              >
-                <Text style={[styles.filterChipText, { color: tagFilter === tag ? s.tagActiveText : s.tagText }]}>
-                  {tag}
-                </Text>
-              </Touchable>
-            ))}
-          </>
-        )}
-
-        {/* Star chips */}
-        <View style={[styles.filterSep, { backgroundColor: s.tagBackground }]} />
-        {[5, 4, 3, 2, 1].map(star => (
-          <Touchable
-            key={star}
-            onPress={() => setStarFilter(starFilter === star ? null : star)}
-            borderRadius={20}
-            style={[
-              styles.filterChip,
-              styles.filterChipStar,
-              { backgroundColor: starFilter === star ? s.tagActiveBackground : s.tagBackground },
-            ]}
-          >
-            <StarIcon
-              size={11}
-              color={starFilter === star ? s.tagActiveText : s.starFilled}
-              strokeWidth={0}
-            />
-            <Text style={[styles.filterChipText, { color: starFilter === star ? s.tagActiveText : s.tagText }]}>
-              {star}
-            </Text>
-          </Touchable>
-        ))}
-      </ScrollView>
+        <Touchable
+          onPress={() => setFilterSheet('tags')}
+          borderRadius={24}
+          style={[
+            styles.filterPill,
+            tagFilter != null
+              ? { backgroundColor: s.filterPillActiveBackground, borderColor: s.filterPillActiveBorder }
+              : { backgroundColor: s.filterPillBackground, borderColor: s.filterPillBorder },
+          ]}
+        >
+          <FilterIcon
+            size={15}
+            color={tagFilter != null ? s.filterPillActiveText : s.filterPillText}
+            strokeWidth={1.5}
+          />
+          <Text style={[styles.filterPillText, { color: tagFilter != null ? s.filterPillActiveText : s.filterPillText }]}>
+            {tagFilterLabel}
+          </Text>
+        </Touchable>
+      </View>
 
       {/* Grid */}
       {outfitsStatus === 'loading' ? (
@@ -304,20 +383,13 @@ function Styles() {
           <ActivityIndicator color={s.buttonPrimary} />
         </View>
       ) : filteredOutfits.length === 0 ? (
-        <View style={styles.center}>
-          <ShirtIcon size={52} color={s.emptyIcon} />
-          <Text style={[styles.emptyText, { color: s.emptyText }]}>{t('styles.emptyTitle')}</Text>
-          <Text style={[styles.emptySub, { color: s.emptySubtitle }]}>{t('styles.emptySubtitle')}</Text>
-          <Touchable
-            onPress={() => setActiveTab('creator')}
-            borderRadius={14}
-            style={[styles.emptyBtn, { backgroundColor: s.buttonPrimary }]}
-          >
-            <PlusCircleIcon size={16} color={s.buttonPrimaryText} />
-            <Text style={[styles.emptyBtnText, { color: s.buttonPrimaryText }]}>
-              {t('styles.createFirst')}
+        <View style={[styles.dashedContainer, { paddingBottom: bottomBarTotalHeight + 16 }]}>
+          <View style={[styles.dashedBox, { borderColor: s.emptySubtitle }]}>
+            <StarIcon size={44} color={s.emptySubtitle} strokeWidth={1.5} />
+            <Text style={[styles.emptySub, { color: s.emptySubtitle }]}>
+              {hasActiveFilter ? t('styles.emptyTitle') : t('styles.emptyDashed')}
             </Text>
-          </Touchable>
+          </View>
         </View>
       ) : (
         <FlatList
@@ -325,17 +397,20 @@ function Styles() {
           keyExtractor={item => item.id}
           numColumns={2}
           columnWrapperStyle={styles.gridRow}
-          contentContainerStyle={[styles.gridContent, { paddingBottom: insets.bottom + 32 }]}
+          contentContainerStyle={[styles.gridContent, { paddingBottom: bottomBarTotalHeight + 16 }]}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
             <OutfitCard outfit={item} onPress={() => openAction(item)} />
           )}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
         />
       )}
     </View>
   );
 
-  const renderCreatorTab = () => (
+  const renderRunwayTab = () => (
     <OutfitCreator
       closetItems={closetItems}
       closetLoading={closetStatus === 'loading'}
@@ -352,10 +427,10 @@ function Styles() {
     </View>
   );
 
-  const TABS: { key: Tab; label: string }[] = [
-    { key: 'outfits', label: t('styles.tabOutfits') },
-    { key: 'creator', label: t('styles.tabCreator') },
-    { key: 'essence', label: t('styles.tabEssence') },
+  const TABS: { key: Tab; label: string; Icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }> }[] = [
+    { key: 'looks', label: t('styles.tabLooks'), Icon: ColumnsIcon },
+    { key: 'essence', label: t('styles.tabEssence'), Icon: SparklesIcon },
+    { key: 'runway', label: t('styles.tabRunway'), Icon: CrownIcon },
   ];
 
   return (
@@ -364,49 +439,205 @@ function Styles() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={[styles.title, { color: s.headerTitle }]}>{t('styles.title')}</Text>
-        <Touchable
-          onPress={() => setActiveTab('creator')}
-          hitSlop={8}
-          borderRadius={10}
-          style={[styles.addBtn, { backgroundColor: s.tabActive }]}
-        >
-          <PlusCircleIcon size={16} color={s.tabActiveText} />
-          <Text style={[styles.addBtnText, { color: s.tabActiveText }]}>
-            {t('styles.createShort')}
-          </Text>
-        </Touchable>
-      </View>
-
-      {/* Tab bar */}
-      <View
-        style={[
-          styles.tabBar,
-          { backgroundColor: s.tabBackground, borderBottomColor: s.tabBorder },
-        ]}
-      >
-        {TABS.map(tab => (
-          <Touchable
-            key={tab.key}
-            onPress={() => setActiveTab(tab.key)}
-            borderRadius={8}
-            style={[styles.tabBtn, activeTab === tab.key && { backgroundColor: s.tabActive }]}
-          >
-            <Text
-              style={[
-                styles.tabBtnText,
-                { color: activeTab === tab.key ? s.tabActiveText : s.tabInactiveText },
-              ]}
-            >
-              {tab.label}
-            </Text>
-          </Touchable>
-        ))}
+        <Text style={[styles.headerSubtitle, { color: s.headerSubtitle }]}>
+          {t('styles.subtitle')}
+        </Text>
       </View>
 
       {/* Content */}
-      {activeTab === 'outfits' && renderOutfitsTab()}
-      {activeTab === 'creator' && renderCreatorTab()}
+      {activeTab === 'looks' && renderLooksTab()}
+      {activeTab === 'runway' && renderRunwayTab()}
       {activeTab === 'essence' && renderEssenceTab()}
+
+      {/* FAB */}
+      <Touchable
+        onPress={() => { setCreateStep(1); setShowCreate(true); }}
+        borderRadius={28}
+        style={[styles.fab, { backgroundColor: s.fabBackground, bottom: bottomBarTotalHeight + 16 }]}
+      >
+        <Text style={[styles.fabIcon, { color: s.fabIcon }]}>+</Text>
+      </Touchable>
+
+      {/* Creation sheet */}
+      {showCreate && (
+        <BottomSheet
+          onClose={() => { setShowCreate(false); setCreateStep(1); }}
+          backgroundColor={s.modalBackground}
+          backdropColor={s.modalBackdrop}
+        >
+          {/* Sheet header */}
+          <View style={[styles.sheetHeader, { borderBottomColor: s.modalBorder }]}>
+            {createStep === 2 && (
+              <Touchable
+                onPress={() => setCreateStep(1)}
+                hitSlop={8}
+                borderRadius={20}
+                style={styles.sheetBack}
+              >
+                <ArrowLeftIcon size={20} color={s.modalTitle} />
+              </Touchable>
+            )}
+            <Text style={[styles.sheetTitle, { color: s.modalTitle, flex: 1, textAlign: createStep === 1 ? 'center' : 'left' }]}>
+              {createStep === 1 ? t('styles.createTitle') : t('styles.createOutfits')}
+            </Text>
+          </View>
+
+          {/* Step 1 — 4 option grid */}
+          {createStep === 1 && (
+            <View style={styles.createGrid}>
+              {[
+                { label: t('styles.createOutfits'),  Icon: ShirtIcon,    color: '#6366F1', onPress: () => setCreateStep(2) },
+                { label: t('styles.createHaircuts'), Icon: ScissorsIcon, color: '#F97316', onPress: () => { setShowCreate(false); setShowHaircut(true); } },
+                { label: t('styles.createMakeup'),   Icon: SparklesIcon, color: '#EC4899', onPress: () => { setShowCreate(false); setShowMakeup(true); } },
+                { label: t('styles.createNails'),    Icon: HandIcon,     color: '#14B8A6', onPress: () => { setShowCreate(false); setShowNails(true); } },
+              ].map(opt => (
+                <Touchable
+                  key={opt.label}
+                  onPress={opt.onPress}
+                  borderRadius={24}
+                  style={[styles.createCard, { backgroundColor: s.outfitCardMosaicBackground, borderColor: s.modalBorder }]}
+                >
+                  <View style={[styles.createIconCircle, { backgroundColor: s.modalBackground }]}>
+                    <opt.Icon size={28} color={opt.color} />
+                  </View>
+                  <Text style={[styles.createCardLabel, { color: s.modalTitle }]}>{opt.label}</Text>
+                </Touchable>
+              ))}
+            </View>
+          )}
+
+          {/* Step 2 — outfit method */}
+          {createStep === 2 && (
+            <View style={styles.createMethods}>
+              <Text style={[styles.createMethodsHint, { color: s.modalSubtitle }]}>
+                {t('styles.createChooseMethod')}
+              </Text>
+              <Touchable
+                onPress={() => { setShowCreate(false); setCreateStep(1); setShowManualCreator(true); }}
+                borderRadius={16}
+                style={[styles.createMethod, { backgroundColor: s.outfitCardMosaicBackground, borderColor: s.modalBorder }]}
+              >
+                <View style={[styles.createMethodIcon, { backgroundColor: s.modalBackground }]}>
+                  <ShirtIcon size={24} color={s.modalTitle} />
+                </View>
+                <View style={styles.createMethodText}>
+                  <Text style={[styles.createMethodTitle, { color: s.modalTitle }]}>{t('styles.createManual')}</Text>
+                  <Text style={[styles.createMethodDesc, { color: s.modalSubtitle }]}>{t('styles.createManualDesc')}</Text>
+                </View>
+              </Touchable>
+              <Touchable
+                onPress={() => { setShowCreate(false); setCreateStep(1); setShowAICreator(true); }}
+                borderRadius={16}
+                style={[styles.createMethod, { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' }]}
+              >
+                <View style={[styles.createMethodIcon, { backgroundColor: s.modalBackground }]}>
+                  <SparklesIcon size={24} color="#4F46E5" />
+                </View>
+                <View style={styles.createMethodText}>
+                  <Text style={[styles.createMethodTitle, { color: '#312E81' }]}>{t('styles.createAI')}</Text>
+                  <Text style={[styles.createMethodDesc, { color: '#4338CA' }]}>{t('styles.createAIDesc')}</Text>
+                </View>
+              </Touchable>
+            </View>
+          )}
+        </BottomSheet>
+      )}
+
+      {/* Bottom tab bar */}
+      <View
+        style={[
+          styles.bottomBar,
+          {
+            backgroundColor: s.bottomBarBackground,
+            borderTopColor: s.bottomBarBorder,
+            height: bottomBarTotalHeight,
+            paddingBottom: insets.bottom,
+          },
+        ]}
+      >
+        {TABS.map(tab => {
+          const isActive = activeTab === tab.key;
+          const color = isActive ? s.bottomBarActive : s.bottomBarInactive;
+          return (
+            <Touchable
+              key={tab.key}
+              onPress={() => setActiveTab(tab.key)}
+              borderRadius={8}
+              style={styles.bottomTabItem}
+            >
+              <tab.Icon
+                size={22}
+                color={color}
+                strokeWidth={isActive ? 2.5 : 1.75}
+              />
+              <Text style={[styles.bottomTabLabel, { color }]}>
+                {tab.label}
+              </Text>
+            </Touchable>
+          );
+        })}
+      </View>
+
+      {/* Filter sheets */}
+      {filterSheet === 'stars' && (
+        <BottomSheet
+          onClose={() => setFilterSheet(null)}
+          backgroundColor={s.modalBackground}
+          backdropColor={s.modalBackdrop}
+        >
+          <View style={[styles.sheetHeader, { borderBottomColor: s.modalBorder }]}>
+            <Text style={[styles.sheetTitle, { color: s.modalTitle }]}>
+              {t('styles.filterStars')}
+            </Text>
+          </View>
+          {([null, 5, 4, 3, 2, 1] as (number | null)[]).map(star => {
+            const isSelected = starFilter === star;
+            return (
+              <Touchable
+                key={star ?? 'all'}
+                onPress={() => { setStarFilter(star); setFilterSheet(null); }}
+                borderRadius={0}
+                style={[styles.sheetOption, { borderBottomColor: s.modalBorder }]}
+              >
+                <Text style={[styles.sheetOptionText, { color: s.modalTitle }]}>
+                  {star != null ? `${star} ★` : t('styles.filterAll')}
+                </Text>
+                {isSelected && <CheckIcon size={18} color={s.buttonPrimary} />}
+              </Touchable>
+            );
+          })}
+        </BottomSheet>
+      )}
+
+      {filterSheet === 'tags' && (
+        <BottomSheet
+          onClose={() => setFilterSheet(null)}
+          backgroundColor={s.modalBackground}
+          backdropColor={s.modalBackdrop}
+        >
+          <View style={[styles.sheetHeader, { borderBottomColor: s.modalBorder }]}>
+            <Text style={[styles.sheetTitle, { color: s.modalTitle }]}>
+              {t('styles.filterTags')}
+            </Text>
+          </View>
+          {([null, ...allTags] as (string | null)[]).map(tag => {
+            const isSelected = tagFilter === tag;
+            return (
+              <Touchable
+                key={tag ?? 'all'}
+                onPress={() => { setTagFilter(tag); setFilterSheet(null); }}
+                borderRadius={0}
+                style={[styles.sheetOption, { borderBottomColor: s.modalBorder }]}
+              >
+                <Text style={[styles.sheetOptionText, { color: s.modalTitle }]}>
+                  {tag ?? t('styles.filterAll')}
+                </Text>
+                {isSelected && <CheckIcon size={18} color={s.buttonPrimary} />}
+              </Touchable>
+            );
+          })}
+        </BottomSheet>
+      )}
 
       {/* Sheets */}
       {activeSheet === 'action' && selectedOutfit && (
@@ -414,7 +645,7 @@ function Styles() {
           outfit={selectedOutfit}
           onClose={closeSheet}
           onSchedule={() => { setActiveSheet('schedule'); }}
-          onShare={() => { closeSheet(); }}
+          onShare={handleShare}
           onTags={() => { setActiveSheet('tags'); }}
           onRename={() => { setActiveSheet('rename'); }}
           onRate={() => { setActiveSheet('rate'); }}
@@ -458,134 +689,334 @@ function Styles() {
           onSchedule={handleSchedule}
         />
       )}
+
+      <HaircutCreator
+        visible={showHaircut}
+        profile={profile}
+        onClose={() => setShowHaircut(false)}
+      />
+      <MakeupCreator
+        visible={showMakeup}
+        profile={profile}
+        outfits={outfits}
+        onClose={() => setShowMakeup(false)}
+      />
+      <NailCreator
+        visible={showNails}
+        profile={profile}
+        onClose={() => setShowNails(false)}
+      />
+      <ManualOutfitCreator
+        visible={showManualCreator}
+        closetItems={closetItems}
+        closetLoading={closetStatus === 'loading'}
+        saving={creatorSaving}
+        onClose={() => setShowManualCreator(false)}
+        onSave={handleManualSave}
+      />
+      <AIOutfitCreator
+        visible={showAICreator}
+        closetItems={closetItems}
+        closetLoading={closetStatus === 'loading'}
+        saving={creatorSaving}
+        onClose={() => setShowAICreator(false)}
+        onSave={handleAISave}
+      />
     </View>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const CARD_GAP = 10;
-
 const styles = StyleSheet.create({
   root: { flex: 1 },
 
   // Header
   header: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 10,
+    gap: 4,
+  },
+  headerTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
     gap: 12,
   },
-  title: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5, flex: 1 },
+  title: { fontSize: 32, fontWeight: '800', letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 14, lineHeight: 20 },
   addBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-  },
-  addBtnText: { fontSize: 12, fontWeight: '700' },
-
-  // Tab bar
-  tabBar: {
-    flexDirection: 'row',
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    gap: 6,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  tabBtn: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 8 },
-  tabBtnText: { fontSize: 11, fontWeight: '700' },
-  tabContent: { flex: 1 },
-
-  // Filters — single compact row
-  filtersRow: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    gap: 7,
-    alignItems: 'center',
-  },
-  filterChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  filterChipStar: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  filterChipText: { fontSize: 12, fontWeight: '600' },
-  filterSep: { width: 1, height: 16, borderRadius: 1, opacity: 0.4 },
-
-  // Outfit grid
-  gridContent: { paddingHorizontal: CARD_GAP, paddingBottom: 32 },
-  gridRow: { gap: CARD_GAP, marginBottom: CARD_GAP },
-
-  // Portrait card
-  card: { flex: 1, borderRadius: 14, overflow: 'hidden' },
-  cardImage: {
-    aspectRatio: 3 / 4,
-    width: '100%',
-    borderRadius: 14,
-    overflow: 'hidden',
-  },
-  cardImagePlaceholder: {
-    ...StyleSheet.absoluteFillObject,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  mosaic: { ...StyleSheet.absoluteFillObject, flexDirection: 'row', flexWrap: 'wrap' },
-  mosaicCell: { width: '50%', height: '50%' },
 
-  // Overlay elements on the card
-  sourceBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
+  // Tab content
+  tabContent: { flex: 1 },
+
+  // Filter pills
+  filterRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 10,
   },
-  sourceBadgeText: { fontSize: 8, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+  filterPill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 24,
+    borderWidth: 1,
+  },
+  filterPillText: { fontSize: 14, fontWeight: '600' },
+
+  // Outfit grid
+  gridContent: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 32 },
+  gridRow: { gap: 12, marginBottom: 12 },
+
+  // Card
+  card: {
+    flex: 1,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  cardMedia: {
+    aspectRatio: 1,
+    width: '100%',
+    overflow: 'hidden',
+  },
+  mosaic: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: 'column',
+    gap: 1,
+  },
+  mosaicRow: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 1,
+  },
+  mosaicCell: {
+    flex: 1,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mosaicLabel: {
+    fontSize: 8,
+    fontWeight: '600',
+    textAlign: 'center',
+    padding: 4,
+  },
   tagsOverlay: {
     position: 'absolute',
     top: 8,
     left: 8,
-    gap: 4,
+    gap: 3,
   },
   tagChip: {
-    backgroundColor: 'rgba(255,255,255,0.88)',
+    backgroundColor: 'rgba(255,255,255,0.92)',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 6,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(99,102,241,0.2)',
   },
-  tagChipText: { fontSize: 8, fontWeight: '700', color: '#1B2A4A' },
-  overlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(0,0,0,0.48)',
-    paddingHorizontal: 10,
-    paddingTop: 24,
-    paddingBottom: 10,
+  tagChipText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#6366F1',
   },
-  overlayName: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  overlayStars: { flexDirection: 'row', gap: 2, marginTop: 3 },
+  cardInfo: {
+    padding: 10,
+  },
+  cardRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+  },
+  cardNameWrap: {
+    flex: 1,
+    minWidth: 0,
+    gap: 3,
+  },
+  cardName: { fontSize: 13, fontWeight: '700' },
+  cardRatingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  cardRatingText: { fontSize: 11, fontWeight: '700' },
+  sourceBadge: {
+    paddingHorizontal: 5,
+    paddingVertical: 3,
+    borderRadius: 4,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+  },
+  sourceBadgeText: { fontSize: 8, fontWeight: '800', letterSpacing: 0.3 },
 
   // Empty / loading
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, gap: 12 },
   emptyText: { fontSize: 17, fontWeight: '700', textAlign: 'center' },
-  emptySub: { fontSize: 13, textAlign: 'center' },
-  emptyBtn: {
+  emptySub: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  dashedContainer: {
+    flex: 1,
+    padding: 16,
+  },
+  dashedBox: {
+    flex: 1,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    paddingHorizontal: 32,
+  },
+
+  // FAB
+  fab: {
+    position: 'absolute',
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  fabIcon: {
+    fontSize: 28,
+    fontWeight: '300',
+    lineHeight: 32,
+  },
+
+  // Creation sheet
+  sheetBack: {
+    marginRight: 8,
+  },
+  createGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 16,
+    gap: 12,
+  },
+  createCard: {
+    width: '47%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 24,
+    paddingHorizontal: 12,
+    borderRadius: 24,
+    borderWidth: 1,
+  },
+  createIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  createCardLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  createMethods: {
+    padding: 16,
+    gap: 12,
+  },
+  createMethodsHint: {
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  createMethod: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 14,
-    marginTop: 8,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 14,
   },
-  emptyBtnText: { fontSize: 14, fontWeight: '700' },
+  createMethodIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  createMethodText: { flex: 1 },
+  createMethodTitle: { fontSize: 15, fontWeight: '700' },
+  createMethodDesc: { fontSize: 12, marginTop: 2, lineHeight: 17 },
+
+  // Filter sheets
+  sheetHeader: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  sheetTitle: { fontSize: 16, fontWeight: '700' },
+  sheetOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: 16,
+    paddingRight: 20,
+    paddingVertical: 16,
+    gap: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  sheetOptionStars: { flexDirection: 'row', gap: 3 },
+  sheetOptionText: { flex: 1, fontSize: 15, fontWeight: '500' },
+
+  // Bottom tab bar
+  bottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  bottomTabItem: {
+    flex: 1,
+    height: BOTTOM_TAB_HEIGHT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+  },
+  bottomTabLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
 });
 
 export default Styles;

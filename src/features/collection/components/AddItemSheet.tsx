@@ -15,6 +15,7 @@ import useCollectionTheme from '@hooks/useCollectionTheme';
 import useCameraPermission from '@hooks/useCameraPermission';
 import { logError } from '@utilities/crashlytics';
 import { CameraIcon, ImageIcon, GemIcon, CheckIcon } from '@assets/icons';
+import { getImageSource } from '@api/client';
 import { identifyItems, extractItem } from '../api/aiApi';
 import { ClothingCategory, ScannedItem } from '../types';
 
@@ -315,7 +316,7 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
             >
               {item.imageData ? (
                 <Image
-                  source={{ uri: item.imageData }}
+                  source={getImageSource(item.imageData)}
                   style={styles.itemThumb}
                   resizeMode="cover"
                 />

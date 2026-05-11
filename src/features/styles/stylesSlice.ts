@@ -6,7 +6,7 @@ import { Outfit } from './types';
 import {
   fetchOutfits,
   createOutfit,
-  updateOutfit,
+  renameOutfit,
   deleteOutfit,
 } from './api/stylesApi';
 
@@ -41,6 +41,10 @@ export const addOutfit = createAsyncThunk(
   async (params: { name: string; itemIds: string[] }) => createOutfit(params),
 );
 
+// TODO(backend): `tags` and `rating` are stored locally only — the zena backend
+// has no columns for them in the `outfits` table. Until that's added and a
+// PATCH /outfits/:id endpoint is implemented, these fields live in Redux persist
+// (MMKV) and are merged back in on every server refresh (see loadOutfits.fulfilled).
 export const editOutfit = createAsyncThunk(
   'styles/editOutfit',
   async ({
@@ -52,7 +56,9 @@ export const editOutfit = createAsyncThunk(
     tags?: string[];
     rating?: number | null;
   }) => {
-    await updateOutfit(id, params);
+    if (params.name != null) {
+      await renameOutfit(id, params.name);
+    }
     return { id, ...params };
   },
 );
@@ -78,7 +84,13 @@ const stylesSlice = createSlice({
       })
       .addCase(loadOutfits.fulfilled, (state, action: PayloadAction<Outfit[]>) => {
         state.outfitsStatus = 'succeeded';
-        state.outfits = action.payload;
+        // tags and rating are local-only — preserve them across server refreshes
+        const local = new Map(state.outfits.map(o => [o.id, { tags: o.tags, rating: o.rating }]));
+        state.outfits = action.payload.map(o => ({
+          ...o,
+          tags: local.get(o.id)?.tags ?? o.tags,
+          rating: local.get(o.id)?.rating ?? o.rating,
+        }));
       })
       .addCase(loadOutfits.rejected, (state, action) => {
         state.outfitsStatus = 'failed';

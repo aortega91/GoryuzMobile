@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPatch, apiDelete } from '@api/client';
+import { apiGet, apiPost, apiPut, apiDelete } from '@api/client';
 import { Outfit } from '../types';
 
 function normalise(raw: Partial<Outfit> & { id: string; name: string }): Outfit {
@@ -23,17 +23,27 @@ export async function createOutfit(params: {
   name: string;
   itemIds: string[];
 }): Promise<Outfit> {
-  const raw = await apiPost<Partial<Outfit> & { id: string; name: string }>('/outfits', params);
-  return normalise(raw);
+  const { id } = await apiPost<{ id: string }>('/outfits', {
+    name: params.name,
+    items: params.itemIds.map(itemId => ({ id: itemId })),
+  });
+  const all = await fetchOutfits();
+  const created = all.find(o => o.id === id);
+  if (!created) throw new Error('Created outfit not found after fetch');
+  return created;
 }
 
-export async function updateOutfit(
-  id: string,
-  params: { name?: string; tags?: string[]; rating?: number | null },
-): Promise<void> {
-  await apiPatch(`/outfits/${id}`, params);
+export async function renameOutfit(id: string, name: string): Promise<void> {
+  await apiPut(`/outfits/${id}`, { name });
 }
 
 export async function deleteOutfit(id: string): Promise<void> {
   await apiDelete(`/outfits/${id}`);
+}
+
+export async function suggestOutfit(params: {
+  prompt: string;
+  closetItemIds: string[];
+}): Promise<{ itemIds: string[]; name: string }> {
+  return apiPost<{ itemIds: string[]; name: string }>('/outfits/suggest', params);
 }

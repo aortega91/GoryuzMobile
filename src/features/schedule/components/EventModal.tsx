@@ -5,6 +5,7 @@ import useScheduleTheme from '@hooks/useScheduleTheme';
 import BottomSheet from '@components/BottomSheet';
 import Touchable from '@components/Touchable';
 import { TrashIcon, CalendarIcon, RefreshCwIcon } from '@assets/icons';
+import { getImageSource } from '@api/client';
 import { CalendarEvent } from '../types';
 import DatePickerModal from './DatePickerModal';
 
@@ -58,7 +59,7 @@ function EventModal({ event, onClose, onRemove, onMove, onChangeOutfit }: Props)
                 <View key={item.id} style={styles.itemCard}>
                   {item.imageData ? (
                     <Image
-                      source={{ uri: item.imageData }}
+                      source={getImageSource(item.imageData)}
                       style={styles.itemImage}
                       resizeMode="cover"
                     />

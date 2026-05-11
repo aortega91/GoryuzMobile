@@ -5,6 +5,7 @@ import useScheduleTheme from '@hooks/useScheduleTheme';
 import BottomSheet from '@components/BottomSheet';
 import Touchable from '@components/Touchable';
 import { ShirtIcon } from '@assets/icons';
+import { getImageSource } from '@api/client';
 import { ScheduleOutfit } from '../types';
 
 interface Props {
@@ -43,14 +44,14 @@ function OutfitPickerSheet({ outfits, onSelect, onClose }: Props) {
               >
                 <View style={styles.imageContainer}>
                   {outfit.imageData ? (
-                    <Image source={{ uri: outfit.imageData }} style={styles.image} resizeMode="cover" />
+                    <Image source={getImageSource(outfit.imageData)} style={styles.image} resizeMode="cover" />
                   ) : outfit.items.length > 0 ? (
                     <View style={styles.grid2x2}>
                       {[0, 1, 2, 3].map(i => (
                         <View key={i} style={styles.gridCell}>
                           {outfit.items[i]?.imageData ? (
                             <Image
-                              source={{ uri: outfit.items[i].imageData! }}
+                              source={getImageSource(outfit.items[i].imageData!)}
                               style={styles.gridImage}
                               resizeMode="cover"
                             />

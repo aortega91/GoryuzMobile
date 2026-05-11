@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import BottomSheet from '@components/BottomSheet';
 import Touchable from '@components/Touchable';
 import useStylesTheme from '@hooks/useStylesTheme';
+import { getImageSource } from '@api/client';
 import { CalendarIcon, ShirtIcon } from '@assets/icons';
 import DatePickerModal from '@features/schedule/components/DatePickerModal';
 import { Outfit } from '../types';
@@ -59,7 +60,7 @@ function ScheduleOutfitSheet({
             <View style={styles.previewThumb}>
               {previewImage ? (
                 <Image
-                  source={{ uri: previewImage }}
+                  source={getImageSource(previewImage)}
                   style={styles.previewImage}
                   resizeMode="cover"
                 />
