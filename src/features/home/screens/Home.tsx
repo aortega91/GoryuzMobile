@@ -24,6 +24,7 @@ import Collection from '@features/collection/screens/Collection';
 import Styles from '@features/styles/screens/Styles';
 import Schedule from '@features/schedule/screens/Schedule';
 import Profile from '@features/profile/screens/Profile';
+import Discover from '@features/discover/screens/Discover';
 import { loadProfile } from '../profileSlice';
 import { MOCK_FEED_POSTS } from '../mockFeedData';
 import { ActiveModule } from '../types';
@@ -257,7 +258,7 @@ function Home() {
           {activeModule === 'styles' && <Styles />}
           {activeModule === 'schedule' && <Schedule />}
           {activeModule === 'profile' && <Profile />}
-          {activeModule === 'discover' && renderComingSoon()}
+          {activeModule === 'discover' && <Discover />}
           {activeModule === 'second_life' && renderComingSoon()}
           {activeModule === 'community' && renderComingSoon()}
         </View>

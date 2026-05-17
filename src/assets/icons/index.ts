@@ -50,3 +50,6 @@ export { default as ScissorsIcon } from './ScissorsIcon';
 export { default as HandIcon } from './HandIcon';
 export { default as BrainIcon } from './BrainIcon';
 export { default as TargetIcon } from './TargetIcon';
+export { default as UploadCloudIcon } from './UploadCloudIcon';
+export { default as ExternalLinkIcon } from './ExternalLinkIcon';
+export { default as ZapIcon } from './ZapIcon';
