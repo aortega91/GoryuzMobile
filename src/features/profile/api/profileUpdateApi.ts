@@ -10,6 +10,11 @@ export interface UpdateProfilePayload {
   currency?: string;
   avatarUrl?: string;
   outfitRepetitionDays?: number;
+  stylePrompt?: string;
+  stylePromptImage?: string;
+  avatarDescription?: string;
+  avatarImage?: string;
+  useAdvancedModel?: boolean;
 }
 
 export function updateProfile(payload: UpdateProfilePayload): Promise<UserProfile> {

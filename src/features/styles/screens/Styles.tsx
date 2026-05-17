@@ -1,12 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Image,
   RefreshControl,
+  ScrollView,
   Share,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +19,7 @@ import { getImageSource } from '@api/client';
 import Touchable from '@components/Touchable';
 import BottomSheet from '@components/BottomSheet';
 import useStylesTheme from '@hooks/useStylesTheme';
+import useCameraPermission from '@hooks/useCameraPermission';
 import {
   SparklesIcon,
   StarIcon,
@@ -28,10 +31,20 @@ import {
   ScissorsIcon,
   HandIcon,
   ArrowLeftIcon,
+  BrainIcon,
+  TargetIcon,
+  UserIcon,
+  ImageIcon,
+  AlertCircleIcon,
+  GemIcon,
 } from '@assets/icons';
+import { updateProfile } from '@features/profile/api/profileUpdateApi';
+import { updateProfileLocally, loadProfile } from '@features/home/profileSlice';
+import { logError } from '@utilities/crashlytics';
 import { AppDispatch, RootState } from '@utilities/store';
 import { addCalendarEvent } from '@features/schedule/api/calendarApi';
 import { loadCollection } from '@features/collection/collectionSlice';
+import { analyzeStyle, generateAvatarImage } from '../api/stylesGenerateApi';
 import HaircutCreator from '../components/HaircutCreator';
 import MakeupCreator from '../components/MakeupCreator';
 import NailCreator from '../components/NailCreator';
@@ -419,13 +432,495 @@ function Styles() {
     />
   );
 
-  const renderEssenceTab = () => (
-    <View style={styles.center}>
-      <SparklesIcon size={52} color={s.emptyIcon} />
-      <Text style={[styles.emptyText, { color: s.emptyText }]}>{t('styles.essenceTitle')}</Text>
-      <Text style={[styles.emptySub, { color: s.emptySubtitle }]}>{t('styles.essenceSubtitle')}</Text>
-    </View>
-  );
+  // ─── Essence tab state ────────────────────────────────────────────────────────
+
+  const [stylePrompt, setStylePrompt] = useState(profile?.stylePrompt ?? '');
+  const [stylePromptImage, setStylePromptImage] = useState(profile?.stylePromptImage ?? '');
+  const [avatarDescription, setAvatarDescription] = useState(profile?.avatarDescription ?? '');
+  const [avatarRefImage, setAvatarRefImage] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const isFirstRender = useRef(true);
+
+  const { openGallery } = useCameraPermission();
+
+  // Sync local state if profile loads/changes after mount
+  useEffect(() => {
+    if (profile && isFirstRender.current) {
+      setStylePrompt(profile.stylePrompt ?? '');
+      setStylePromptImage(profile.stylePromptImage ?? '');
+      setAvatarDescription(profile.avatarDescription ?? '');
+    }
+  }, [profile]);
+
+  // Auto-save style fields with 1.5s debounce
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const updated = await updateProfile({
+          stylePrompt,
+          stylePromptImage: stylePromptImage || undefined,
+          avatarDescription,
+        });
+        dispatch(updateProfileLocally(updated));
+      } catch (err) {
+        logError(err instanceof Error ? err : new Error(String(err)), 'essence/autoSave');
+      }
+    }, 1500);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stylePrompt, stylePromptImage, avatarDescription]);
+
+  const handlePickStyleImage = async () => {
+    const result = await openGallery();
+    if (result.status === 'success') {
+      const asset = result.response.assets?.[0];
+      if (asset?.base64 && asset?.type) {
+        setStylePromptImage(`data:${asset.type};base64,${asset.base64}`);
+      }
+    }
+  };
+
+  const handlePickAvatarRefImage = async () => {
+    const result = await openGallery();
+    if (result.status === 'success') {
+      const asset = result.response.assets?.[0];
+      if (asset?.base64 && asset?.type) {
+        setAvatarRefImage(`data:${asset.type};base64,${asset.base64}`);
+      }
+    }
+  };
+
+  const handleAnalyze = async () => {
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+    try {
+      const { summary } = await analyzeStyle({
+        closet: closetItems,
+        savedOutfits: outfits,
+        stylePrompt,
+        gender: profile?.gender ?? null,
+      });
+      dispatch(updateProfileLocally({ styleSummary: summary }));
+      dispatch(loadProfile());
+    } catch (err) {
+      logError(err instanceof Error ? err : new Error(String(err)), 'essence/analyze');
+      setAnalysisError(t('styles.essenceAnalysisError'));
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleGenerateAvatar = async () => {
+    setIsGeneratingAvatar(true);
+    setAvatarError(null);
+    try {
+      const mimeType = avatarRefImage?.match(/data:(.*);base64,/)?.[1] ?? undefined;
+      const base64Ref = avatarRefImage ? avatarRefImage.split(',')[1] : undefined;
+      const result = await generateAvatarImage({
+        description: avatarDescription,
+        referenceImageBase64: base64Ref,
+        mimeType,
+      });
+      const newAvatarUrl = result.avatarUrl || result.avatarImage;
+      dispatch(updateProfileLocally({ avatarImage: newAvatarUrl, avatarDescription }));
+      dispatch(loadProfile());
+    } catch (err) {
+      logError(err instanceof Error ? err : new Error(String(err)), 'essence/generateAvatar');
+      setAvatarError(t('styles.essenceAvatarError'));
+    } finally {
+      setIsGeneratingAvatar(false);
+    }
+  };
+
+  const renderAnalysisResult = (summary: string) => {
+    const cleanText = summary.replace(/#/g, '').replace(/\*\*/g, '');
+    const sections = cleanText.split(/\d+\.\s/).filter(sec => sec.trim().length > 0);
+
+    const parseSection = (section: string) => {
+      const firstColon = section.indexOf(':');
+      if (firstColon !== -1) {
+        return {
+          title: section.substring(0, firstColon).trim(),
+          content: section.substring(firstColon + 1).trim(),
+        };
+      }
+      return { title: '', content: section.trim() };
+    };
+
+    let styleName = '';
+    let styleDescription = sections[0] ?? '';
+    const section1 = sections[0] ?? '';
+    if (section1.includes(':')) {
+      const parts = section1.split(':');
+      const content = parts.slice(1).join(':').trim();
+      const firstDot = content.indexOf('.');
+      if (firstDot !== -1 && firstDot < 50) {
+        styleName = content.substring(0, firstDot).trim();
+        styleDescription = content.substring(firstDot + 1).trim();
+      } else {
+        styleName = content;
+        styleDescription = '';
+      }
+    }
+
+    const actionKws = ['vacía', 'no tienes', 'falta', 'ningún', 'carga', 'guarda', 'empty', "don't have", 'missing', 'upload', 'save'];
+    const cards = [
+      { ...parseSection(sections[1] ?? ''), bgKey: 'Sky' as const },
+      { ...parseSection(sections[2] ?? ''), bgKey: 'Purple' as const },
+      { ...parseSection(sections[3] ?? ''), bgKey: 'Emerald' as const },
+    ].map(card => {
+      const isAlert = actionKws.some(kw => card.content.toLowerCase().includes(kw));
+      return { ...card, isAlert };
+    });
+
+    return (
+      <View style={essenceStyles.analysisResult}>
+        {/* Hero */}
+        <View style={[essenceStyles.heroCard, { backgroundColor: s.essenceHeroBg, borderColor: s.essenceHeroBorder }]}>
+          <CrownIcon size={48} color={s.essenceIconIndigo} strokeWidth={1.5} />
+          <Text style={[essenceStyles.heroTitle, { color: s.essenceHeroTitle }]}>
+            {styleName || t('styles.essenceTitle')}
+          </Text>
+          {styleDescription ? (
+            <Text style={[essenceStyles.heroSubtitle, { color: s.essenceHeroSubtitle }]}>
+              {styleDescription}
+            </Text>
+          ) : null}
+        </View>
+
+        {/* Cards */}
+        {cards.map((card, idx) => {
+          const bgColor = card.isAlert
+            ? s.essenceCardAlertBg
+            : idx === 0 ? s.essenceCardSkyBg
+            : idx === 1 ? s.essenceCardPurpleBg
+            : s.essenceCardEmeraldBg;
+          const borderColor = card.isAlert
+            ? s.essenceCardAlertBorder
+            : idx === 0 ? s.essenceCardSkyBorder
+            : idx === 1 ? s.essenceCardPurpleBorder
+            : s.essenceCardEmeraldBorder;
+          const titleColor = card.isAlert
+            ? s.essenceCardAlertTitle
+            : idx === 0 ? s.essenceCardSkyTitle
+            : idx === 1 ? s.essenceCardPurpleTitle
+            : s.essenceCardEmeraldTitle;
+
+          return (
+            // eslint-disable-next-line react/no-array-index-key
+            <View key={idx} style={[essenceStyles.analysisCard, { backgroundColor: bgColor, borderColor }]}>
+              {card.isAlert ? (
+                <AlertCircleIcon size={20} color={s.essenceCardAlertTitle} />
+              ) : (
+                <SparklesIcon size={20} color={titleColor} strokeWidth={1.5} />
+              )}
+              <View style={essenceStyles.analysisCardText}>
+                {card.title ? (
+                  <Text style={[essenceStyles.analysisCardTitle, { color: titleColor }]}>
+                    {card.title}
+                  </Text>
+                ) : null}
+                <Text style={[essenceStyles.analysisCardBody, { color: s.essenceCardBody }]}>
+                  {card.content}
+                </Text>
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    );
+  };
+
+  const renderEssenceTab = () => {
+    const isVip = profile?.plan === 'vip';
+    const avatarPreview = profile?.avatarImage ?? null;
+
+    return (
+      <ScrollView
+        style={styles.tabContent}
+        contentContainerStyle={[essenceStyles.scrollContent, { paddingBottom: bottomBarTotalHeight + 32 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── 1. Personal Vision ───────────────────────────────────── */}
+        <View style={[essenceStyles.section, { backgroundColor: s.essenceSectionBackground, borderColor: s.essenceSectionBorder }]}>
+          <View style={essenceStyles.sectionHeader}>
+            <View style={[essenceStyles.sectionIconBg, { backgroundColor: s.essenceInputBackground }]}>
+              <TargetIcon size={20} color={s.essenceIconIndigo} />
+            </View>
+            <View style={essenceStyles.sectionHeaderText}>
+              <Text style={[essenceStyles.sectionTitle, { color: s.modalTitle }]}>
+                {t('styles.essencePersonalVision')}
+              </Text>
+              <Text style={[essenceStyles.sectionDesc, { color: s.modalSubtitle }]}>
+                {t('styles.essencePersonalVisionDesc')}
+              </Text>
+            </View>
+          </View>
+
+          <TextInput
+            value={stylePrompt}
+            onChangeText={setStylePrompt}
+            multiline
+            numberOfLines={5}
+            placeholder={t('styles.essenceStylePlaceholder')}
+            placeholderTextColor={s.essenceInputPlaceholder}
+            style={[
+              essenceStyles.textarea,
+              {
+                backgroundColor: s.essenceInputBackground,
+                borderColor: s.essenceInputBorder,
+                color: s.essenceInputText,
+              },
+            ]}
+          />
+
+          {/* Reference image */}
+          {stylePromptImage ? (
+            <View style={essenceStyles.refImageContainer}>
+              <Image
+                source={{ uri: stylePromptImage }}
+                style={essenceStyles.refImage}
+                resizeMode="cover"
+              />
+              <Touchable
+                onPress={() => setStylePromptImage('')}
+                borderRadius={20}
+                style={[essenceStyles.removeImageBtn, { backgroundColor: s.modalBackground }]}
+              >
+                <Text style={[essenceStyles.removeImageText, { color: s.actionDangerText }]}>
+                  {t('styles.essenceRemoveImage')}
+                </Text>
+              </Touchable>
+            </View>
+          ) : (
+            <Touchable
+              onPress={handlePickStyleImage}
+              borderRadius={12}
+              style={[essenceStyles.uploadBtn, { borderColor: s.essenceInputBorder, backgroundColor: s.essenceInputBackground }]}
+            >
+              <ImageIcon size={18} color={s.modalSubtitle} />
+              <Text style={[essenceStyles.uploadBtnText, { color: s.modalSubtitle }]}>
+                {t('styles.essenceUploadReference')}
+              </Text>
+            </Touchable>
+          )}
+        </View>
+
+        {/* ── 2. AI Analysis ───────────────────────────────────────── */}
+        <View style={[essenceStyles.section, { backgroundColor: s.essenceSectionBackground, borderColor: s.essenceSectionBorder }]}>
+          <View style={essenceStyles.sectionHeaderRow}>
+            <View style={essenceStyles.sectionHeaderLeft}>
+              <View style={[essenceStyles.sectionIconBg, { backgroundColor: s.essenceInputBackground }]}>
+                <BrainIcon size={20} color={s.essenceIconPurple} />
+              </View>
+              <View style={essenceStyles.sectionHeaderText}>
+                <Text style={[essenceStyles.sectionTitle, { color: s.modalTitle }]}>
+                  {t('styles.essenceAnalysis')}
+                </Text>
+                <Text style={[essenceStyles.sectionDesc, { color: s.modalSubtitle }]}>
+                  {t('styles.essenceAnalysisDesc')}
+                </Text>
+              </View>
+            </View>
+
+            <View style={essenceStyles.analyzeRow}>
+              <View style={[essenceStyles.gemsBadge, { backgroundColor: s.essenceGemsBadgeBackground, borderColor: s.essenceGemsBadgeBorder }]}>
+                <GemIcon size={13} color={s.essenceGemsBadgeText} />
+                <Text style={[essenceStyles.gemsBadgeText, { color: s.essenceGemsBadgeText }]}>4</Text>
+              </View>
+              <Touchable
+                onPress={handleAnalyze}
+                disabled={isAnalyzing}
+                borderRadius={24}
+                style={[
+                  essenceStyles.analyzeBtn,
+                  { backgroundColor: isAnalyzing ? '#6EE7B7' : '#10B981' },
+                  isAnalyzing && essenceStyles.analyzeBtnDisabled,
+                ]}
+              >
+                {isAnalyzing ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <SparklesIcon size={16} color="#fff" />
+                )}
+                <Text style={essenceStyles.analyzeBtnText}>
+                  {isAnalyzing ? t('styles.essenceAnalyzing') : t('styles.essenceAnalyze')}
+                </Text>
+              </Touchable>
+            </View>
+          </View>
+
+          {/* Analysis result or empty state */}
+          {analysisError ? (
+            <View style={[essenceStyles.emptyAnalysis, { backgroundColor: s.essenceAnalysisBackground, borderColor: s.essenceAnalysisBorder }]}>
+              <AlertCircleIcon size={28} color={s.actionDangerText} />
+              <Text style={[essenceStyles.emptyAnalysisText, { color: s.actionDangerText }]}>
+                {analysisError}
+              </Text>
+            </View>
+          ) : profile?.styleSummary ? (
+            renderAnalysisResult(profile.styleSummary)
+          ) : (
+            <View style={[essenceStyles.emptyAnalysis, { backgroundColor: s.essenceAnalysisBackground, borderColor: s.essenceAnalysisBorder }]}>
+              <SparklesIcon size={28} color={s.emptyIcon} strokeWidth={1.5} />
+              <Text style={[essenceStyles.emptyAnalysisTitle, { color: s.emptyText }]}>
+                {t('styles.essenceWaiting')}
+              </Text>
+              <Text style={[essenceStyles.emptyAnalysisText, { color: s.emptySubtitle }]}>
+                {t('styles.essenceWaitingDesc')}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* ── 3. Avatar (VIP) ──────────────────────────────────────── */}
+        <View style={[essenceStyles.section, { backgroundColor: s.essenceSectionBackground, borderColor: s.essenceSectionBorder }]}>
+          <View style={essenceStyles.sectionHeader}>
+            <View style={[essenceStyles.sectionIconBg, { backgroundColor: '#ECFDF5' }]}>
+              <UserIcon size={20} color={s.essenceIconEmerald} />
+            </View>
+            <View style={essenceStyles.sectionHeaderText}>
+              <Text style={[essenceStyles.sectionTitle, { color: s.modalTitle }]}>
+                {t('styles.essenceAvatar')}
+              </Text>
+              <Text style={[essenceStyles.sectionDesc, { color: s.modalSubtitle }]}>
+                {t('styles.essenceAvatarDesc')}
+              </Text>
+            </View>
+          </View>
+
+          <View style={essenceStyles.avatarLayout}>
+            {/* Avatar preview */}
+            <View style={[essenceStyles.avatarPreview, { borderColor: s.essenceInputBorder, backgroundColor: s.essenceInputBackground }]}>
+              {avatarPreview ? (
+                <>
+                  <Image source={getImageSource(avatarPreview)} style={essenceStyles.avatarImg} resizeMode="contain" />
+                  <View style={essenceStyles.avatarActiveBadge}>
+                    <Text style={essenceStyles.avatarActiveBadgeText}>{t('styles.essenceAvatarActive')}</Text>
+                  </View>
+                </>
+              ) : (
+                <View style={essenceStyles.avatarEmpty}>
+                  <UserIcon size={40} color={s.emptyIcon} strokeWidth={1.5} />
+                  <Text style={[essenceStyles.avatarEmptyText, { color: s.emptySubtitle }]}>
+                    {t('styles.essenceAvatarNone')}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Inputs */}
+            <View style={essenceStyles.avatarInputs}>
+              <Text style={[essenceStyles.inputLabel, { color: s.modalLabel }]}>
+                {t('styles.essenceAvatarDescLabel').toUpperCase()}
+              </Text>
+              <TextInput
+                value={avatarDescription}
+                onChangeText={setAvatarDescription}
+                multiline
+                numberOfLines={4}
+                placeholder={t('styles.essenceAvatarDescPlaceholder')}
+                placeholderTextColor={s.essenceInputPlaceholder}
+                editable={isVip}
+                style={[
+                  essenceStyles.textarea,
+                  {
+                    backgroundColor: s.essenceInputBackground,
+                    borderColor: s.essenceInputBorder,
+                    color: s.essenceInputText,
+                    opacity: isVip ? 1 : 0.5,
+                  },
+                ]}
+              />
+
+              <Text style={[essenceStyles.inputLabel, { color: s.modalLabel, marginTop: 12 }]}>
+                {t('styles.essenceAvatarRefLabel').toUpperCase()}
+              </Text>
+              {avatarRefImage ? (
+                <View style={essenceStyles.refImageContainer}>
+                  <Image source={{ uri: avatarRefImage }} style={essenceStyles.refImageSmall} resizeMode="cover" />
+                  <Touchable
+                    onPress={() => setAvatarRefImage(null)}
+                    borderRadius={20}
+                    style={[essenceStyles.removeImageBtn, { backgroundColor: s.modalBackground }]}
+                  >
+                    <Text style={[essenceStyles.removeImageText, { color: s.actionDangerText }]}>
+                      {t('styles.essenceRemoveImage')}
+                    </Text>
+                  </Touchable>
+                </View>
+              ) : (
+                <Touchable
+                  onPress={handlePickAvatarRefImage}
+                  disabled={!isVip}
+                  borderRadius={12}
+                  style={[
+                    essenceStyles.uploadBtn,
+                    { borderColor: s.essenceInputBorder, backgroundColor: s.essenceInputBackground, opacity: isVip ? 1 : 0.5 },
+                  ]}
+                >
+                  <ImageIcon size={16} color={s.modalSubtitle} />
+                  <Text style={[essenceStyles.uploadBtnText, { color: s.modalSubtitle }]}>
+                    {t('styles.essenceAvatarRefUpload')}
+                  </Text>
+                </Touchable>
+              )}
+
+              {/* Footer: gems + generate button */}
+              <View style={essenceStyles.avatarFooter}>
+                <View style={[essenceStyles.gemsBadge, { backgroundColor: s.essenceGemsBadgeBackground, borderColor: s.essenceGemsBadgeBorder }]}>
+                  <GemIcon size={13} color={s.essenceGemsBadgeText} />
+                  <Text style={[essenceStyles.gemsBadgeText, { color: s.essenceGemsBadgeText }]}>10</Text>
+                </View>
+                <Touchable
+                  onPress={handleGenerateAvatar}
+                  disabled={!isVip || isGeneratingAvatar}
+                  borderRadius={24}
+                  style={[
+                    essenceStyles.generateBtn,
+                    { opacity: !isVip || isGeneratingAvatar ? 0.5 : 1 },
+                  ]}
+                >
+                  {isGeneratingAvatar ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <SparklesIcon size={16} color="#fff" />
+                  )}
+                  <Text style={essenceStyles.generateBtnText}>
+                    {isGeneratingAvatar ? t('styles.essenceAvatarGenerating') : t('styles.essenceAvatarGenerate')}
+                  </Text>
+                </Touchable>
+              </View>
+
+              {!isVip && (
+                <View style={[essenceStyles.vipOverlay, { backgroundColor: 'transparent' }]}>
+                  <View style={[essenceStyles.vipBadge, { backgroundColor: s.essenceGemsBadgeBackground, borderColor: s.essenceGemsBadgeBorder }]}>
+                    <CrownIcon size={14} color={s.essenceGemsBadgeText} />
+                    <Text style={[essenceStyles.vipBadgeText, { color: s.essenceGemsBadgeText }]}>
+                      {t('styles.essenceVipOnly')}
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {avatarError && (
+                <Text style={[essenceStyles.errorText, { color: s.actionDangerText }]}>
+                  {avatarError}
+                </Text>
+              )}
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    );
+  };
 
   const TABS: { key: Tab; label: string; Icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }> }[] = [
     { key: 'looks', label: t('styles.tabLooks'), Icon: ColumnsIcon },
@@ -1016,6 +1511,313 @@ const styles = StyleSheet.create({
   bottomTabLabel: {
     fontSize: 10,
     fontWeight: '600',
+  },
+});
+
+// ─── Essence styles ───────────────────────────────────────────────────────────
+
+const essenceStyles = StyleSheet.create({
+  scrollContent: {
+    padding: 16,
+    gap: 16,
+  },
+  section: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    gap: 14,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    flexWrap: 'wrap',
+  },
+  sectionHeaderLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  sectionIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  sectionHeaderText: {
+    flex: 1,
+    gap: 3,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  sectionDesc: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  textarea: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 14,
+    lineHeight: 20,
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  refImageContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  refImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 10,
+  },
+  refImageSmall: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+  },
+  removeImageBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  removeImageText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  uploadBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+  },
+  uploadBtnText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+
+  // Analysis row (header + button inline)
+  analyzeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 0,
+  },
+  gemsBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  gemsBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  analyzeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 24,
+  },
+  analyzeBtnDisabled: {
+    opacity: 0.7,
+  },
+  analyzeBtnText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+
+  // Empty analysis placeholder
+  emptyAnalysis: {
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 28,
+    gap: 8,
+  },
+  emptyAnalysisTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  emptyAnalysisText: {
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+
+  // Analysis result
+  analysisResult: {
+    gap: 10,
+  },
+  heroCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 20,
+    alignItems: 'center',
+    gap: 8,
+  },
+  heroTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  heroSubtitle: {
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  analysisCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+  },
+  analysisCardText: {
+    flex: 1,
+    gap: 4,
+  },
+  analysisCardTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  analysisCardBody: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+
+  // Avatar section
+  avatarLayout: {
+    flexDirection: 'row',
+    gap: 14,
+    alignItems: 'flex-start',
+  },
+  avatarPreview: {
+    width: 100,
+    aspectRatio: 3 / 4,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  avatarImg: {
+    width: '100%',
+    height: '100%',
+  },
+  avatarEmpty: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    padding: 8,
+  },
+  avatarEmptyText: {
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+  },
+  avatarActiveBadge: {
+    position: 'absolute',
+    bottom: 6,
+    left: 4,
+    right: 4,
+    backgroundColor: '#10B981',
+    borderRadius: 6,
+    paddingVertical: 3,
+    alignItems: 'center',
+  },
+  avatarActiveBadgeText: {
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  avatarInputs: {
+    flex: 1,
+    gap: 6,
+  },
+  inputLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
+  avatarFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 8,
+    marginTop: 8,
+  },
+  generateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 24,
+    backgroundColor: '#6D28D9',
+  },
+  generateBtnText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  vipOverlay: {
+    alignItems: 'flex-start',
+    marginTop: 4,
+  },
+  vipBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  vipBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  errorText: {
+    fontSize: 12,
+    marginTop: 4,
   },
 });
 

@@ -13,12 +13,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
+import { useDispatch } from 'react-redux';
+
 import Touchable from '@components/Touchable';
 import useStylesTheme from '@hooks/useStylesTheme';
 import { getImageSource } from '@api/client';
 import { ArrowLeftIcon, SparklesIcon, RefreshCwIcon, ShirtIcon } from '@assets/icons';
 import { logError } from '@utilities/crashlytics';
+import { AppDispatch } from '@utilities/store';
 import { ClothingItem } from '@features/collection/types';
+import { loadProfile } from '@features/home/profileSlice';
 import { suggestOutfit } from '../api/stylesApi';
 
 interface Props {
@@ -35,6 +39,7 @@ type Step = 'prompt' | 'loading' | 'result';
 function AIOutfitCreator({ visible, closetItems, closetLoading, saving, onClose, onSave }: Props) {
   const { t } = useTranslation();
   const { styles: s } = useStylesTheme();
+  const dispatch = useDispatch<AppDispatch>();
 
   const [step, setStep] = useState<Step>('prompt');
   const [prompt, setPrompt] = useState('');
@@ -67,6 +72,7 @@ function AIOutfitCreator({ visible, closetItems, closetLoading, saving, onClose,
       setSuggestedIds(result.itemIds);
       setOutfitName(result.name);
       setStep('result');
+      dispatch(loadProfile());
     } catch (err) {
       logError(err instanceof Error ? err : new Error(String(err)), 'AIOutfitCreator.generate');
       setError(t('styles.aiCreatorError'));

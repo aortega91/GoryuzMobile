@@ -48,3 +48,5 @@ export { default as ListIcon } from './ListIcon';
 export { default as FilterIcon } from './FilterIcon';
 export { default as ScissorsIcon } from './ScissorsIcon';
 export { default as HandIcon } from './HandIcon';
+export { default as BrainIcon } from './BrainIcon';
+export { default as TargetIcon } from './TargetIcon';

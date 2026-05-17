@@ -12,11 +12,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
+import { useDispatch } from 'react-redux';
+
 import Touchable from '@components/Touchable';
 import useStylesTheme from '@hooks/useStylesTheme';
 import { ArrowLeftIcon, AlertTriangleIcon, ScissorsIcon, RefreshCwIcon, UserIcon } from '@assets/icons';
 import { logError } from '@utilities/crashlytics';
+import { AppDispatch } from '@utilities/store';
 import { UserProfile } from '@features/home/api/profileApi';
+import { loadProfile } from '@features/home/profileSlice';
 import { generateHaircut, saveDesign } from '../api/stylesGenerateApi';
 
 interface Props {
@@ -28,6 +32,7 @@ interface Props {
 function HaircutCreator({ visible, profile, onClose }: Props) {
   const { t } = useTranslation();
   const { styles: s } = useStylesTheme();
+  const dispatch = useDispatch<AppDispatch>();
 
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -53,6 +58,7 @@ function HaircutCreator({ visible, profile, onClose }: Props) {
     try {
       const result = await generateHaircut({ prompt: prompt.trim() });
       setResultUrl(result.imageUrl);
+      dispatch(loadProfile());
     } catch (err) {
       logError(err instanceof Error ? err : new Error(String(err)), 'HaircutCreator.generate');
       setError(t('styles.generatorError'));

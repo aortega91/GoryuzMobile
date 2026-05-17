@@ -94,6 +94,43 @@ export interface StylesTheme extends Theme {
     filterPillActiveBackground: string;
     filterPillActiveBorder: string;
     filterPillActiveText: string;
+
+    // Essence tab
+    essenceSectionBackground: string;
+    essenceSectionBorder: string;
+    essenceInputBackground: string;
+    essenceInputBorder: string;
+    essenceInputText: string;
+    essenceInputPlaceholder: string;
+    essenceIconIndigo: string;
+    essenceIconPurple: string;
+    essenceIconEmerald: string;
+    essenceAnalysisBackground: string;
+    essenceAnalysisBorder: string;
+    essenceAnalysisText: string;
+    essenceHeroBg: string;
+    essenceHeroBorder: string;
+    essenceHeroTitle: string;
+    essenceHeroSubtitle: string;
+    essenceCardSkyBg: string;
+    essenceCardSkyBorder: string;
+    essenceCardSkyTitle: string;
+    essenceCardPurpleBg: string;
+    essenceCardPurpleBorder: string;
+    essenceCardPurpleTitle: string;
+    essenceCardEmeraldBg: string;
+    essenceCardEmeraldBorder: string;
+    essenceCardEmeraldTitle: string;
+    essenceCardAlertBg: string;
+    essenceCardAlertBorder: string;
+    essenceCardAlertTitle: string;
+    essenceCardBody: string;
+    essenceToggleActive: string;
+    essenceToggleInactive: string;
+    essenceGemsBadgeBackground: string;
+    essenceGemsBadgeBorder: string;
+    essenceGemsBadgeText: string;
+    essenceVipOverlay: string;
   };
 }
 
@@ -189,6 +226,42 @@ const stylesLight: StylesTheme['styles'] = {
   filterPillActiveBackground: commonColors.navyDark,
   filterPillActiveBorder: commonColors.navyDark,
   filterPillActiveText: commonColors.white,
+
+  essenceSectionBackground: commonColors.white,
+  essenceSectionBorder: commonColors.grayLight,
+  essenceInputBackground: '#F9FAFB',
+  essenceInputBorder: commonColors.grayLight,
+  essenceInputText: commonColors.navyDark,
+  essenceInputPlaceholder: commonColors.gray,
+  essenceIconIndigo: '#4F46E5',
+  essenceIconPurple: '#7C3AED',
+  essenceIconEmerald: '#059669',
+  essenceAnalysisBackground: '#F9FAFB',
+  essenceAnalysisBorder: commonColors.grayLight,
+  essenceAnalysisText: commonColors.grayDark,
+  essenceHeroBg: '#FFFBEB',
+  essenceHeroBorder: '#FDE68A',
+  essenceHeroTitle: commonColors.navyDark,
+  essenceHeroSubtitle: commonColors.grayDark,
+  essenceCardSkyBg: '#F0F9FF',
+  essenceCardSkyBorder: '#BAE6FD',
+  essenceCardSkyTitle: '#0C4A6E',
+  essenceCardPurpleBg: '#FAF5FF',
+  essenceCardPurpleBorder: '#DDD6FE',
+  essenceCardPurpleTitle: '#4C1D95',
+  essenceCardEmeraldBg: '#ECFDF5',
+  essenceCardEmeraldBorder: '#A7F3D0',
+  essenceCardEmeraldTitle: '#064E3B',
+  essenceCardAlertBg: '#FFF7ED',
+  essenceCardAlertBorder: '#FED7AA',
+  essenceCardAlertTitle: '#7C2D12',
+  essenceCardBody: '#374151',
+  essenceToggleActive: '#4F46E5',
+  essenceToggleInactive: '#D1D5DB',
+  essenceGemsBadgeBackground: '#F5F3FF',
+  essenceGemsBadgeBorder: '#DDD6FE',
+  essenceGemsBadgeText: '#6D28D9',
+  essenceVipOverlay: 'rgba(250,245,255,0.85)',
 };
 
 const stylesDark: StylesTheme['styles'] = {
@@ -283,6 +356,42 @@ const stylesDark: StylesTheme['styles'] = {
   filterPillActiveBackground: commonColors.white,
   filterPillActiveBorder: commonColors.white,
   filterPillActiveText: commonColors.navyDark,
+
+  essenceSectionBackground: commonColors.darkCard,
+  essenceSectionBorder: commonColors.darkBorder,
+  essenceInputBackground: '#1A1A1A',
+  essenceInputBorder: commonColors.darkBorder,
+  essenceInputText: commonColors.offWhite,
+  essenceInputPlaceholder: commonColors.grayDark,
+  essenceIconIndigo: '#818CF8',
+  essenceIconPurple: '#A78BFA',
+  essenceIconEmerald: '#34D399',
+  essenceAnalysisBackground: '#1A1A1A',
+  essenceAnalysisBorder: commonColors.darkBorder,
+  essenceAnalysisText: commonColors.gray,
+  essenceHeroBg: 'rgba(120,53,15,0.25)',
+  essenceHeroBorder: 'rgba(180,83,9,0.3)',
+  essenceHeroTitle: commonColors.offWhite,
+  essenceHeroSubtitle: commonColors.gray,
+  essenceCardSkyBg: 'rgba(12,74,110,0.25)',
+  essenceCardSkyBorder: 'rgba(14,116,144,0.3)',
+  essenceCardSkyTitle: '#BAE6FD',
+  essenceCardPurpleBg: 'rgba(76,29,149,0.2)',
+  essenceCardPurpleBorder: 'rgba(109,40,217,0.3)',
+  essenceCardPurpleTitle: '#DDD6FE',
+  essenceCardEmeraldBg: 'rgba(6,78,59,0.2)',
+  essenceCardEmeraldBorder: 'rgba(16,185,129,0.3)',
+  essenceCardEmeraldTitle: '#A7F3D0',
+  essenceCardAlertBg: 'rgba(124,45,18,0.2)',
+  essenceCardAlertBorder: 'rgba(234,88,12,0.3)',
+  essenceCardAlertTitle: '#FED7AA',
+  essenceCardBody: '#D1D5DB',
+  essenceToggleActive: '#818CF8',
+  essenceToggleInactive: '#374151',
+  essenceGemsBadgeBackground: 'rgba(76,29,149,0.2)',
+  essenceGemsBadgeBorder: 'rgba(109,40,217,0.3)',
+  essenceGemsBadgeText: '#A78BFA',
+  essenceVipOverlay: 'rgba(30,18,60,0.85)',
 };
 
 export interface StylesThemeInstance extends StylesTheme {}

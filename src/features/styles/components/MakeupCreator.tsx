@@ -12,6 +12,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
+import { useDispatch } from 'react-redux';
+
 import Touchable from '@components/Touchable';
 import useStylesTheme from '@hooks/useStylesTheme';
 import {
@@ -24,7 +26,9 @@ import {
   MonitorIcon,
 } from '@assets/icons';
 import { logError } from '@utilities/crashlytics';
+import { AppDispatch } from '@utilities/store';
 import { UserProfile } from '@features/home/api/profileApi';
+import { loadProfile } from '@features/home/profileSlice';
 import { generateMakeup, saveDesign } from '../api/stylesGenerateApi';
 import { Outfit } from '../types';
 
@@ -40,6 +44,7 @@ interface Props {
 function MakeupCreator({ visible, profile, outfits, onClose }: Props) {
   const { t } = useTranslation();
   const { styles: s } = useStylesTheme();
+  const dispatch = useDispatch<AppDispatch>();
 
   const [prompt, setPrompt] = useState('');
   const [selectedOutfitId, setSelectedOutfitId] = useState('');
@@ -73,6 +78,7 @@ function MakeupCreator({ visible, profile, outfits, onClose }: Props) {
         lighting,
       });
       setResultUrl(result.imageUrl);
+      dispatch(loadProfile());
     } catch (err) {
       logError(err instanceof Error ? err : new Error(String(err)), 'MakeupCreator.generate');
       setError(t('styles.generatorError'));
