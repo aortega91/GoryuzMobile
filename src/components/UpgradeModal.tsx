@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 
 import Touchable from '@components/Touchable';
 import { CrownIcon, SparklesIcon, ArrowRightIcon } from '@assets/icons';
+import { AuthTheme } from '@features/auth/theme';
 import useTheme from '@hooks/useTheme';
 
 export type RequiredPlan = 'premium' | 'vip';
@@ -27,7 +28,7 @@ const PLAN_NAMES: Record<RequiredPlan, string> = {
 
 function UpgradeModal({ visible, requiredPlan, onUpgrade, onClose }: Props) {
   const { t } = useTranslation();
-  const { theme } = useTheme();
+  const theme = useTheme() as AuthTheme;
   const c = theme.common;
 
   const isVip = requiredPlan === 'vip';
