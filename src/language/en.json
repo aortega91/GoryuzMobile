@@ -413,6 +413,13 @@
     "essenceSaved": "Saved",
     "essenceGems": "{{count}} gems"
   },
+  "upgrade": {
+    "lockedTitle": "Feature Locked",
+    "lockedDesc": "This exclusive tool is designed to elevate your style to the next level.",
+    "availableOn": "Available on the",
+    "cta": "Upgrade my Plan",
+    "noThanks": "No thanks, keep exploring"
+  },
   "common": {
     "loading": "Loading...",
     "retry": "Retry",

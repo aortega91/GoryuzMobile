@@ -15,8 +15,9 @@ import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 
 import Touchable from '@components/Touchable';
+import UpgradeModal from '@components/UpgradeModal';
 import useStylesTheme from '@hooks/useStylesTheme';
-import { ArrowLeftIcon, AlertTriangleIcon, HandIcon, RefreshCwIcon } from '@assets/icons';
+import { ArrowLeftIcon, HandIcon, RefreshCwIcon } from '@assets/icons';
 import { logError } from '@utilities/crashlytics';
 import { AppDispatch } from '@utilities/store';
 import { UserProfile } from '@features/home/api/profileApi';
@@ -99,28 +100,14 @@ function NailCreator({ visible, profile, onClose }: Props) {
     { id: 'both', labelKey: 'styles.nailsBoth' },
   ];
 
-  // Requirements not met → small centered dialog
   if (!isPremium) {
     return (
-      <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-        <View style={styles.reqBackdrop}>
-          <View style={[styles.reqCard, { backgroundColor: s.modalBackground }]}>
-            <AlertTriangleIcon size={48} color="#14B8A6" />
-            <Text style={[styles.reqTitle, { color: s.modalTitle }]}>{t('styles.nailsReqTitle')}</Text>
-            <Text style={[styles.reqDesc, { color: s.modalSubtitle }]}>{t('styles.nailsReqDesc')}</Text>
-            <Touchable onPress={onClose} borderRadius={14} style={[styles.reqBtn, { backgroundColor: s.buttonPrimary }]}>
-              <Text style={[styles.reqBtnText, { color: s.buttonPrimaryText }]}>{t('profile.viewPlans')}</Text>
-            </Touchable>
-            <Touchable
-              onPress={onClose}
-              borderRadius={14}
-              style={[styles.reqBtnSecondary, { backgroundColor: s.buttonSecondary, borderColor: s.buttonSecondaryBorder }]}
-            >
-              <Text style={[styles.reqBtnText, { color: s.buttonSecondaryText }]}>{t('common.cancel')}</Text>
-            </Touchable>
-          </View>
-        </View>
-      </Modal>
+      <UpgradeModal
+        visible={visible}
+        requiredPlan="premium"
+        onUpgrade={onClose}
+        onClose={onClose}
+      />
     );
   }
 

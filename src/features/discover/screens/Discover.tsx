@@ -16,6 +16,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 
 import Touchable from '@components/Touchable';
+import UpgradeModal from '@components/UpgradeModal';
 import useDiscoverTheme from '@hooks/useDiscoverTheme';
 import useCameraPermission from '@hooks/useCameraPermission';
 import {
@@ -301,6 +302,7 @@ function Discover() {
   const [proError, setProError] = useState<string | null>(null);
   const [proCombinedImage, setProCombinedImage] = useState<string | null>(null);
   const [proSaving, setProSaving] = useState(false);
+  const [showProUpgrade, setShowProUpgrade] = useState(false);
 
   const handleFlashGenerate = useCallback(async () => {
     if (!flashPrompt.trim()) return;
@@ -638,7 +640,13 @@ function Discover() {
             return (
               <Touchable
                 key={mode}
-                onPress={() => setCombinatorMode(mode)}
+                onPress={() => {
+                  if (mode === 'pro' && profile?.plan !== 'premium' && profile?.plan !== 'vip') {
+                    setShowProUpgrade(true);
+                  } else {
+                    setCombinatorMode(mode);
+                  }
+                }}
                 borderRadius={10}
                 style={[
                   styles.segmentItem,
@@ -973,6 +981,13 @@ function Discover() {
           </View>
         </TouchableWithoutFeedback>
       )}
+
+      <UpgradeModal
+        visible={showProUpgrade}
+        requiredPlan="premium"
+        onUpgrade={() => setShowProUpgrade(false)}
+        onClose={() => setShowProUpgrade(false)}
+      />
     </View>
   );
 }

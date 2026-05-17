@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 
 import Touchable from '@components/Touchable';
+import UpgradeModal from '@components/UpgradeModal';
 import useStylesTheme from '@hooks/useStylesTheme';
 import { ArrowLeftIcon, AlertTriangleIcon, ScissorsIcon, RefreshCwIcon, UserIcon } from '@assets/icons';
 import { logError } from '@utilities/crashlytics';
@@ -42,7 +43,6 @@ function HaircutCreator({ visible, profile, onClose }: Props) {
 
   const isPremium = profile?.plan === 'premium';
   const hasFace = !!profile?.avatarImage;
-  const requirementsMet = isPremium && hasFace;
 
   const handleClose = () => {
     setPrompt('');
@@ -81,26 +81,27 @@ function HaircutCreator({ visible, profile, onClose }: Props) {
     }
   };
 
-  // Requirements not met → small centered dialog
-  if (!requirementsMet) {
-    const msg = !isPremium && !hasFace
-      ? t('styles.generatorBothReq')
-      : !isPremium
-        ? t('styles.generatorPremiumReq')
-        : t('styles.generatorFaceReq');
+  // Premium requirement → UpgradeModal
+  if (!isPremium) {
+    return (
+      <UpgradeModal
+        visible={visible}
+        requiredPlan="premium"
+        onUpgrade={onClose}
+        onClose={onClose}
+      />
+    );
+  }
 
+  // Face photo missing → simple warning dialog
+  if (!hasFace) {
     return (
       <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
         <View style={styles.reqBackdrop}>
           <View style={[styles.reqCard, { backgroundColor: s.modalBackground }]}>
             <AlertTriangleIcon size={48} color="#F97316" />
             <Text style={[styles.reqTitle, { color: s.modalTitle }]}>{t('styles.generatorReqTitle')}</Text>
-            <Text style={[styles.reqDesc, { color: s.modalSubtitle }]}>{msg}</Text>
-            {!isPremium && (
-              <Touchable onPress={onClose} borderRadius={14} style={[styles.reqBtn, { backgroundColor: s.buttonPrimary }]}>
-                <Text style={[styles.reqBtnText, { color: s.buttonPrimaryText }]}>{t('profile.viewPlans')}</Text>
-              </Touchable>
-            )}
+            <Text style={[styles.reqDesc, { color: s.modalSubtitle }]}>{t('styles.generatorFaceReq')}</Text>
             <Touchable
               onPress={onClose}
               borderRadius={14}

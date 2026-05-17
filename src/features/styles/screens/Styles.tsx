@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { getImageSource } from '@api/client';
 import Touchable from '@components/Touchable';
 import BottomSheet from '@components/BottomSheet';
+import UpgradeModal from '@components/UpgradeModal';
 import useStylesTheme from '@hooks/useStylesTheme';
 import useCameraPermission from '@hooks/useCameraPermission';
 import {
@@ -442,6 +443,7 @@ function Styles() {
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [showVipUpgrade, setShowVipUpgrade] = useState(false);
   const isFirstRender = useRef(true);
 
   const { openGallery } = useCameraPermission();
@@ -900,14 +902,18 @@ function Styles() {
               </View>
 
               {!isVip && (
-                <View style={[essenceStyles.vipOverlay, { backgroundColor: 'transparent' }]}>
+                <Touchable
+                  onPress={() => setShowVipUpgrade(true)}
+                  borderRadius={12}
+                  style={[essenceStyles.vipOverlay, { backgroundColor: 'rgba(0,0,0,0.04)' }]}
+                >
                   <View style={[essenceStyles.vipBadge, { backgroundColor: s.essenceGemsBadgeBackground, borderColor: s.essenceGemsBadgeBorder }]}>
                     <CrownIcon size={14} color={s.essenceGemsBadgeText} />
                     <Text style={[essenceStyles.vipBadgeText, { color: s.essenceGemsBadgeText }]}>
                       {t('styles.essenceVipOnly')}
                     </Text>
                   </View>
-                </View>
+                </Touchable>
               )}
 
               {avatarError && (
@@ -1216,6 +1222,12 @@ function Styles() {
         saving={creatorSaving}
         onClose={() => setShowAICreator(false)}
         onSave={handleAISave}
+      />
+      <UpgradeModal
+        visible={showVipUpgrade}
+        requiredPlan="vip"
+        onUpgrade={() => setShowVipUpgrade(false)}
+        onClose={() => setShowVipUpgrade(false)}
       />
     </View>
   );

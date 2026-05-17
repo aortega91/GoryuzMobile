@@ -413,6 +413,13 @@
     "essenceSaved": "Guardado",
     "essenceGems": "{{count}} gemas"
   },
+  "upgrade": {
+    "lockedTitle": "Funcionalidad Bloqueada",
+    "lockedDesc": "Esta herramienta exclusiva está diseñada para elevar tu estilo al siguiente nivel.",
+    "availableOn": "Disponible en el plan",
+    "cta": "Mejorar mi Plan",
+    "noThanks": "No gracias, seguir explorando"
+  },
   "common": {
     "loading": "Cargando...",
     "retry": "Reintentar",
