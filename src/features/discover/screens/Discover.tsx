@@ -4,6 +4,7 @@ import {
   FlatList,
   Image,
   Linking,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -32,6 +33,7 @@ import {
   AlertCircleIcon,
 } from '@assets/icons';
 import { loadProfile } from '@features/home/profileSlice';
+import { loadCollection } from '@features/collection/collectionSlice';
 import { addOutfit } from '@features/styles/stylesSlice';
 import { suggestOutfit } from '@features/styles/api/stylesApi';
 import { getImageSource, imageUrlToBase64 } from '@api/client';
@@ -307,6 +309,7 @@ function Discover() {
   const [proCombinedImage, setProCombinedImage] = useState<string | null>(null);
   const [proSaving, setProSaving] = useState(false);
   const [showProUpgrade, setShowProUpgrade] = useState(false);
+  const [closetRefreshing, setClosetRefreshing] = useState(false);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- dormant: restore when /outfits/suggest backend endpoint is live
   const handleFlashGenerate = useCallback(async () => {
@@ -764,6 +767,17 @@ function Discover() {
     <ScrollView
       contentContainerStyle={[styles.proScroll, { paddingBottom: bottomBarTotalHeight + 32 }]}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={closetRefreshing}
+          onRefresh={async () => {
+            setClosetRefreshing(true);
+            await dispatch(loadCollection());
+            setClosetRefreshing(false);
+          }}
+          tintColor={d.bottomBarActive}
+        />
+      }
     >
       {/* Gem cost */}
       <View style={styles.gemCostRow}>
