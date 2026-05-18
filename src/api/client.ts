@@ -186,7 +186,22 @@ export async function imageUrlToBase64(imageData: string): Promise<string> {
   const blob = await response.blob();
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
+    reader.onloadend = () => {
+      let result = reader.result as string;
+      // R2 storage often returns application/octet-stream regardless of the
+      // actual image format. Gemini rejects that MIME type, so infer the real
+      // type from the URL extension and patch the data URL prefix.
+      if (result.startsWith('data:application/octet-stream')) {
+        const ext = uri.split('?')[0].split('.').pop()?.toLowerCase();
+        const mime =
+          ext === 'png' ? 'image/png' :
+          ext === 'gif' ? 'image/gif' :
+          ext === 'webp' ? 'image/webp' :
+          'image/jpeg'; // default — covers jpg, jpeg, and unknown
+        result = result.replace('data:application/octet-stream', `data:${mime}`);
+      }
+      resolve(result);
+    };
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
