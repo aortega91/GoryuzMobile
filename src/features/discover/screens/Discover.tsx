@@ -358,7 +358,10 @@ function Discover() {
         })),
       ]);
       const result = await combineOutfit({ items: convertedItems, avatarImage });
-      setProCombinedImage(result.combinedImage);
+      // Backend returns raw base64 (no data URL prefix) — add it before rendering
+      const raw = result.combinedImage;
+      const dataUrl = raw.startsWith('data:') ? raw : `data:image/png;base64,${raw}`;
+      setProCombinedImage(dataUrl);
       setProStatus('idle');
       dispatch(loadProfile());
     } catch (err) {
