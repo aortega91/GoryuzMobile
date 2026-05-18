@@ -85,6 +85,7 @@
     "combinatorProCost": "10 gemas por combinación",
     "combinatorFlashPlaceholder": "Describe la ocasión o el estilo…",
     "combinatorFlashGenerate": "Generar outfit",
+    "combinatorFlashComingSoon": "Esta función estará disponible pronto.",
     "combinatorGenerating": "Generando…",
     "combinatorFlashError": "No se pudo generar el outfit. Intenta de nuevo.",
     "combinatorFlashResultLabel": "Outfit sugerido",

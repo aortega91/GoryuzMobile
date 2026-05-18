@@ -85,6 +85,7 @@
     "combinatorProCost": "10 gems per combination",
     "combinatorFlashPlaceholder": "Describe the occasion or style…",
     "combinatorFlashGenerate": "Generate outfit",
+    "combinatorFlashComingSoon": "This feature will be available soon.",
     "combinatorGenerating": "Generating…",
     "combinatorFlashError": "Could not generate outfit. Please try again.",
     "combinatorFlashResultLabel": "Suggested outfit",

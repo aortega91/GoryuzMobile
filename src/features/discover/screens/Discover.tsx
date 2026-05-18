@@ -7,7 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
+  // TextInput, -- dormant: restore when /outfits/suggest backend endpoint is live
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
@@ -291,10 +291,14 @@ function Discover() {
   // ─── Combinador tab state ─────────────────────────────────────────────────────
 
   const [combinatorMode, setCombinatorMode] = useState<CombinatorMode>('flash');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- dormant: restore when /outfits/suggest backend endpoint is live
   const [flashPrompt, setFlashPrompt] = useState('');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- dormant
   const [flashStatus, setFlashStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- dormant
   const [flashError, setFlashError] = useState<string | null>(null);
   const [flashResultItemIds, setFlashResultItemIds] = useState<string[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- dormant
   const [flashResultName, setFlashResultName] = useState<string>('');
 
   const [proSelectedIds, setProSelectedIds] = useState<Set<string>>(new Set());
@@ -304,6 +308,7 @@ function Discover() {
   const [proSaving, setProSaving] = useState(false);
   const [showProUpgrade, setShowProUpgrade] = useState(false);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- dormant: restore when /outfits/suggest backend endpoint is live
   const handleFlashGenerate = useCallback(async () => {
     if (!flashPrompt.trim()) return;
     setFlashStatus('loading');
@@ -675,61 +680,53 @@ function Discover() {
   };
 
   const renderFlashMode = () => {
-    const flashItems = closetItems.filter(i => flashResultItemIds.includes(i.id));
+    // TODO: unhide when /outfits/suggest backend endpoint is live
+    // Full implementation preserved below — only the return is swapped out
+    const flashItems = closetItems.filter(i => flashResultItemIds.includes(i.id)); // eslint-disable-line @typescript-eslint/no-unused-vars
 
+    return (
+      <View style={[styles.comingSoonContainer, { paddingBottom: bottomBarTotalHeight + 32 }]}>
+        <ZapIcon size={48} color={d.emptyIcon} strokeWidth={1.5} />
+        <Text style={[styles.emptyTitle, { color: d.emptyText }]}>{t('common.comingSoon')}</Text>
+        <Text style={[styles.emptySub, { color: d.emptySubtitle }]}>{t('discover.combinatorFlashComingSoon')}</Text>
+      </View>
+    );
+
+    /* --- unhide block start ---
     return (
       <ScrollView
         contentContainerStyle={[styles.flashScroll, { paddingBottom: bottomBarTotalHeight + 32 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Gem cost */}
         <View style={styles.gemCostRow}>
           {renderGemBadge(3)}
           <Text style={[styles.gemCostText, { color: d.emptySubtitle }]}>{t('discover.combinatorFlashCost')}</Text>
         </View>
-
-        {/* Prompt input */}
         <TextInput
           value={flashPrompt}
           onChangeText={setFlashPrompt}
           placeholder={t('discover.combinatorFlashPlaceholder')}
           placeholderTextColor={d.modalInputPlaceholder}
-          style={[
-            styles.promptInput,
-            {
-              backgroundColor: d.modalInputBackground,
-              borderColor: d.modalInputBorder,
-              color: d.modalInputText,
-            },
-          ]}
+          style={[styles.promptInput, { backgroundColor: d.modalInputBackground, borderColor: d.modalInputBorder, color: d.modalInputText }]}
           editable={flashStatus !== 'loading'}
           multiline
         />
-
         <Touchable
           onPress={handleFlashGenerate}
           disabled={flashStatus === 'loading' || !flashPrompt.trim()}
           borderRadius={24}
-          style={[
-            styles.generateBtn,
-            { backgroundColor: d.buttonPrimary, opacity: flashStatus === 'loading' || !flashPrompt.trim() ? 0.6 : 1 },
-          ]}
+          style={[styles.generateBtn, { backgroundColor: d.buttonPrimary, opacity: flashStatus === 'loading' || !flashPrompt.trim() ? 0.6 : 1 }]}
         >
-          {flashStatus === 'loading' ? (
-            <ActivityIndicator size="small" color={d.buttonPrimaryText} />
-          ) : (
-            <ZapIcon size={16} color={d.buttonPrimaryText} />
-          )}
+          {flashStatus === 'loading'
+            ? <ActivityIndicator size="small" color={d.buttonPrimaryText} />
+            : <ZapIcon size={16} color={d.buttonPrimaryText} />}
           <Text style={[styles.generateBtnText, { color: d.buttonPrimaryText }]}>
             {flashStatus === 'loading' ? t('discover.combinatorGenerating') : t('discover.combinatorFlashGenerate')}
           </Text>
         </Touchable>
-
         {flashStatus === 'error' && (
           <Text style={[styles.errorText, { color: d.buttonDangerText }]}>{flashError}</Text>
         )}
-
-        {/* Flash result */}
         {flashResultItemIds.length > 0 && (
           <View style={styles.flashResult}>
             <Text style={[styles.sectionLabel, { color: d.headerSubtitle }]}>{t('discover.combinatorFlashResultLabel')}</Text>
@@ -751,6 +748,7 @@ function Discover() {
         )}
       </ScrollView>
     );
+    --- unhide block end --- */
   };
 
   const renderProMode = (avatarImage: string | null) => (
@@ -1045,6 +1043,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     paddingVertical: 40,
   },
+  comingSoonContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, gap: 12 },
   emptyTitle: { fontSize: 16, fontWeight: '700', textAlign: 'center' },
   emptySub: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
   errorText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
