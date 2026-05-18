@@ -34,7 +34,7 @@ import {
 import { loadProfile } from '@features/home/profileSlice';
 import { addOutfit } from '@features/styles/stylesSlice';
 import { suggestOutfit } from '@features/styles/api/stylesApi';
-import { getImageSource } from '@api/client';
+import { getImageSource, imageUrlToBase64 } from '@api/client';
 import { logError } from '@utilities/crashlytics';
 import { AppDispatch, RootState } from '@utilities/store';
 import {
@@ -332,18 +332,27 @@ function Discover() {
   }, [flashPrompt, closetItems, dispatch, t]);
 
   const handleProCombine = useCallback(async () => {
-    const avatarImage = profile?.avatarImage;
-    if (!avatarImage) return;
+    const avatarImageRaw = profile?.avatarImage;
+    if (!avatarImageRaw) return;
     const selectedItems = closetItems
-      .filter(i => proSelectedIds.has(i.id))
-      .map(i => ({ id: i.id, name: i.name, imageData: i.imageData }));
+      .filter(i => proSelectedIds.has(i.id) && !!i.imageData)
+      .map(i => ({ id: i.id, name: i.name, imageData: i.imageData! }));
     if (selectedItems.length === 0) return;
 
     setProStatus('loading');
     setProError(null);
     setProCombinedImage(null);
     try {
-      const result = await combineOutfit({ items: selectedItems, avatarImage });
+      // Convert all URLs to base64 data URLs before sending — the backend
+      // expects base64, not relative paths or CDN URLs.
+      const [avatarImage, ...convertedItems] = await Promise.all([
+        imageUrlToBase64(avatarImageRaw),
+        ...selectedItems.map(async item => ({
+          ...item,
+          imageData: await imageUrlToBase64(item.imageData),
+        })),
+      ]);
+      const result = await combineOutfit({ items: convertedItems, avatarImage });
       setProCombinedImage(result.combinedImage);
       setProStatus('idle');
       dispatch(loadProfile());

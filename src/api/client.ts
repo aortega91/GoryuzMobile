@@ -166,6 +166,32 @@ export function getImageSource(
   return { uri, headers: authHeaders };
 }
 
+// ─── Image → base64 helper ───────────────────────────────────────────────────
+
+/**
+ * Fetches an image (relative path, absolute URL, or existing data URL) and
+ * returns it as a base64 data URL suitable for sending to AI endpoints.
+ * Relative paths are prefixed with ORIGIN and sent with session auth headers.
+ */
+export async function imageUrlToBase64(imageData: string): Promise<string> {
+  if (imageData.startsWith('data:')) {
+    return imageData;
+  }
+  const uri = imageData.startsWith('/') ? `${ORIGIN}${imageData}` : imageData;
+  const authHeaders = resolveAuthHeaders() as Record<string, string>;
+  const response = await fetch(uri, { headers: authHeaders });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch image: ${uri} (${response.status})`);
+  }
+  const blob = await response.blob();
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 // ─── Convenience methods ──────────────────────────────────────────────────────
 
 export const apiGet = <T>(path: string) =>
