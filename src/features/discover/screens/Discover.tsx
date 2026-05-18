@@ -344,7 +344,9 @@ function Discover() {
 
     setProStatus('loading');
     setProError(null);
-    setProCombinedImage(null);
+    // Don't clear proCombinedImage here — keep the previous result visible
+    // until a new one arrives; clearing it upfront means a failure leaves the
+    // user with nothing to show.
     try {
       // Convert all URLs to base64 data URLs before sending — the backend
       // expects base64, not relative paths or CDN URLs.
@@ -814,6 +816,7 @@ function Discover() {
                   <Touchable
                     key={item.id}
                     onPress={() => toggleProItem(item.id)}
+                    disabled={proStatus === 'loading'}
                     borderRadius={12}
                     style={[
                       styles.proClosetItem,
@@ -821,6 +824,7 @@ function Discover() {
                         backgroundColor: d.closetItemBackground,
                         borderColor: isSelected ? d.closetItemSelectedBorder : d.closetItemBorder,
                         borderWidth: isSelected ? 2 : 1,
+                        opacity: proStatus === 'loading' ? 0.5 : 1,
                       },
                     ]}
                   >
