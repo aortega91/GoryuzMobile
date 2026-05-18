@@ -1,7 +1,8 @@
 import { apiPost, apiDelete } from '@api/client';
-import { UserProfile } from '@features/home/api/profileApi';
+import { ImpactStats, UserProfile } from '@features/home/api/profileApi';
 
 export interface UpdateProfilePayload {
+  impactStats?: ImpactStats;
   nickname?: string;
   phone?: string;
   gender?: 'male' | 'female' | 'neutral';

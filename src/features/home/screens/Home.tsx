@@ -15,6 +15,7 @@ import i18n from '@language/index';
 
 import Touchable from '@components/Touchable';
 import PermissionModal from '@components/PermissionModal';
+import Toast from '@components/Toast';
 import useHomeTheme from '@hooks/useHomeTheme';
 import useLocation from '@hooks/useLocation';
 import { RootState, AppDispatch } from '@utilities/store';
@@ -25,6 +26,7 @@ import Styles from '@features/styles/screens/Styles';
 import Schedule from '@features/schedule/screens/Schedule';
 import Profile from '@features/profile/screens/Profile';
 import Discover from '@features/discover/screens/Discover';
+import SecondLife from '@features/secondLife/screens/SecondLife';
 import { loadProfile } from '../profileSlice';
 import { MOCK_FEED_POSTS } from '../mockFeedData';
 import { ActiveModule } from '../types';
@@ -259,7 +261,7 @@ function Home() {
           {activeModule === 'schedule' && <Schedule />}
           {activeModule === 'profile' && <Profile />}
           {activeModule === 'discover' && <Discover />}
-          {activeModule === 'second_life' && renderComingSoon()}
+          {activeModule === 'second_life' && <SecondLife />}
           {activeModule === 'community' && renderComingSoon()}
         </View>
 
@@ -325,6 +327,8 @@ function Home() {
           onDismiss={dismissLocationBlocked}
         />
       )}
+
+      <Toast />
     </View>
   );
 }

@@ -77,6 +77,9 @@ const collectionSlice = createSlice({
       state.status = 'idle';
       state.error = null;
     },
+    removeItemLocally(state, action: import('@reduxjs/toolkit').PayloadAction<string>) {
+      state.items = state.items.filter(i => i.id !== action.payload);
+    },
   },
   extraReducers: builder => {
     // loadCollection
@@ -145,5 +148,5 @@ const collectionSlice = createSlice({
   },
 });
 
-export const { resetCollection } = collectionSlice.actions;
+export const { resetCollection, removeItemLocally } = collectionSlice.actions;
 export default collectionSlice.reducer;

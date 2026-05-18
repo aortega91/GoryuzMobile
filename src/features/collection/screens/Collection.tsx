@@ -17,11 +17,15 @@ import useCollectionTheme from '@hooks/useCollectionTheme';
 import { RootState, AppDispatch } from '@utilities/store';
 import { AlertCircleIcon, SearchIcon, ShirtIcon } from '@assets/icons';
 import { loadProfile } from '@features/home/profileSlice';
+import { addToSecondLife } from '@features/secondLife/api/secondLifeApi';
+import { logError } from '@utilities/crashlytics';
+import toast from '@utilities/toast';
 import {
   loadCollection,
   addItems,
   renameItem,
   deleteItem,
+  removeItemLocally,
 } from '../collectionSlice';
 import { ClothingCategory, ClothingItem, ScannedItem } from '../types';
 import CategoryTabs from '../components/CategoryTabs';
@@ -85,24 +89,47 @@ function Collection() {
     async (scannedItems: ScannedItem[]) => {
       await dispatch(addItems(scannedItems)).unwrap();
       dispatch(loadProfile());
+      toast.success(t('collection.toastAdded'));
     },
-    [dispatch],
+    [dispatch, t],
   );
 
   const handleRename = useCallback(
     (item: ClothingItem, name: string) => {
       dispatch(renameItem({ id: item.id, name }));
       setRenaming(null);
+      toast.success(t('collection.toastRenamed'));
     },
-    [dispatch],
+    [dispatch, t],
   );
 
   const handleDelete = useCallback(
     (item: ClothingItem) => {
       dispatch(deleteItem(item.id));
       setDeleting(null);
+      toast.info(t('collection.toastDeleted'));
     },
-    [dispatch],
+    [dispatch, t],
+  );
+
+  const handleMoveToSecondLife = useCallback(
+    async (item: ClothingItem, mode: import('../types').SecondLifeMode) => {
+      const statusMap: Record<import('../types').SecondLifeMode, 'sale' | 'gift' | 'trade'> = {
+        sell: 'sale',
+        gift: 'gift',
+        exchange: 'trade',
+      };
+      dispatch(removeItemLocally(item.id));
+      try {
+        await addToSecondLife({ itemId: item.id, status: statusMap[mode] });
+        toast.success(t('collection.toastSecondLife'));
+      } catch (err) {
+        dispatch(loadCollection());
+        logError(err, 'collection/moveToSecondLife');
+        toast.error(t('collection.toastSecondLifeError'));
+      }
+    },
+    [dispatch, t],
   );
 
   // ─── Render item ─────────────────────────────────────────────────────────────
@@ -289,7 +316,8 @@ function Collection() {
         <SecondLifeSheet
           item={secondLife}
           onClose={() => setSecondLife(null)}
-          onContinue={_mode => {
+          onContinue={mode => {
+            handleMoveToSecondLife(secondLife, mode);
             setSecondLife(null);
           }}
         />

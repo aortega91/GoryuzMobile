@@ -6,7 +6,6 @@ import React, {
 } from 'react';
 import {
   Alert,
-  Animated,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -47,6 +46,7 @@ import {
 
 import { getImageSource } from '@api/client';
 import useProfileTheme from '@hooks/useProfileTheme';
+import toast from '@utilities/toast';
 import { updateProfile, deleteAccount } from '../api/profileUpdateApi';
 
 // ─── Option types ─────────────────────────────────────────────────────────────
@@ -548,26 +548,9 @@ function Profile() {
     }
   }, [dispatch]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Save toast animation
-  const toastOpacity = useRef(new Animated.Value(0)).current;
-  const toastY = useRef(new Animated.Value(-8)).current;
   const isFirstRender = useRef(true);
 
   // ─── Auto-save ──────────────────────────────────────────────────────────────
-
-  const showSaveToast = useCallback(() => {
-    Animated.parallel([
-      Animated.timing(toastOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-      Animated.timing(toastY, { toValue: 0, duration: 200, useNativeDriver: true }),
-    ]).start(() => {
-      setTimeout(() => {
-        Animated.parallel([
-          Animated.timing(toastOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
-          Animated.timing(toastY, { toValue: -8, duration: 300, useNativeDriver: true }),
-        ]).start();
-      }, 1800);
-    });
-  }, [toastOpacity, toastY]);
 
   // Refs so debounced effect always reads latest language/currency without
   // them being in its dep array (language and currency save immediately).
@@ -601,7 +584,7 @@ function Profile() {
           currency: currencyRef.current,
         });
         dispatch(updateProfileLocally(updated));
-        showSaveToast();
+        toast.success(t('profile.saved'));
       } catch (err) {
         logError(err, 'profile:autosave');
         Alert.alert(t('common.error'), t('profile.errorUpdate'));
@@ -630,7 +613,7 @@ function Profile() {
       if (newLanguage !== i18n.language) {
         i18n.changeLanguage(newLanguage);
       }
-      showSaveToast();
+      toast.success(t('profile.saved'));
     } catch (err) {
       logError(err, 'profile:autosave');
       Alert.alert(t('common.error'), t('profile.errorUpdate'));
@@ -638,7 +621,7 @@ function Profile() {
       setIsSaving(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nickname, phone, gender, aiName, dispatch, showSaveToast, t]);
+  }, [nickname, phone, gender, aiName, dispatch, t]);
 
   // ─── Option lists ────────────────────────────────────────────────────────────
 
@@ -757,22 +740,6 @@ function Profile() {
   return (
     <View style={[styles.root, { backgroundColor: pt.background }]}>
       {/* Save toast */}
-      <Animated.View
-        style={[
-          styles.toast,
-          {
-            backgroundColor: pt.toastBackground,
-            opacity: toastOpacity,
-            transform: [{ translateY: toastY }],
-          },
-        ]}
-        pointerEvents="none"
-      >
-        <CheckIcon size={14} color={pt.toastText} />
-        <Text style={[styles.toastText, { color: pt.toastText }]}>
-          {t('profile.saved')}
-        </Text>
-      </Animated.View>
 
       <View style={styles.safeArea}>
         {/* Header */}

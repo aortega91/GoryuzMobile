@@ -54,3 +54,4 @@ export { default as UploadCloudIcon } from './UploadCloudIcon';
 export { default as ExternalLinkIcon } from './ExternalLinkIcon';
 export { default as ZapIcon } from './ZapIcon';
 export { default as ArrowRightIcon } from './ArrowRightIcon';
+export { default as HeartIcon } from './HeartIcon';

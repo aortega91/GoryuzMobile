@@ -20,6 +20,13 @@ export interface CommonTheme {
   /** Overlays */
   overlayDark: string;
   overlayLight: string;
+  /** Toast notifications */
+  toastSuccessBackground: string;
+  toastSuccessText: string;
+  toastErrorBackground: string;
+  toastErrorText: string;
+  toastInfoBackground: string;
+  toastInfoText: string;
 }
 
 // ─── Full theme shape ─────────────────────────────────────────────────────────
@@ -47,6 +54,12 @@ export const lightTheme: Theme = {
     warningAmber: commonColors.warningAmber,
     overlayDark: commonColors.overlayDark,
     overlayLight: commonColors.overlayLight,
+    toastSuccessBackground: '#DCFCE7',
+    toastSuccessText: '#166534',
+    toastErrorBackground: '#FEE2E2',
+    toastErrorText: '#991B1B',
+    toastInfoBackground: commonColors.navyDark,
+    toastInfoText: commonColors.offWhite,
   },
 };
 
@@ -68,5 +81,11 @@ export const darkTheme: Theme = {
     warningAmber: commonColors.warningAmber,
     overlayDark: 'rgba(0,0,0,0.70)',
     overlayLight: 'rgba(255,255,255,0.08)',
+    toastSuccessBackground: '#14532D',
+    toastSuccessText: '#86EFAC',
+    toastErrorBackground: '#7F1D1D',
+    toastErrorText: '#FCA5A5',
+    toastInfoBackground: '#E8E6E1',
+    toastInfoText: commonColors.navyDark,
   },
 };
