@@ -97,7 +97,8 @@
     "combinatorProCombine": "Combine",
     "combinatorProError": "Could not combine outfit. Please try again.",
     "combinatorProResultLabel": "Your combined look",
-    "combinatorProSave": "Save outfit",
+    "combinatorProSaved": "Saved to Styles!",
+    "combinatorProSave":"Save outfit",
     "combinatorProSavedName": "PRO Combined Outfit"
   },
   "collection": {

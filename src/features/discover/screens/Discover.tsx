@@ -308,6 +308,7 @@ function Discover() {
   const [proError, setProError] = useState<string | null>(null);
   const [proCombinedImage, setProCombinedImage] = useState<string | null>(null);
   const [proSaving, setProSaving] = useState(false);
+  const [proSaved, setProSaved] = useState(false);
   const [showProUpgrade, setShowProUpgrade] = useState(false);
   const [closetRefreshing, setClosetRefreshing] = useState(false);
 
@@ -377,6 +378,8 @@ function Discover() {
     try {
       const itemIds = Array.from(proSelectedIds);
       await dispatch(addOutfit({ name: t('discover.combinatorProSavedName'), itemIds }));
+      setProSaved(true);
+      setTimeout(() => setProSaved(false), 3000);
     } catch (err) {
       logError(err instanceof Error ? err : new Error(String(err)), 'discover/proSaveOutfit');
     } finally {
@@ -888,14 +891,24 @@ function Discover() {
               </View>
               <Touchable
                 onPress={handleProSaveOutfit}
-                disabled={proSaving}
+                disabled={proSaving || proSaved}
                 borderRadius={24}
-                style={[styles.saveBtn, { backgroundColor: d.fabBackground, opacity: proSaving ? 0.6 : 1 }]}
+                style={[
+                  styles.saveBtn,
+                  {
+                    backgroundColor: proSaved ? d.successBackground : d.fabBackground,
+                    opacity: proSaving ? 0.6 : 1,
+                  },
+                ]}
               >
                 {proSaving ? (
                   <ActivityIndicator size="small" color={d.fabIcon} />
+                ) : proSaved ? (
+                  <CheckIcon size={18} color={d.successText} />
                 ) : null}
-                <Text style={[styles.saveBtnText, { color: d.fabIcon }]}>{t('discover.combinatorProSave')}</Text>
+                <Text style={[styles.saveBtnText, { color: proSaved ? d.successText : d.fabIcon }]}>
+                  {proSaved ? t('discover.combinatorProSaved') : t('discover.combinatorProSave')}
+                </Text>
               </Touchable>
             </View>
           )}

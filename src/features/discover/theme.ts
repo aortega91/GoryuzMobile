@@ -53,6 +53,10 @@ export interface DiscoverTheme extends Theme {
     fabBackground: string;
     fabIcon: string;
 
+    // Success state
+    successBackground: string;
+    successText: string;
+
     // Gem badge
     gemBadgeBackground: string;
     gemBadgeBorder: string;
@@ -145,6 +149,9 @@ const discoverLight: DiscoverTheme['discover'] = {
   fabBackground: '#6366F1',
   fabIcon: commonColors.white,
 
+  successBackground: '#DCFCE7',
+  successText: '#166534',
+
   gemBadgeBackground: '#F5F3FF',
   gemBadgeBorder: '#DDD6FE',
   gemBadgeText: '#6D28D9',
@@ -228,6 +235,9 @@ const discoverDark: DiscoverTheme['discover'] = {
 
   fabBackground: '#4F46E5',
   fabIcon: commonColors.white,
+
+  successBackground: '#14532D',
+  successText: '#86EFAC',
 
   gemBadgeBackground: 'rgba(76,29,149,0.2)',
   gemBadgeBorder: 'rgba(109,40,217,0.3)',
