@@ -27,6 +27,7 @@ interface TopBarProps {
   onGemPress?: () => void;
   onMessagePress?: () => void;
   onNotificationPress?: () => void;
+  unreadNotifications?: number;
   avatarUrl?: string | null;
   onAvatarPress?: () => void;
   unreadMessages?: number;
@@ -40,6 +41,7 @@ function TopBar({
   onGemPress,
   onMessagePress,
   onNotificationPress,
+  unreadNotifications = 0,
   avatarUrl,
   onAvatarPress,
   unreadMessages = 0,
@@ -139,6 +141,13 @@ function TopBar({
           hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
         >
           <BellIcon size={20} color={t.topBarIcon} />
+          {unreadNotifications > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>
+                {unreadNotifications > 9 ? '9+' : String(unreadNotifications)}
+              </Text>
+            </View>
+          )}
         </Touchable>
 
         {/* Avatar */}

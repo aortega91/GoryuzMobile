@@ -19,6 +19,7 @@ import profileReducer from '@features/home/profileSlice';
 import collectionReducer from '@features/collection/collectionSlice';
 import scheduleReducer from '@features/schedule/scheduleSlice';
 import stylesReducer from '@features/styles/stylesSlice';
+import notificationsReducer from '@features/notifications/notificationsSlice';
 import appThemeReducer from './appThemeSlice';
 import locationReducer from './locationSlice';
 
@@ -73,6 +74,7 @@ const rootPersistConfig = {
   version: 1,
   // session has its own persist config; profile/collection/schedule/styles are always refetched on launch
   blacklist: ['session', 'profile', 'collection', 'schedule', 'styles'],
+  // notifications persists (not blacklisted) so users keep their notification history
   transforms: [locationTransform],
 };
 
@@ -84,6 +86,7 @@ const rootReducer = combineReducers({
   collection: collectionReducer,
   schedule: scheduleReducer,
   styles: stylesReducer,
+  notifications: notificationsReducer,
   appTheme: appThemeReducer,
   location: locationReducer,
 });

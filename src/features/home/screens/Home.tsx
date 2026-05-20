@@ -27,6 +27,9 @@ import Schedule from '@features/schedule/screens/Schedule';
 import Profile from '@features/profile/screens/Profile';
 import Discover from '@features/discover/screens/Discover';
 import SecondLife from '@features/secondLife/screens/SecondLife';
+import Notifications from '@features/notifications/screens/Notifications';
+import { addNotification } from '@features/notifications/notificationsSlice';
+import { loadEvents } from '@features/schedule/scheduleSlice';
 import { loadProfile } from '../profileSlice';
 import { MOCK_FEED_POSTS } from '../mockFeedData';
 import { ActiveModule } from '../types';
@@ -52,6 +55,11 @@ function Home() {
   const profile = useSelector((state: RootState) => state.profile.data);
   const profileStatus = useSelector((state: RootState) => state.profile.status);
   const cityName = useSelector((state: RootState) => state.location.cityName);
+  const scheduleEvents = useSelector((state: RootState) => state.schedule.events);
+  const scheduleStatus = useSelector((state: RootState) => state.schedule.eventsStatus);
+  const unreadNotifications = useSelector(
+    (state: RootState) => state.notifications.items.filter(n => !n.read).length,
+  );
 
   const { detectLocation, locationBlocked, handleOpenLocationSettings, dismissLocationBlocked } = useLocation();
 
@@ -81,6 +89,24 @@ function Home() {
       detectLocation();
     }
   }, [profile?.language]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (scheduleStatus === 'idle') dispatch(loadEvents());
+  }, [dispatch, scheduleStatus]);
+
+  useEffect(() => {
+    if (scheduleStatus !== 'succeeded') return;
+    const today = new Date().toISOString().split('T')[0];
+    const todayEvent = scheduleEvents.find(e => e.date === today && e.outfit);
+    if (todayEvent?.outfit) {
+      dispatch(addNotification({
+        id: `outfit-today-${today}`,
+        text: t('notifications.outfitToday', { name: todayEvent.outfit.name }),
+        timestamp: new Date().toISOString(),
+      }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheduleStatus]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -231,6 +257,8 @@ function Home() {
           location={location}
           onLocationPress={detectLocation}
           onAvatarPress={() => setActiveModule('profile')}
+          onNotificationPress={() => setActiveModule('notifications')}
+          unreadNotifications={unreadNotifications}
         />
 
         {/* Module content area */}
@@ -263,6 +291,9 @@ function Home() {
           {activeModule === 'discover' && <Discover />}
           {activeModule === 'second_life' && <SecondLife />}
           {activeModule === 'community' && renderComingSoon()}
+          {activeModule === 'notifications' && (
+            <Notifications onClose={() => setActiveModule('home')} />
+          )}
         </View>
 
         {/* Bottom tab bar — home panel only */}

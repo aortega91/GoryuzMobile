@@ -98,7 +98,7 @@
     "combinatorProError": "Could not combine outfit. Please try again.",
     "combinatorProResultLabel": "Your combined look",
     "combinatorProSaved": "Saved to Styles!",
-    "combinatorProSave":"Save outfit",
+    "combinatorProSave": "Save outfit",
     "combinatorProSavedName": "PRO Combined Outfit"
   },
   "collection": {
@@ -479,5 +479,16 @@
     "cancel": "Cancel",
     "error": "Error",
     "comingSoon": "Coming soon"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "empty": "No notifications",
+    "emptyDesc": "You're all caught up!",
+    "justNow": "Just now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago",
+    "outfitToday": "You have an outfit planned for today: {{name}}"
   }
 }

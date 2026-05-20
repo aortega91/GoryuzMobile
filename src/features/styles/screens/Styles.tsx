@@ -987,21 +987,27 @@ function Styles() {
           {createStep === 1 && (
             <View style={styles.createGrid}>
               {[
-                { label: t('styles.createOutfits'),  Icon: ShirtIcon,    color: '#6366F1', onPress: () => setCreateStep(2) },
-                { label: t('styles.createHaircuts'), Icon: ScissorsIcon, color: '#F97316', onPress: () => { setShowCreate(false); setShowHaircut(true); } },
-                { label: t('styles.createMakeup'),   Icon: SparklesIcon, color: '#EC4899', onPress: () => { setShowCreate(false); setShowMakeup(true); } },
-                { label: t('styles.createNails'),    Icon: HandIcon,     color: '#14B8A6', onPress: () => { setShowCreate(false); setShowNails(true); } },
+                { label: t('styles.createOutfits'),  Icon: ShirtIcon,    color: '#6366F1', onPress: () => setCreateStep(2),                                               soon: false },
+                { label: t('styles.createHaircuts'), Icon: ScissorsIcon, color: '#F97316', onPress: () => { setShowCreate(false); setShowHaircut(true); },                 soon: true },
+                { label: t('styles.createMakeup'),   Icon: SparklesIcon, color: '#EC4899', onPress: () => { setShowCreate(false); setShowMakeup(true); },                  soon: true },
+                { label: t('styles.createNails'),    Icon: HandIcon,     color: '#14B8A6', onPress: () => { setShowCreate(false); setShowNails(true); },                   soon: true },
               ].map(opt => (
                 <Touchable
                   key={opt.label}
-                  onPress={opt.onPress}
+                  onPress={opt.soon ? undefined : opt.onPress}
+                  disabled={opt.soon}
                   borderRadius={24}
                   style={[styles.createCard, { backgroundColor: s.outfitCardMosaicBackground, borderColor: s.modalBorder }]}
                 >
-                  <View style={[styles.createIconCircle, { backgroundColor: s.modalBackground }]}>
+                  <View style={[styles.createIconCircle, opt.soon && styles.createIconCircleFlat, { backgroundColor: opt.soon ? `${opt.color}22` : s.modalBackground }]}>
                     <opt.Icon size={28} color={opt.color} />
                   </View>
                   <Text style={[styles.createCardLabel, { color: s.modalTitle }]}>{opt.label}</Text>
+                  {opt.soon && (
+                    <View style={styles.createCardSoonBadge}>
+                      <Text style={styles.createCardSoonText}>{t('common.comingSoon')}</Text>
+                    </View>
+                  )}
                 </Touchable>
               ))}
             </View>
@@ -1451,6 +1457,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     textAlign: 'center',
+  },
+  createIconCircleFlat: {
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  createCardSoonBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    backgroundColor: '#FEF3C7',
+  },
+  createCardSoonText: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    color: '#92400E',
   },
   createMethods: {
     padding: 16,
