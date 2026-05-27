@@ -55,3 +55,4 @@ export { default as ExternalLinkIcon } from './ExternalLinkIcon';
 export { default as ZapIcon } from './ZapIcon';
 export { default as ArrowRightIcon } from './ArrowRightIcon';
 export { default as HeartIcon } from './HeartIcon';
+export { default as LifeBuoyIcon } from './LifeBuoyIcon';

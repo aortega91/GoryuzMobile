@@ -19,6 +19,7 @@ import {
   ArchiveIcon,
   CalendarIcon,
   HomeIcon,
+  LifeBuoyIcon,
   ShirtIcon,
   SparklesIcon,
   StarIcon,
@@ -73,6 +74,11 @@ const NAV_ITEMS: NavItem[] = [
     module: 'community',
     labelKey: 'menu.community',
     icon: color => <UsersIcon size={20} color={color} />,
+  },
+  {
+    module: 'support',
+    labelKey: 'menu.support',
+    icon: color => <LifeBuoyIcon size={20} color={color} />,
   },
 ];
 

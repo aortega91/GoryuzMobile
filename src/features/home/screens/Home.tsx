@@ -29,6 +29,7 @@ import Discover from '@features/discover/screens/Discover';
 import SecondLife from '@features/secondLife/screens/SecondLife';
 import Notifications from '@features/notifications/screens/Notifications';
 import Subscription from '@features/subscription/screens/Subscription';
+import Support from '@features/support/screens/Support';
 import { addNotification } from '@features/notifications/notificationsSlice';
 import { loadEvents } from '@features/schedule/scheduleSlice';
 import { loadProfile } from '../profileSlice';
@@ -295,6 +296,7 @@ function Home() {
           {activeModule === 'second_life' && <SecondLife />}
           {activeModule === 'community' && renderComingSoon()}
           {activeModule === 'subscription' && <Subscription />}
+          {activeModule === 'support' && <Support />}
           {activeModule === 'notifications' && (
             <Notifications onClose={() => setActiveModule('home')} />
           )}

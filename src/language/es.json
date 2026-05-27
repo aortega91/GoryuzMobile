@@ -45,10 +45,36 @@
     "discover": "Descubrir",
     "secondLife": "Segunda Vida",
     "community": "Comunidad",
-    "subscription": "Suscripción"
+    "subscription": "Suscripción",
+    "support": "Soporte"
   },
   "subscription": {
     "loadError": "No se pudo cargar la página de suscripción. Verifica tu conexión e intenta de nuevo.",
+    "retry": "Reintentar"
+  },
+  "support": {
+    "title": "Soporte",
+    "newTicket": "Nuevo Ticket",
+    "history": "Historial",
+    "ticketTitle": "Título",
+    "ticketTitlePlaceholder": "¿Cuál es el problema?",
+    "description": "Descripción",
+    "descriptionPlaceholder": "Describe tu problema en detalle...",
+    "evidence": "Evidencia (opcional)",
+    "attachEvidence": "Adjuntar Imagen",
+    "changeImage": "Cambiar Imagen",
+    "fromCamera": "Tomar Foto",
+    "fromGallery": "Elegir de Galería",
+    "submit": "Enviar Ticket",
+    "submitSuccess": "Ticket enviado exitosamente",
+    "submitError": "No se pudo enviar el ticket. Intenta de nuevo.",
+    "fieldRequired": "El título y la descripción son requeridos.",
+    "statusPending": "Pendiente",
+    "statusResolved": "Resuelto",
+    "adminResponse": "Respuesta del Equipo",
+    "emptyHistory": "Sin tickets aún",
+    "emptyHistoryDesc": "Crea un nuevo ticket si necesitas ayuda.",
+    "loadError": "Error al cargar los tickets. Desliza para actualizar.",
     "retry": "Reintentar"
   },
   "permissions": {

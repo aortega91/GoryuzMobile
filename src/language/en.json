@@ -45,11 +45,37 @@
     "discover": "Discover",
     "secondLife": "Second Life",
     "community": "Community",
-    "subscription": "Subscription"
+    "subscription": "Subscription",
+    "support": "Support"
   },
   "subscription": {
     "loadError": "Could not load the subscription page. Check your connection and try again.",
     "retry": "Try Again"
+  },
+  "support": {
+    "title": "Support",
+    "newTicket": "New Ticket",
+    "history": "History",
+    "ticketTitle": "Title",
+    "ticketTitlePlaceholder": "What's the issue?",
+    "description": "Description",
+    "descriptionPlaceholder": "Describe your issue in detail...",
+    "evidence": "Evidence (optional)",
+    "attachEvidence": "Attach Image",
+    "changeImage": "Change Image",
+    "fromCamera": "Take Photo",
+    "fromGallery": "Choose from Gallery",
+    "submit": "Submit Ticket",
+    "submitSuccess": "Ticket submitted successfully",
+    "submitError": "Failed to submit ticket. Please try again.",
+    "fieldRequired": "Title and description are required.",
+    "statusPending": "Pending",
+    "statusResolved": "Resolved",
+    "adminResponse": "Team Response",
+    "emptyHistory": "No tickets yet",
+    "emptyHistoryDesc": "Create a new ticket if you need help.",
+    "loadError": "Failed to load tickets. Pull to refresh.",
+    "retry": "Retry"
   },
   "permissions": {
     "cameraTitle": "Camera Access Required",

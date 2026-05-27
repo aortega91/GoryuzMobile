@@ -8,7 +8,8 @@ export type ActiveModule =
   | 'second_life'
   | 'community'
   | 'notifications'
-  | 'subscription';
+  | 'subscription'
+  | 'support';
 
 export interface FeedUser {
   id: string;
