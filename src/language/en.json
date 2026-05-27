@@ -44,7 +44,12 @@
     "schedule": "Schedule",
     "discover": "Discover",
     "secondLife": "Second Life",
-    "community": "Community"
+    "community": "Community",
+    "subscription": "Subscription"
+  },
+  "subscription": {
+    "loadError": "Could not load the subscription page. Check your connection and try again.",
+    "retry": "Try Again"
   },
   "permissions": {
     "cameraTitle": "Camera Access Required",

@@ -44,7 +44,12 @@
     "schedule": "Agenda",
     "discover": "Descubrir",
     "secondLife": "Segunda Vida",
-    "community": "Comunidad"
+    "community": "Comunidad",
+    "subscription": "Suscripción"
+  },
+  "subscription": {
+    "loadError": "No se pudo cargar la página de suscripción. Verifica tu conexión e intenta de nuevo.",
+    "retry": "Reintentar"
   },
   "permissions": {
     "cameraTitle": "Acceso a la Cámara Requerido",

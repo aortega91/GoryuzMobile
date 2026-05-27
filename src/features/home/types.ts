@@ -7,7 +7,8 @@ export type ActiveModule =
   | 'discover'
   | 'second_life'
   | 'community'
-  | 'notifications';
+  | 'notifications'
+  | 'subscription';
 
 export interface FeedUser {
   id: string;

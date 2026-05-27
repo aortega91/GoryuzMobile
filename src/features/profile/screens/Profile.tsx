@@ -461,7 +461,11 @@ const fieldStyles = StyleSheet.create({
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-function Profile() {
+interface ProfileProps {
+  onViewPlans?: () => void;
+}
+
+function Profile({ onViewPlans }: ProfileProps) {
   const theme = useProfileTheme();
   const pt = theme.profile;
   const { t, i18n } = useTranslation();
@@ -990,12 +994,7 @@ function Profile() {
                     styles.subscriptionBtn,
                     { backgroundColor: pt.primarySoft },
                   ]}
-                  onPress={() =>
-                    Alert.alert(
-                      t('profile.comingSoonTitle'),
-                      t('profile.comingSoonMessage'),
-                    )
-                  }
+                  onPress={onViewPlans}
                   borderRadius={10}
                 >
                   <Text style={[styles.subscriptionBtnText, { color: pt.primary }]}>

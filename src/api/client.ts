@@ -24,16 +24,18 @@ const BASE_URL = (Config.API_URL ?? 'https://preview.goryuz.com/api').replace(
   '',
 );
 
-// Origin without the /api suffix — used to build absolute image URLs from relative paths
-const ORIGIN = BASE_URL.replace(/\/api$/, '');
+// Origin without the /api suffix — used to build absolute image URLs from relative paths.
+// Exported for WebView-based screens that need to load the web app directly.
+export const ORIGIN = BASE_URL.replace(/\/api$/, '');
 
 // ─── Fallback token (from zena/Untitled-1.json — used while backend auth is
 //     being aligned with Firebase ID tokens) ──────────────────────────────────
 
 // Full cookie string copied from browser DevTools (preview.goryuz.com)
 // Replace this whenever the session expires.
-const FALLBACK_COOKIE =
-  '__Host-authjs.csrf-token=11e92702d1951daf8e22bcc48d3a24da47a54d505967efd62d34be6a5622aa6b%7Cdb17ab489780169cb0551bf700949a02b0c02ed881335f7f3994f58c031356cc; __Secure-authjs.callback-url=https%3A%2F%2Fpreview.goryuz.com%2F; goryuz-language=es; __Secure-authjs.session-token=eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2Q0JDLUhTNTEyIiwia2lkIjoiM0U1NTNVWW15MU45MmNqdHoyWHV1WWZPMGcyUVI0bF9sdGVIckZqX1hPS2lHN29DcEVNaWZrQ1Y4aDItRDk4djZFN2pCNi1haF92YXJSOFktR0l4OGcifQ..1Mh5XBKX-F0jUQxS-nz3lA.YpuOE1L1b1rUttpcaw2GL1-CG1eInIea3Pm6gapmg8rDpcJkz-LpORJ7T0OI98ge5TYeZ6aZ3wriMsy67kWju6qTYVknELWMnCJYwSJbWEq6LGxO_nvOLnxzJ8XufD7vGtRpOrtzKBwBFIUCWs-1hW5j_NeYrB7Gd9ZAUsnHki-9bCCsD9kc_D0NuwlLmqLVXEysCoaTxvjbG-uQfkAMZ5igmEYUUDL8ufNg8HluTMpQuuqOM7fcnv9ubMwTGrcDU4AQWmmeAH5h73x6Xf4S6QNUvMpAH3hOSzwLIFU05BF1TnGdlowRLEim0wJsNtCe8FswuU0CXDcNhpQasJ7lQ9hNSlUsrcll9Mml9LywfdKZP8MfKZYa8dkRL7-9L8LkreTyYi2ISoIitV9Uqoro3IEFqzCtndZyT4QTZgI9iOX8Uyeh2RAC4zOvY-ewjBni8wKnBKLkJMifZV-xWK_UGA.q2HyDkjbSDBkiPLZUQK_oeweMzboiKNl1v1u4DuAzpQ';
+// Exported so WebView-based screens (e.g. Subscription) can pre-seed the same session cookie.
+export const FALLBACK_COOKIE =
+  '__Host-authjs.csrf-token=11e92702d1951daf8e22bcc48d3a24da47a54d505967efd62d34be6a5622aa6b%7Cdb17ab489780169cb0551bf700949a02b0c02ed881335f7f3994f58c031356cc; __Secure-authjs.callback-url=https%3A%2F%2Fpreview.goryuz.com%2F; goryuz-language=es; __Secure-authjs.session-token=eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2Q0JDLUhTNTEyIiwia2lkIjoiM0U1NTNVWW15MU45MmNqdHoyWHV1WWZPMGcyUVI0bF9sdGVIckZqX1hPS2lHN29DcEVNaWZrQ1Y4aDItRDk4djZFN2pCNi1haF92YXJSOFktR0l4OGcifQ..jfv0R1exRlhozQOJj90kEA.vxSw7SEJtEl_DBK39LEtwDlZ8V0L1dY51fjYUDo-sLgvHjm305ssRsuzZfxWwJKECYmbcXuL8pEAOUIntFbh2N9fzN4nfE1Ml3wgQVwLdGZp2hLMcNIY_ENBldcLgsx7khaIjOoh9PDYrXuGZXbwKCg0-i0jVW08cYeGOY1cCMZTcugxRVIBP8MyWjv564OzPF8NJ1rGstu2OdvQ7_DruqTrj2sToEIXMyFWd6jREIVa4mSOy03y6lU_K97_yDHW7ifKzOMuZMqhIcVfP66k-8JuwQWJmmyFNg3aFKAnODLM3ACfDIrT_s49Qf640QU0dyMDbGEKlnXzGw5F80_YCPEmFfR0jB6ieHyeM85BsyBWjW56NrwVUqWxOMwQ3x9kuiCejOXlPuMArJDkaVo-GyxylP0-jG8GmajLMdiCjEJtiD3q46MTDcwFRT1LVWEH6V8elM3FFJeTzq1Bem0QUQ._Nc_efl7fHcWiOZVfEQJSKJhz4ikprMNKv6Zrtqg8kU';
 
 // ─── Auth headers ─────────────────────────────────────────────────────────────
 
