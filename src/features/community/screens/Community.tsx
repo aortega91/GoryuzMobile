@@ -73,6 +73,11 @@ type UserCardProps = {
 };
 
 function UserCard({ user, c, rightSlot, onPress }: UserCardProps) {
+  const [imgErr, setImgErr] = useState(false);
+  useEffect(() => { setImgErr(false); }, [user.id]);
+  const avatarUri = imgErr || !user.avatarUrl
+    ? `https://i.pravatar.cc/80?u=${user.id}`
+    : user.avatarUrl;
   return (
     <Touchable
       style={[styles.card, { backgroundColor: c.cardBackground, borderColor: c.cardBorder }]}
@@ -81,8 +86,10 @@ function UserCard({ user, c, rightSlot, onPress }: UserCardProps) {
       disabled={!onPress}
     >
       <Image
-        source={{ uri: user.avatarUrl || `https://i.pravatar.cc/80?u=${user.id}` }}
+        key={avatarUri}
+        source={{ uri: avatarUri }}
         style={[styles.cardAvatar, { borderColor: c.avatarBorder }]}
+        onError={() => setImgErr(true)}
       />
       <View style={styles.cardInfo}>
         <Text style={[styles.cardName, { color: c.cardTitle }]} numberOfLines={1}>
@@ -109,11 +116,18 @@ type RequestCardProps = {
 };
 
 function RequestCard({ request, c, onAccept, onReject }: RequestCardProps) {
+  const [imgErr, setImgErr] = useState(false);
+  useEffect(() => { setImgErr(false); }, [request.id]);
+  const avatarUri = imgErr || !request.avatarUrl
+    ? `https://i.pravatar.cc/80?u=${request.id}`
+    : request.avatarUrl;
   return (
     <View style={[styles.card, { backgroundColor: c.cardBackground, borderColor: c.cardBorder }]}>
       <Image
-        source={{ uri: request.avatarUrl || `https://i.pravatar.cc/80?u=${request.id}` }}
+        key={avatarUri}
+        source={{ uri: avatarUri }}
         style={[styles.cardAvatar, { borderColor: c.avatarBorder }]}
+        onError={() => setImgErr(true)}
       />
       <View style={styles.cardInfo}>
         <Text style={[styles.cardName, { color: c.cardTitle }]} numberOfLines={1}>
@@ -154,6 +168,11 @@ type ConvRowProps = {
 };
 
 function ConvRow({ conv, c, onPress }: ConvRowProps) {
+  const [imgErr, setImgErr] = useState(false);
+  useEffect(() => { setImgErr(false); }, [conv.otherUserId]);
+  const avatarUri = imgErr || !conv.otherUserAvatar
+    ? `https://i.pravatar.cc/80?u=${conv.otherUserId}`
+    : conv.otherUserAvatar;
   return (
     <Touchable
       style={[styles.convRow, { backgroundColor: c.cardBackground, borderBottomColor: c.cardBorder }]}
@@ -162,8 +181,10 @@ function ConvRow({ conv, c, onPress }: ConvRowProps) {
     >
       <View style={styles.convAvatarWrap}>
         <Image
-          source={{ uri: conv.otherUserAvatar || `https://i.pravatar.cc/80?u=${conv.otherUserId}` }}
+          key={avatarUri}
+          source={{ uri: avatarUri }}
           style={[styles.convAvatar, { borderColor: c.avatarBorder }]}
+          onError={() => setImgErr(true)}
         />
         {conv.unreadCount > 0 && (
           <View style={[styles.unreadDot, { backgroundColor: c.unreadDot }]} />
