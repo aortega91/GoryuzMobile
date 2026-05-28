@@ -43,6 +43,7 @@ import SecondLife from '@features/secondLife/screens/SecondLife';
 import Notifications from '@features/notifications/screens/Notifications';
 import Subscription from '@features/subscription/screens/Subscription';
 import Support from '@features/support/screens/Support';
+import Community from '@features/community/screens/Community';
 import { addNotification } from '@features/notifications/notificationsSlice';
 import { loadEvents } from '@features/schedule/scheduleSlice';
 import { loadProfile } from '../profileSlice';
@@ -490,16 +491,6 @@ function Home() {
     { id: 'saved', labelKey: 'home.tabCollection', Icon: BookmarkIcon },
   ];
 
-  // ─── Coming soon placeholder ──────────────────────────────────────────────────
-
-  const renderComingSoon = () => (
-    <View style={styles.comingSoon}>
-      <SparklesIcon size={48} color={homeTokens.subtitleText} strokeWidth={1.5} />
-      <Text style={[styles.comingSoonText, { color: homeTokens.headlineText }]}>
-        {t('common.comingSoon')}
-      </Text>
-    </View>
-  );
 
   const statusBarDark = activeModule === 'home' && activeTab === 'feed';
 
@@ -544,7 +535,7 @@ function Home() {
           )}
           {activeModule === 'discover' && <Discover />}
           {activeModule === 'second_life' && <SecondLife />}
-          {activeModule === 'community' && renderComingSoon()}
+          {activeModule === 'community' && <Community />}
           {activeModule === 'subscription' && <Subscription />}
           {activeModule === 'support' && <Support />}
           {activeModule === 'notifications' && (
@@ -738,17 +729,6 @@ const styles = StyleSheet.create({
   },
   tabLabelInactive: {
     fontWeight: '500',
-  },
-  // Coming soon placeholder
-  comingSoon: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
-  },
-  comingSoonText: {
-    fontSize: 18,
-    fontWeight: '700',
   },
   // Publish sheet
   sheetContent: {
