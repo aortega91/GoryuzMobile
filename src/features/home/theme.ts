@@ -51,6 +51,23 @@ export interface HomeTheme extends Theme {
     fabBackground: string;
     fabIcon: string;
 
+    // My Vision grid & publish sheet
+    gridItemBorder: string;
+    inputBackground: string;
+    inputBorder: string;
+    inputText: string;
+    inputPlaceholder: string;
+    primaryButton: string;
+    primaryButtonText: string;
+
+    // Collection color filter chips
+    chipBackground: string;
+    chipBorder: string;
+    chipText: string;
+    chipActiveBackground: string;
+    chipActiveBorder: string;
+    chipActiveText: string;
+
     // Drawer (always dark-navy regardless of device theme)
     drawerBackground: string;
     drawerBorder: string;
@@ -108,6 +125,20 @@ export const homeLightTheme: HomeTheme = {
     fabBackground: commonColors.navyDark,
     fabIcon: commonColors.white,
 
+    gridItemBorder: commonColors.grayLight,
+    inputBackground: commonColors.slateBackground,
+    inputBorder: commonColors.grayLight,
+    inputText: commonColors.navyDark,
+    inputPlaceholder: commonColors.gray,
+    primaryButton: commonColors.navyDark,
+    primaryButtonText: commonColors.white,
+    chipBackground: commonColors.white,
+    chipBorder: commonColors.grayLight,
+    chipText: commonColors.grayDark,
+    chipActiveBackground: commonColors.navyDark,
+    chipActiveBorder: commonColors.navyDark,
+    chipActiveText: commonColors.white,
+
     drawerBackground: commonColors.navyDark,
     drawerBorder: 'rgba(255,255,255,0.08)',
     drawerText: 'rgba(255,255,255,0.80)',
@@ -163,6 +194,20 @@ export const homeDarkTheme: HomeTheme = {
 
     fabBackground: '#4F46E5',
     fabIcon: commonColors.white,
+
+    gridItemBorder: commonColors.darkBorder,
+    inputBackground: '#1A2440',
+    inputBorder: commonColors.darkBorder,
+    inputText: commonColors.offWhite,
+    inputPlaceholder: commonColors.grayDark,
+    primaryButton: '#818CF8',
+    primaryButtonText: commonColors.white,
+    chipBackground: commonColors.darkCard,
+    chipBorder: commonColors.darkBorder,
+    chipText: commonColors.gray,
+    chipActiveBackground: '#818CF8',
+    chipActiveBorder: '#818CF8',
+    chipActiveText: commonColors.white,
 
     drawerBackground: commonColors.navyDark,
     drawerBorder: 'rgba(255,255,255,0.08)',

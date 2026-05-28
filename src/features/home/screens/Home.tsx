@@ -1,11 +1,16 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
+  Dimensions,
   FlatList,
+  Image,
   RefreshControl,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,12 +19,20 @@ import { useTranslation } from 'react-i18next';
 import i18n from '@language/index';
 
 import Touchable from '@components/Touchable';
+import BottomSheet from '@components/BottomSheet';
 import PermissionModal from '@components/PermissionModal';
 import Toast from '@components/Toast';
 import useHomeTheme from '@hooks/useHomeTheme';
 import useLocation from '@hooks/useLocation';
+import useCameraPermission from '@hooks/useCameraPermission';
 import { RootState, AppDispatch } from '@utilities/store';
-import { ShirtIcon, StarIcon, PlusCircleIcon, EyeIcon, SparklesIcon, BookmarkIcon } from '@assets/icons';
+import {
+  BookmarkIcon,
+  CameraIcon,
+  ImageIcon,
+  PlusCircleIcon,
+  SparklesIcon,
+} from '@assets/icons';
 import { clearSession } from '@features/auth/sessionSlice';
 import Collection from '@features/collection/screens/Collection';
 import Styles from '@features/styles/screens/Styles';
@@ -33,17 +46,171 @@ import Support from '@features/support/screens/Support';
 import { addNotification } from '@features/notifications/notificationsSlice';
 import { loadEvents } from '@features/schedule/scheduleSlice';
 import { loadProfile } from '../profileSlice';
-import { MOCK_FEED_POSTS } from '../mockFeedData';
-import { ActiveModule } from '../types';
+import { MOCK_FEED_POSTS, MOCK_OWN_POSTS, MOCK_SAVED_POSTS } from '../mockFeedData';
+import { ActiveModule, FeedPost as FeedPostType } from '../types';
 
 import TopBar from '../components/TopBar';
-import ActionCard from '../components/ActionCard';
 import DrawerMenu, { DrawerMenuHandle } from '../components/DrawerMenu';
 import FeedPost from '../components/FeedPost';
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const GRID_COLS = 3;
+const GRID_GAP = 2;
+const GRID_ITEM_SIZE = (SCREEN_WIDTH - GRID_GAP * (GRID_COLS + 1)) / GRID_COLS;
+
+const COLOR_FILTERS = [
+  { key: 'all', labelKey: 'lookbook.filterAll' },
+  { key: 'neutral', labelKey: 'lookbook.filterNeutral' },
+  { key: 'earth', labelKey: 'lookbook.filterEarth' },
+  { key: 'dark', labelKey: 'lookbook.filterDark' },
+  { key: 'pink', labelKey: 'lookbook.filterPink' },
+  { key: 'blue', labelKey: 'lookbook.filterBlue' },
+  { key: 'green', labelKey: 'lookbook.filterGreen' },
+] as const;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type HomeTab = 'feed' | 'my_posts' | 'saved';
+
+// ─── Publish Sheet ────────────────────────────────────────────────────────────
+
+type HomeTokens = ReturnType<typeof useHomeTheme>['home'];
+
+interface PublishSheetProps {
+  onClose: () => void;
+  tokens: HomeTokens;
+}
+
+function PublishSheet({ onClose, tokens: t_ }: PublishSheetProps) {
+  const { t } = useTranslation();
+  const { openCamera, openGallery } = useCameraPermission();
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handlePickSource = () => {
+    Alert.alert(t('lookbook.addPhoto'), '', [
+      {
+        text: t('lookbook.fromCamera'),
+        onPress: async () => {
+          const asset = await openCamera();
+          if (asset?.uri) setImageUri(asset.uri);
+        },
+      },
+      {
+        text: t('lookbook.fromGallery'),
+        onPress: async () => {
+          const asset = await openGallery();
+          if (asset?.uri) setImageUri(asset.uri);
+        },
+      },
+      { text: t('common.cancel'), style: 'cancel' },
+    ]);
+  };
+
+  const handlePublish = () => {
+    if (!title.trim() || !imageUri) {
+      Alert.alert(t('lookbook.publishRequired'));
+      return;
+    }
+    setIsSaving(true);
+    setTimeout(() => {
+      setIsSaving(false);
+      onClose();
+    }, 1200);
+  };
+
+  return (
+    <BottomSheet onClose={onClose} backgroundColor={t_.cardBackground}>
+      <View style={styles.sheetContent}>
+        <Text style={[styles.sheetTitle, { color: t_.headlineText }]}>
+          {t('lookbook.publishTitle')}
+        </Text>
+
+        <Touchable
+          style={[
+            styles.imagePicker,
+            { backgroundColor: t_.inputBackground, borderColor: t_.inputBorder },
+            imageUri ? styles.imagePickerFilled : null,
+          ]}
+          onPress={handlePickSource}
+          borderRadius={12}
+          disabled={isSaving}
+        >
+          {imageUri ? (
+            <Image source={{ uri: imageUri }} style={styles.imagePickerPreview} resizeMode="cover" />
+          ) : (
+            <View style={styles.imagePickerPlaceholder}>
+              <CameraIcon size={28} color={t_.inputPlaceholder} strokeWidth={1.5} />
+              <Text style={[styles.imagePickerLabel, { color: t_.inputPlaceholder }]}>
+                {t('lookbook.addPhoto')}
+              </Text>
+            </View>
+          )}
+        </Touchable>
+
+        <View style={styles.fieldGroup}>
+          <Text style={[styles.fieldLabel, { color: t_.headlineText }]}>
+            {t('lookbook.postTitle')}
+          </Text>
+          <TextInput
+            style={[
+              styles.input,
+              { backgroundColor: t_.inputBackground, borderColor: t_.inputBorder, color: t_.inputText },
+            ]}
+            placeholder={t('lookbook.postTitlePlaceholder')}
+            placeholderTextColor={t_.inputPlaceholder}
+            value={title}
+            onChangeText={setTitle}
+            editable={!isSaving}
+          />
+        </View>
+
+        <View style={styles.fieldGroup}>
+          <Text style={[styles.fieldLabel, { color: t_.headlineText }]}>
+            {t('lookbook.postDescription')}
+          </Text>
+          <TextInput
+            style={[
+              styles.input,
+              styles.inputMultiline,
+              { backgroundColor: t_.inputBackground, borderColor: t_.inputBorder, color: t_.inputText },
+            ]}
+            placeholder={t('lookbook.postDescriptionPlaceholder')}
+            placeholderTextColor={t_.inputPlaceholder}
+            value={description}
+            onChangeText={setDescription}
+            multiline
+            numberOfLines={3}
+            editable={!isSaving}
+          />
+        </View>
+
+        <Touchable
+          style={[
+            styles.publishButton,
+            { backgroundColor: t_.primaryButton },
+            isSaving && styles.disabledButton,
+          ]}
+          onPress={handlePublish}
+          borderRadius={14}
+          disabled={isSaving}
+        >
+          {isSaving ? (
+            <ActivityIndicator color={t_.primaryButtonText} size="small" />
+          ) : (
+            <Text style={[styles.publishButtonText, { color: t_.primaryButtonText }]}>
+              {t('lookbook.publish')}
+            </Text>
+          )}
+        </Touchable>
+      </View>
+    </BottomSheet>
+  );
+}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -73,6 +240,13 @@ function Home() {
   const [activeTab, setActiveTab] = useState<HomeTab>('feed');
   const [tabContentHeight, setTabContentHeight] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Mi Visión state
+  const [ownPosts, setOwnPosts] = useState<FeedPostType[]>(MOCK_OWN_POSTS);
+  const [showPublishSheet, setShowPublishSheet] = useState(false);
+
+  // Colección filter state
+  const [savedFilter, setSavedFilter] = useState('all');
 
   useEffect(() => {
     if (profileStatus === 'idle') {
@@ -124,8 +298,22 @@ function Home() {
     setActiveModule(module);
   }, []);
 
+  const handleDeletePost = (post: FeedPostType) => {
+    Alert.alert(
+      t('lookbook.deleteTitle'),
+      t('lookbook.deleteMessage'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('lookbook.deleteConfirm'),
+          style: 'destructive',
+          onPress: () => setOwnPosts(prev => prev.filter(p => p.id !== post.id)),
+        },
+      ],
+    );
+  };
+
   const gemCount = profile?.tokens ?? 0;
-  const firstName = user?.displayName?.split(' ')[0] ?? t('home.defaultName');
   const location = cityName ?? undefined;
 
   // ─── Home panel tabs ─────────────────────────────────────────────────────────
@@ -159,73 +347,145 @@ function Home() {
     );
   };
 
-  const renderMyVisionTab = () => (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={isRefreshing}
-          onRefresh={handleRefresh}
-          tintColor={homeTokens.headlineText}
-        />
-      }
-    >
-      {/* Greeting */}
-      <View style={styles.greetingSection}>
-        <Text style={[styles.greeting, { color: homeTokens.headlineText }]}>
-          {t('home.greeting', { name: firstName })}
-        </Text>
-        <Text style={[styles.greetingSubtitle, { color: homeTokens.subtitleText }]}>
-          {t('home.greetingSubtitle')}
-        </Text>
-        <Text style={[styles.greetingQuestion, { color: homeTokens.subtitleText }]}>
-          {t('home.greetingQuestion')}
-        </Text>
-      </View>
+  const renderMyVisionTab = () => {
+    if (ownPosts.length === 0) {
+      return (
+        <View style={styles.emptyState}>
+          <ImageIcon size={48} color={homeTokens.subtitleText} strokeWidth={1.5} />
+          <Text style={[styles.emptyTitle, { color: homeTokens.headlineText }]}>
+            {t('lookbook.visionEmpty')}
+          </Text>
+          <Text style={[styles.emptySubtitle, { color: homeTokens.subtitleText }]}>
+            {t('lookbook.visionEmptyDesc')}
+          </Text>
+          <Touchable
+            style={[styles.emptyButton, { backgroundColor: homeTokens.primaryButton }]}
+            onPress={() => setShowPublishSheet(true)}
+            borderRadius={12}
+          >
+            <Text style={[styles.emptyButtonText, { color: homeTokens.primaryButtonText }]}>
+              {t('lookbook.publishFirst')}
+            </Text>
+          </Touchable>
+        </View>
+      );
+    }
 
-      {/* Action cards */}
-      <View style={styles.cards}>
-        <ActionCard
-          isCta
-          icon={<ShirtIcon size={24} />}
-          title={t('home.loadFirstItem')}
-          description={t('home.loadFirstItemDesc')}
-          onPress={() => setActiveModule('closet')}
-        />
-        <ActionCard
-          icon={<StarIcon size={24} />}
-          title={t('home.myStyles')}
-          description={t('home.myStylesDesc')}
-          onPress={() => setActiveModule('styles')}
-        />
-        <ActionCard
-          icon={<PlusCircleIcon size={24} />}
-          title={t('home.addPieces')}
-          description={t('home.addPiecesDesc')}
-          onPress={() => setActiveModule('closet')}
-        />
-      </View>
-    </ScrollView>
-  );
+    return (
+      <ScrollView
+        style={[styles.gridScroll, { backgroundColor: homeTokens.background }]}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={homeTokens.headlineText}
+          />
+        }
+      >
+        <View style={styles.grid}>
+          {ownPosts.map(post => (
+            <Touchable
+              key={post.id}
+              style={[styles.gridItem, { borderColor: homeTokens.gridItemBorder }]}
+              onLongPress={() => handleDeletePost(post)}
+              borderRadius={4}
+            >
+              <Image
+                source={{ uri: post.imageUrl }}
+                style={styles.gridItemImage}
+                resizeMode="cover"
+              />
+            </Touchable>
+          ))}
+          <Touchable
+            style={[
+              styles.gridItem,
+              styles.gridAddButton,
+              { borderColor: homeTokens.gridItemBorder, backgroundColor: homeTokens.inputBackground },
+            ]}
+            onPress={() => setShowPublishSheet(true)}
+            borderRadius={4}
+          >
+            <PlusCircleIcon size={28} color={homeTokens.inputPlaceholder} strokeWidth={1.5} />
+          </Touchable>
+        </View>
+      </ScrollView>
+    );
+  };
 
-  const renderSavedTab = () => (
-    <View style={styles.emptyState}>
-      <BookmarkIcon size={48} color={homeTokens.subtitleText} strokeWidth={1.5} />
-      <Text style={[styles.emptyTitle, { color: homeTokens.headlineText }]}>
-        {t('home.noSavedYet')}
-      </Text>
-      <Text style={[styles.emptySubtitle, { color: homeTokens.subtitleText }]}>
-        {t('home.tabInspiration')} →
-      </Text>
-    </View>
-  );
+  const renderSavedTab = () => {
+    const filtered = savedFilter === 'all'
+      ? MOCK_SAVED_POSTS
+      : MOCK_SAVED_POSTS.filter(p => p.colors?.includes(savedFilter));
+
+    return (
+      <View style={[styles.collectionContainer, { backgroundColor: homeTokens.background }]}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterRow}
+          contentContainerStyle={styles.filterRowContent}
+        >
+          {COLOR_FILTERS.map(filter => {
+            const isActive = savedFilter === filter.key;
+            return (
+              <Touchable
+                key={filter.key}
+                style={[
+                  styles.chip,
+                  {
+                    backgroundColor: isActive ? homeTokens.chipActiveBackground : homeTokens.chipBackground,
+                    borderColor: isActive ? homeTokens.chipActiveBorder : homeTokens.chipBorder,
+                  },
+                ]}
+                onPress={() => setSavedFilter(filter.key)}
+                borderRadius={20}
+              >
+                <Text style={[
+                  styles.chipText,
+                  { color: isActive ? homeTokens.chipActiveText : homeTokens.chipText },
+                ]}>
+                  {t(filter.labelKey)}
+                </Text>
+              </Touchable>
+            );
+          })}
+        </ScrollView>
+
+        {filtered.length === 0 ? (
+          <View style={styles.emptyState}>
+            <BookmarkIcon size={48} color={homeTokens.subtitleText} strokeWidth={1.5} />
+            <Text style={[styles.emptyTitle, { color: homeTokens.headlineText }]}>
+              {t('lookbook.collectionEmpty')}
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: homeTokens.subtitleText }]}>
+              {t('lookbook.collectionEmptyDesc')}
+            </Text>
+          </View>
+        ) : (
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={styles.grid}>
+              {filtered.map(post => (
+                <View key={post.id} style={[styles.gridItem, { borderColor: homeTokens.gridItemBorder }]}>
+                  <Image
+                    source={{ uri: post.imageUrl }}
+                    style={styles.gridItemImage}
+                    resizeMode="cover"
+                  />
+                </View>
+              ))}
+            </View>
+          </ScrollView>
+        )}
+      </View>
+    );
+  };
 
   // ─── Bottom tab bar (home panel only) ────────────────────────────────────────
 
   const TABS: { id: HomeTab; labelKey: string; Icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }> }[] = [
-    { id: 'my_posts', labelKey: 'home.tabMyVision', Icon: EyeIcon },
+    { id: 'my_posts', labelKey: 'home.tabMyVision', Icon: ImageIcon },
     { id: 'feed', labelKey: 'home.tabInspiration', Icon: SparklesIcon },
     { id: 'saved', labelKey: 'home.tabCollection', Icon: BookmarkIcon },
   ];
@@ -273,16 +533,6 @@ function Home() {
               {activeTab === 'feed' && renderInspirationTab()}
               {activeTab === 'my_posts' && renderMyVisionTab()}
               {activeTab === 'saved' && renderSavedTab()}
-
-              {activeTab === 'feed' && (
-                <Touchable
-                  style={[styles.fab, { backgroundColor: homeTokens.fabBackground }]}
-                  onPress={() => {}}
-                  borderRadius={26}
-                >
-                  <Text style={[styles.fabIcon, { color: homeTokens.fabIcon }]}>+</Text>
-                </Touchable>
-              )}
             </>
           )}
 
@@ -365,6 +615,14 @@ function Home() {
         />
       )}
 
+      {/* Publish sheet — mounted over the home panel */}
+      {showPublishSheet && (
+        <PublishSheet
+          onClose={() => setShowPublishSheet(false)}
+          tokens={homeTokens}
+        />
+      )}
+
       <Toast />
     </View>
   );
@@ -382,36 +640,32 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  // Home panel
-  scroll: {
+  // Grid (My Vision & Collection)
+  gridScroll: {
     flex: 1,
   },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 28,
-    paddingBottom: 40,
-    gap: 24,
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: GRID_GAP,
+    gap: GRID_GAP,
   },
-  greetingSection: {
-    gap: 4,
+  gridItem: {
+    width: GRID_ITEM_SIZE,
+    height: GRID_ITEM_SIZE,
+    borderRadius: 4,
+    overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
   },
-  greeting: {
-    fontSize: 32,
-    fontWeight: '800',
-    letterSpacing: -0.5,
+  gridItemImage: {
+    width: '100%',
+    height: '100%',
   },
-  greetingSubtitle: {
-    fontSize: 16,
-    fontWeight: '400',
-    marginTop: 4,
+  gridAddButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  greetingQuestion: {
-    fontSize: 16,
-    fontWeight: '400',
-  },
-  cards: {
-    gap: 12,
-  },
+  // Empty state
   emptyState: {
     flex: 1,
     alignItems: 'center',
@@ -427,27 +681,40 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     fontSize: 13,
     textAlign: 'center',
+    lineHeight: 18,
   },
-  // FAB
-  fab: {
-    position: 'absolute',
-    bottom: 16,
-    right: 16,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 8,
+  emptyButton: {
+    marginTop: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
   },
-  fabIcon: {
-    fontSize: 28,
-    fontWeight: '300',
-    lineHeight: 32,
+  emptyButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  // Collection filter
+  collectionContainer: {
+    flex: 1,
+  },
+  filterRow: {
+    flexGrow: 0,
+    flexShrink: 0,
+  },
+  filterRowContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  chipText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   // Bottom tab bar
   tabBar: {
@@ -482,6 +749,71 @@ const styles = StyleSheet.create({
   comingSoonText: {
     fontSize: 18,
     fontWeight: '700',
+  },
+  // Publish sheet
+  sheetContent: {
+    padding: 20,
+    gap: 16,
+  },
+  sheetTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  imagePicker: {
+    height: 180,
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  imagePickerFilled: {
+    borderWidth: 0,
+  },
+  imagePickerPreview: {
+    width: '100%',
+    height: '100%',
+  },
+  imagePickerPlaceholder: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  imagePickerLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  fieldGroup: {
+    gap: 6,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  input: {
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+  },
+  inputMultiline: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  publishButton: {
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+  publishButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });
 

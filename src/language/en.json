@@ -46,7 +46,8 @@
     "secondLife": "Second Life",
     "community": "Community",
     "subscription": "Subscription",
-    "support": "Support"
+    "support": "Support",
+    "lookbook": "LookBook"
   },
   "subscription": {
     "loadError": "Could not load the subscription page. Check your connection and try again.",
@@ -521,5 +522,35 @@
     "hoursAgo": "{{count}}h ago",
     "daysAgo": "{{count}}d ago",
     "outfitToday": "You have an outfit planned for today: {{name}}"
+  },
+  "lookbook": {
+    "tabVision": "My Vision",
+    "tabInspiration": "Inspiration",
+    "tabCollection": "Collection",
+    "publishTitle": "New Post",
+    "postTitle": "Title",
+    "postTitlePlaceholder": "Name your look...",
+    "postDescription": "Description",
+    "postDescriptionPlaceholder": "Tell us about this outfit...",
+    "addPhoto": "Add Photo",
+    "fromCamera": "Take Photo",
+    "fromGallery": "Choose from Gallery",
+    "publish": "Publish",
+    "publishRequired": "Title and photo are required.",
+    "visionEmpty": "No posts yet",
+    "visionEmptyDesc": "Share your first look with the community.",
+    "publishFirst": "Create Post",
+    "deleteTitle": "Delete Post",
+    "deleteMessage": "Are you sure you want to delete this post? This action cannot be undone.",
+    "deleteConfirm": "Delete",
+    "collectionEmpty": "No saved posts",
+    "collectionEmptyDesc": "Tap the bookmark icon on any look in Inspiration to save it here.",
+    "filterAll": "All",
+    "filterNeutral": "Neutral",
+    "filterEarth": "Earth",
+    "filterDark": "Dark",
+    "filterPink": "Pink",
+    "filterBlue": "Blue",
+    "filterGreen": "Green"
   }
 }

@@ -31,4 +31,11 @@ export interface FeedPost {
   isSaved: boolean;
   isOwn: boolean;
   categories?: string[];
+  /** Colour palette tags used by the LookBook collection filter */
+  colors?: string[];
+  /** Mock AI style analysis result for "Descubrir Estilo" */
+  aiPrompt?: string;
+  /** Mock outfit piece labels for "Análisis Market IA" */
+  clothingItems?: string[];
+  accessories?: string[];
 }

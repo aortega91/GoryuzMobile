@@ -46,7 +46,8 @@
     "secondLife": "Segunda Vida",
     "community": "Comunidad",
     "subscription": "Suscripción",
-    "support": "Soporte"
+    "support": "Soporte",
+    "lookbook": "LookBook"
   },
   "subscription": {
     "loadError": "No se pudo cargar la página de suscripción. Verifica tu conexión e intenta de nuevo.",
@@ -521,5 +522,35 @@
     "hoursAgo": "Hace {{count}}h",
     "daysAgo": "Hace {{count}} días",
     "outfitToday": "Tienes un outfit planeado para hoy: {{name}}"
+  },
+  "lookbook": {
+    "tabVision": "Mi Visión",
+    "tabInspiration": "Inspiración",
+    "tabCollection": "Colección",
+    "publishTitle": "Nueva Publicación",
+    "postTitle": "Título",
+    "postTitlePlaceholder": "Nombra tu look...",
+    "postDescription": "Descripción",
+    "postDescriptionPlaceholder": "Cuéntanos sobre este outfit...",
+    "addPhoto": "Agregar Foto",
+    "fromCamera": "Tomar Foto",
+    "fromGallery": "Elegir de Galería",
+    "publish": "Publicar",
+    "publishRequired": "El título y la foto son requeridos.",
+    "visionEmpty": "Sin publicaciones aún",
+    "visionEmptyDesc": "Comparte tu primer look con la comunidad.",
+    "publishFirst": "Crear Publicación",
+    "deleteTitle": "Eliminar Publicación",
+    "deleteMessage": "¿Estás segura de que quieres eliminar esta publicación? Esta acción no se puede deshacer.",
+    "deleteConfirm": "Eliminar",
+    "collectionEmpty": "Sin publicaciones guardadas",
+    "collectionEmptyDesc": "Toca el ícono de marcador en cualquier look de Inspiración para guardarlo aquí.",
+    "filterAll": "Todas",
+    "filterNeutral": "Neutros",
+    "filterEarth": "Tierra",
+    "filterDark": "Oscuros",
+    "filterPink": "Rosas",
+    "filterBlue": "Azules",
+    "filterGreen": "Verdes"
   }
 }
