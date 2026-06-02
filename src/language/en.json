@@ -546,7 +546,10 @@
     "noConversations": "No conversations yet.",
     "noConversationsSub": "Message a friend from the Following tab.",
     "noMessages": "No messages yet. Say hello!",
-    "messagePlaceholder": "Write a message..."
+    "messagePlaceholder": "Write a message...",
+    "chatConnecting": "Connecting…",
+    "chatReconnecting": "Reconnecting…",
+    "sendFailed": "Couldn’t send. Check your connection."
   },
   "lookbook": {
     "tabVision": "My Vision",

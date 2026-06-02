@@ -546,7 +546,10 @@
     "noConversations": "Sin conversaciones aún.",
     "noConversationsSub": "Envía un mensaje a alguien desde la pestaña Siguiendo.",
     "noMessages": "Sin mensajes aún. ¡Di hola!",
-    "messagePlaceholder": "Escribe un mensaje..."
+    "messagePlaceholder": "Escribe un mensaje...",
+    "chatConnecting": "Conectando…",
+    "chatReconnecting": "Reconectando…",
+    "sendFailed": "No se pudo enviar. Revisa tu conexión."
   },
   "lookbook": {
     "tabVision": "Mi Visión",

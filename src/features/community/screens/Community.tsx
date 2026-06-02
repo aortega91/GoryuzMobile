@@ -2,10 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
   Image,
-  KeyboardAvoidingView,
-  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -13,7 +10,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 
@@ -28,7 +24,6 @@ import {
   MessageIcon,
   MoreVerticalIcon,
   SearchIcon,
-  SendIcon,
   UserIcon,
   UserPlusIcon,
   UsersIcon,
@@ -41,10 +36,10 @@ import {
   respondToRequest,
   unfollowUser,
   fetchConversations,
-  fetchMessages,
-  sendMessage,
+  getOrCreateConversation,
 } from '../api/communityApi';
-import { CommunityUser, ChatMessage, Conversation, FriendRequest } from '../types';
+import { CommunityUser, Conversation, FriendRequest } from '../types';
+import ChatThread from '../components/ChatThread';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -196,7 +191,7 @@ function ConvRow({ conv, c, onPress }: ConvRowProps) {
             {conv.otherUserName}
           </Text>
           <Text style={[styles.convTime, { color: c.timestampText }]}>
-            {formatTime(conv.createdAt)}
+            {formatTime(conv.lastMessageAt)}
           </Text>
         </View>
         <Text style={[styles.convPreview, { color: c.cardSubtitle }]} numberOfLines={1}>
@@ -213,9 +208,11 @@ function Community() {
   const theme = useCommunityTheme();
   const c = theme.community;
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
   const user = useSelector((state: RootState) => state.session.user);
-  const currentUserId = user?.uid ?? '';
+  // The chat backend keys on the zena user id (the profile loaded behind the session),
+  // not the Firebase uid — using the wrong id breaks "other user" resolution and isMe.
+  const profileId = useSelector((state: RootState) => state.profile.data?.id);
+  const currentUserId = profileId ?? user?.uid ?? '';
 
   // ─ Navigation state ──────────────────────────────────────────────────────
   const [mainTab, setMainTab] = useState<MainTab>('connections');
@@ -244,13 +241,6 @@ function Community() {
   );
   const { data: conversations, loading: convsLoading, refetch: refetchConvs } = useRequest(fetchConvsBound);
 
-  // ─ Chat thread state ─────────────────────────────────────────────────────
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [messagesLoading, setMessagesLoading] = useState(false);
-  const [chatInput, setChatInput] = useState('');
-  const [sendingMessage, setSendingMessage] = useState(false);
-  const messagesListRef = useRef<FlatList>(null);
-
   // ─ Search debounce ───────────────────────────────────────────────────────
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
@@ -269,17 +259,34 @@ function Community() {
     return () => { if (searchTimer.current) clearTimeout(searchTimer.current); };
   }, [searchQuery]);
 
-  // ─ Load messages when entering a chat ───────────────────────────────────
-  useEffect(() => {
-    if (!activeChat) return;
-    setMessagesLoading(true);
-    fetchMessages(activeChat.otherUserId)
-      .then(setMessages)
-      .catch(() => setMessages([]))
-      .finally(() => setMessagesLoading(false));
-  }, [activeChat]);
-
   // ─ Actions ───────────────────────────────────────────────────────────────
+
+  /** Opens (or creates) the conversation with a given user and switches to the chat. */
+  const openChatWith = async (target: CommunityUser) => {
+    setMainTab('messages');
+    const existing = (conversations ?? []).find(cv => cv.otherUserId === target.id);
+    if (existing) {
+      setActiveChat(existing);
+      return;
+    }
+    try {
+      const id = await getOrCreateConversation(currentUserId, target.id);
+      const now = new Date().toISOString();
+      setActiveChat({
+        id,
+        otherUserId: target.id,
+        otherUserName: target.name,
+        otherUserAvatar: target.avatarUrl,
+        unreadCount: 0,
+        lastMessage: '',
+        lastMessageAt: now,
+        createdAt: now,
+      });
+      refetchConvs();
+    } catch {
+      // The API client already logs to Crashlytics; nothing actionable in the UI here.
+    }
+  };
 
   const handleFollow = async (targetUser: CommunityUser) => {
     if (!targetUser.handle) return;
@@ -302,7 +309,6 @@ function Community() {
   };
 
   const handleReject = async (req: FriendRequest) => {
-    setPendingAccept(prev => new Set(prev).add(req.id));
     try {
       await respondToRequest(req.id, 'reject');
       refetchRequests();
@@ -332,28 +338,6 @@ function Community() {
       ],
     );
     setOpenMenu(null);
-  };
-
-  const handleSend = async () => {
-    if (!chatInput.trim() || !activeChat || sendingMessage) return;
-    const text = chatInput.trim();
-    setChatInput('');
-    setSendingMessage(true);
-    const optimistic: ChatMessage = {
-      id: `temp-${Date.now()}`,
-      senderId: currentUserId,
-      content: text,
-      isRead: false,
-      createdAt: new Date().toISOString(),
-    };
-    setMessages(prev => [...prev, optimistic]);
-    try {
-      await sendMessage(activeChat.id, text);
-    } catch {
-      setMessages(prev => prev.filter(m => m.id !== optimistic.id));
-    } finally {
-      setSendingMessage(false);
-    }
   };
 
   // ─ Derived data ──────────────────────────────────────────────────────────
@@ -476,11 +460,7 @@ function Community() {
                 <View style={styles.followingActions}>
                   <Touchable
                     style={[styles.iconBtn, { backgroundColor: c.followingBackground }]}
-                    onPress={() => {
-                      const conv = (conversations ?? []).find(cv => cv.otherUserId === u.id);
-                      if (conv) { setMainTab('messages'); setActiveChat(conv); }
-                      else { setMainTab('messages'); }
-                    }}
+                    onPress={() => openChatWith(u)}
                     borderRadius={20}
                     hitSlop={6}
                   >
@@ -542,71 +522,11 @@ function Community() {
   const renderMessagesTab = () => {
     if (activeChat) {
       return (
-        <KeyboardAvoidingView
-          style={styles.chatContainer}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={0}
-        >
-          {messagesLoading ? (
-            <ActivityIndicator style={styles.loader} color={c.tabActiveIndicator} />
-          ) : (
-            <FlatList
-              ref={messagesListRef}
-              data={messages}
-              keyExtractor={m => m.id}
-              contentContainerStyle={styles.messagesList}
-              onContentSizeChange={() => messagesListRef.current?.scrollToEnd({ animated: false })}
-              ListEmptyComponent={
-                <View style={styles.emptyState}>
-                  <MessageIcon size={40} color={c.emptyIcon} strokeWidth={1.5} />
-                  <Text style={[styles.emptyTitle, { color: c.emptyText }]}>{t('community.noMessages')}</Text>
-                </View>
-              }
-              renderItem={({ item }) => {
-                const isMe = item.senderId === currentUserId;
-                return (
-                  <View style={[styles.bubbleRow, isMe ? styles.bubbleRowMe : styles.bubbleRowThem]}>
-                    <View style={[
-                      styles.bubble,
-                      { backgroundColor: isMe ? c.bubbleMe : c.bubbleThem },
-                    ]}>
-                      <Text style={[styles.bubbleText, { color: isMe ? c.bubbleMeText : c.bubbleThemText }]}>
-                        {item.content}
-                      </Text>
-                    </View>
-                    <Text style={[styles.bubbleTime, { color: c.timestampText }]}>
-                      {formatTime(item.createdAt)}
-                    </Text>
-                  </View>
-                );
-              }}
-            />
-          )}
-
-          <View style={[
-            styles.chatInputRow,
-            { backgroundColor: c.chatInputBackground, borderTopColor: c.chatInputBorder, paddingBottom: insets.bottom > 0 ? insets.bottom : 12 },
-          ]}>
-            <TextInput
-              style={[styles.chatInput, { backgroundColor: c.searchBackground, borderColor: c.chatInputBorder, color: c.chatInputText }]}
-              placeholder={t('community.messagePlaceholder')}
-              placeholderTextColor={c.chatInputPlaceholder}
-              value={chatInput}
-              onChangeText={setChatInput}
-              multiline
-            />
-            <Touchable
-              style={[styles.sendBtn, { backgroundColor: c.sendButton }, (!chatInput.trim() || sendingMessage) && styles.sendBtnDisabled]}
-              onPress={handleSend}
-              borderRadius={22}
-              disabled={!chatInput.trim() || sendingMessage}
-            >
-              {sendingMessage
-                ? <ActivityIndicator size="small" color={c.sendButtonIcon} />
-                : <SendIcon size={18} color={c.sendButtonIcon} strokeWidth={2} />}
-            </Touchable>
-          </View>
-        </KeyboardAvoidingView>
+        <ChatThread
+          conversation={activeChat}
+          currentUserId={currentUserId}
+          onRead={refetchConvs}
+        />
       );
     }
 
@@ -890,44 +810,6 @@ const styles = StyleSheet.create({
   convName: { fontSize: 14, fontWeight: '700', flex: 1, marginRight: 8 },
   convTime: { fontSize: 11 },
   convPreview: { fontSize: 13 },
-  // Chat
-  chatContainer: { flex: 1 },
-  messagesList: { padding: 16, gap: 8 },
-  bubbleRow: { maxWidth: '80%', gap: 2 },
-  bubbleRowMe: { alignSelf: 'flex-end', alignItems: 'flex-end' },
-  bubbleRowThem: { alignSelf: 'flex-start', alignItems: 'flex-start' },
-  bubble: {
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-  },
-  bubbleText: { fontSize: 14, lineHeight: 20 },
-  bubbleTime: { fontSize: 10, marginHorizontal: 4 },
-  chatInputRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    gap: 8,
-  },
-  chatInput: {
-    flex: 1,
-    borderRadius: 20,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    fontSize: 14,
-    maxHeight: 100,
-  },
-  sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendBtnDisabled: { opacity: 0.45 },
   // Empty
   emptyState: {
     flex: 1,
