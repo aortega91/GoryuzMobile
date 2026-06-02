@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import Touchable from '@components/Touchable';
 import useCommunityTheme from '@hooks/useCommunityTheme';
 import useRequest from '@hooks/useRequest';
+import toast from '@utilities/toast';
 import { RootState } from '@utilities/store';
 import {
   ChevronLeftIcon,
@@ -208,11 +209,12 @@ function Community() {
   const theme = useCommunityTheme();
   const c = theme.community;
   const { t } = useTranslation();
-  const user = useSelector((state: RootState) => state.session.user);
-  // The chat backend keys on the zena user id (the profile loaded behind the session),
-  // not the Firebase uid — using the wrong id breaks "other user" resolution and isMe.
-  const profileId = useSelector((state: RootState) => state.profile.data?.id);
-  const currentUserId = profileId ?? user?.uid ?? '';
+  // The chat backend keys on the zena user id (the profile loaded behind the session).
+  // NEVER fall back to the Firebase uid: it is not a row in the zena `users` table, so
+  // the chat worker's `INSERT INTO messages` violates the `sender_id -> users.id` FK and
+  // silently drops the message ("Error guardando mensaje en servidor"). An empty id here
+  // is the safe failure mode — the socket simply won't connect (see useChatSocket).
+  const currentUserId = useSelector((state: RootState) => state.profile.data?.id) ?? '';
 
   // ─ Navigation state ──────────────────────────────────────────────────────
   const [mainTab, setMainTab] = useState<MainTab>('connections');
@@ -263,6 +265,12 @@ function Community() {
 
   /** Opens (or creates) the conversation with a given user and switches to the chat. */
   const openChatWith = async (target: CommunityUser) => {
+    // Without a resolved zena user id, sending would fail the worker's sender_id FK.
+    // Surface it instead of opening a thread that can't persist messages.
+    if (!currentUserId) {
+      toast.error(t('community.sendFailed'));
+      return;
+    }
     setMainTab('messages');
     const existing = (conversations ?? []).find(cv => cv.otherUserId === target.id);
     if (existing) {

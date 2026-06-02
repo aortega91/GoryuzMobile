@@ -3,6 +3,10 @@ apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 apply plugin: "com.google.gms.google-services"
 apply plugin: "com.google.firebase.crashlytics"
+// Bake .env values into BuildConfig/resources so react-native-config's `Config.*` is
+// populated at runtime. Autolinking wires the native module but does NOT apply this —
+// without it every `Config.X` reads back undefined.
+apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
 
 /**
  * This is the configuration block to customize your React Native Android app.

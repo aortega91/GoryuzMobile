@@ -17,21 +17,24 @@ import { AppState } from 'react-native';
 import Config from 'react-native-config';
 
 import { logError } from '@utilities/crashlytics';
+import { ORIGIN } from '@api/client';
 import { ChatMessage } from '../types';
 import { toIsoTimestamp } from '../api/communityApi';
 
-// The chat WebSocket is NOT served from the app domain (API_URL) — it lives on a
-// separate Cloudflare worker, exactly as the zena web client connects to it. We mirror
-// its host mapping, derived from API_URL so no extra env var / native rebuild is needed.
+// The chat WebSocket is NOT served from the app domain — it lives on a separate
+// Cloudflare worker, exactly as the zena web client connects to it. We mirror its host
+// mapping, derived from the SAME resolved origin the REST client uses (client.ts `ORIGIN`)
+// so chat and REST can never point at different environments. (Reading `Config.API_URL`
+// directly is unsafe: if the native env isn't wired it is `undefined`, which previously
+// fell through to the PRODUCTION worker while REST silently defaulted to preview.)
 // An explicit CHAT_WS_URL override wins if it is ever added to .env.
 function deriveChatWsBase(): string {
   const override = Config.CHAT_WS_URL?.trim();
   if (override) return override;
-  const apiUrl = Config.API_URL ?? '';
-  if (apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1')) {
+  if (ORIGIN.includes('localhost') || ORIGIN.includes('127.0.0.1')) {
     return 'ws://localhost:8787';
   }
-  if (apiUrl.includes('preview')) {
+  if (ORIGIN.includes('preview')) {
     return 'wss://zena-chat-worker-preview.hernan-mancini.workers.dev';
   }
   return 'wss://zena-chat-worker-production.hernan-mancini.workers.dev';
@@ -143,6 +146,7 @@ export default function useChatSocket(
 
     let socket: WebSocket | null = null;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
     // True while the screen is mounted AND foregrounded — gates auto-reconnect.
     let shouldConnect = true;
 
@@ -151,6 +155,38 @@ export default function useChatSocket(
         clearTimeout(reconnectTimer);
         reconnectTimer = null;
       }
+    };
+
+    const clearHeartbeat = () => {
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
+      }
+    };
+
+    // The chat worker keeps WebSockets in memory with a plain `ws.accept()` and has no
+    // ping/pong or keepalive. Without traffic, an idle socket gets dropped by the mobile
+    // radio / NAT / edge, and the client stops receiving live messages with no clean
+    // close. A lightweight app-level heartbeat keeps the connection warm; the DO ignores
+    // unknown message types, so the ping is harmless server-side.
+    const HEARTBEAT_MS = 25000;
+    const startHeartbeat = () => {
+      clearHeartbeat();
+      heartbeatTimer = setInterval(() => {
+        const s = socketRef.current;
+        if (s && s.readyState === WebSocket.OPEN) {
+          try {
+            s.send(JSON.stringify({ type: 'ping' }));
+          } catch {
+            // A failed send means a dead socket — close it so onclose triggers reconnect.
+            try {
+              s.close();
+            } catch {
+              // ignore
+            }
+          }
+        }
+      }, HEARTBEAT_MS);
     };
 
     const connect = () => {
@@ -169,9 +205,13 @@ export default function useChatSocket(
       const next = new WebSocket(url);
       socket = next;
       socketRef.current = next;
-      next.onopen = () => setStatus('open');
+      next.onopen = () => {
+        setStatus('open');
+        startHeartbeat();
+      };
       next.onmessage = e => handleFrame(e.data as string);
       next.onclose = () => {
+        clearHeartbeat();
         if (socketRef.current === next) socketRef.current = null;
         setStatus('closed');
         // Retry while the screen is active (cold worker / transient drop), like the web client.
@@ -186,6 +226,7 @@ export default function useChatSocket(
 
     const disconnect = () => {
       clearReconnect();
+      clearHeartbeat();
       if (socket) {
         try {
           socket.close();
