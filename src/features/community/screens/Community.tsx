@@ -14,6 +14,7 @@ import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 
 import Touchable from '@components/Touchable';
+import { getImageSource } from '@api/client';
 import useCommunityTheme from '@hooks/useCommunityTheme';
 import useRequest from '@hooks/useRequest';
 import toast from '@utilities/toast';
@@ -71,9 +72,11 @@ type UserCardProps = {
 function UserCard({ user, c, rightSlot, onPress }: UserCardProps) {
   const [imgErr, setImgErr] = useState(false);
   useEffect(() => { setImgErr(false); }, [user.id]);
-  const avatarUri = imgErr || !user.avatarUrl
-    ? `https://i.pravatar.cc/80?u=${user.id}`
-    : user.avatarUrl;
+  // Real avatars are relative/private-R2 URLs that need ORIGIN + session auth headers
+  // (getImageSource); fall back to a generated pravatar if missing or it fails to load.
+  const avatarSource = imgErr || !user.avatarUrl
+    ? { uri: `https://i.pravatar.cc/80?u=${user.id}` }
+    : getImageSource(user.avatarUrl);
   return (
     <Touchable
       style={[styles.card, { backgroundColor: c.cardBackground, borderColor: c.cardBorder }]}
@@ -82,8 +85,8 @@ function UserCard({ user, c, rightSlot, onPress }: UserCardProps) {
       disabled={!onPress}
     >
       <Image
-        key={avatarUri}
-        source={{ uri: avatarUri }}
+        key={avatarSource.uri}
+        source={avatarSource}
         style={[styles.cardAvatar, { borderColor: c.avatarBorder }]}
         onError={() => setImgErr(true)}
       />
@@ -114,14 +117,14 @@ type RequestCardProps = {
 function RequestCard({ request, c, onAccept, onReject }: RequestCardProps) {
   const [imgErr, setImgErr] = useState(false);
   useEffect(() => { setImgErr(false); }, [request.id]);
-  const avatarUri = imgErr || !request.avatarUrl
-    ? `https://i.pravatar.cc/80?u=${request.id}`
-    : request.avatarUrl;
+  const avatarSource = imgErr || !request.avatarUrl
+    ? { uri: `https://i.pravatar.cc/80?u=${request.id}` }
+    : getImageSource(request.avatarUrl);
   return (
     <View style={[styles.card, { backgroundColor: c.cardBackground, borderColor: c.cardBorder }]}>
       <Image
-        key={avatarUri}
-        source={{ uri: avatarUri }}
+        key={avatarSource.uri}
+        source={avatarSource}
         style={[styles.cardAvatar, { borderColor: c.avatarBorder }]}
         onError={() => setImgErr(true)}
       />
@@ -166,9 +169,9 @@ type ConvRowProps = {
 function ConvRow({ conv, c, onPress }: ConvRowProps) {
   const [imgErr, setImgErr] = useState(false);
   useEffect(() => { setImgErr(false); }, [conv.otherUserId]);
-  const avatarUri = imgErr || !conv.otherUserAvatar
-    ? `https://i.pravatar.cc/80?u=${conv.otherUserId}`
-    : conv.otherUserAvatar;
+  const avatarSource = imgErr || !conv.otherUserAvatar
+    ? { uri: `https://i.pravatar.cc/80?u=${conv.otherUserId}` }
+    : getImageSource(conv.otherUserAvatar);
   return (
     <Touchable
       style={[styles.convRow, { backgroundColor: c.cardBackground, borderBottomColor: c.cardBorder }]}
@@ -177,8 +180,8 @@ function ConvRow({ conv, c, onPress }: ConvRowProps) {
     >
       <View style={styles.convAvatarWrap}>
         <Image
-          key={avatarUri}
-          source={{ uri: avatarUri }}
+          key={avatarSource.uri}
+          source={avatarSource}
           style={[styles.convAvatar, { borderColor: c.avatarBorder }]}
           onError={() => setImgErr(true)}
         />
