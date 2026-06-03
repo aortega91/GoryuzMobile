@@ -206,13 +206,19 @@ export default function useChatSocket(
       socket = next;
       socketRef.current = next;
       next.onopen = () => {
+        // Ignore a stale socket that a newer reconnect already superseded.
+        if (socketRef.current !== next) return;
         setStatus('open');
         startHeartbeat();
       };
       next.onmessage = e => handleFrame(e.data as string);
       next.onclose = () => {
+        // A delayed close from an old socket must NOT clobber the current one's status
+        // or kill its heartbeat — otherwise the banner sticks on "Reconectando…" while
+        // the live socket is actually open. Only the current socket drives reconnection.
+        if (socketRef.current !== next) return;
         clearHeartbeat();
-        if (socketRef.current === next) socketRef.current = null;
+        socketRef.current = null;
         setStatus('closed');
         // Retry while the screen is active (cold worker / transient drop), like the web client.
         if (shouldConnect) {
