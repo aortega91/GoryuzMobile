@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -114,6 +115,8 @@ function Schedule() {
   const [changingOutfitForEvent, setChangingOutfitForEvent] =
     useState<CalendarEvent | null>(null);
 
+  const [refreshing, setRefreshing] = useState(false);
+
   // ─── Load data on mount ───────────────────────────────────────────────────
 
   useEffect(() => {
@@ -122,16 +125,35 @@ function Schedule() {
     dispatch(loadOutfits());
   }, [dispatch, eventsStatus]);
 
-  useEffect(() => {
+  const loadWeather = useCallback(async () => {
     if (latitude == null || longitude == null) { return; }
-    fetchWeatherForecast(latitude, longitude, 16)
-      .then(forecast => {
-        const map: Record<string, DailyWeather> = {};
-        forecast.forEach(d => { map[d.date] = d; });
-        setLocationWeather(map);
-      })
-      .catch(err => logError(err, 'Schedule.fetchWeather'));
+    try {
+      const forecast = await fetchWeatherForecast(latitude, longitude, 16);
+      const map: Record<string, DailyWeather> = {};
+      forecast.forEach(d => { map[d.date] = d; });
+      setLocationWeather(map);
+    } catch (err) {
+      logError(err, 'Schedule.fetchWeather');
+    }
   }, [latitude, longitude]);
+
+  useEffect(() => {
+    loadWeather();
+  }, [loadWeather]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        dispatch(loadEvents()),
+        dispatch(loadTrips()),
+        dispatch(loadOutfits()),
+        loadWeather(),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [dispatch, loadWeather]);
 
   // ─── Derived data ─────────────────────────────────────────────────────────
 
@@ -246,8 +268,16 @@ function Schedule() {
 
     return (
       <ScrollView
+        style={styles.scroll}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.monthContainer, { paddingBottom: insets.bottom + 16 }]}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={s.headerTitle}
+          />
+        }
       >
         {/* Day name headers */}
         <View style={styles.monthHeaderRow}>
@@ -349,8 +379,16 @@ function Schedule() {
 
     return (
       <ScrollView
+        style={styles.scroll}
         contentContainerStyle={[styles.dayViewContent, { paddingBottom: insets.bottom + 32 }]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={s.headerTitle}
+          />
+        }
       >
         <View style={styles.dayViewHeader}>
           <View>
@@ -600,6 +638,10 @@ function Schedule() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  // Lets the content ScrollView fill the area below the header/toggle so it
+  // owns a scroll viewport — required for pull-to-refresh to engage even when
+  // the month grid / day list is shorter than the screen.
+  scroll: { flex: 1 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

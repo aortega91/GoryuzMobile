@@ -380,6 +380,7 @@ function SecondLife() {
         </View>
       ) : (
         <FlatList
+          style={styles.list}
           data={filteredMyItems}
           keyExtractor={item => item.id}
           renderItem={renderVitrinaItem}
@@ -511,6 +512,7 @@ function SecondLife() {
         </View>
       ) : (
         <FlatList
+          style={styles.list}
           data={filteredMarketplace}
           keyExtractor={item => item.id}
           renderItem={renderMarketItem}
@@ -879,6 +881,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   // ─── Grid ────────────────────────────────────────────────────────────────────
+  list: {
+    // flex:1 gives the FlatList a bounded height inside the flex:1 tabContent,
+    // so it owns its own scroll viewport. Without it the list sizes to its
+    // content and there's no overscroll region — the pull-to-refresh gesture
+    // never engages.
+    flex: 1,
+  },
   gridContent: {
     paddingHorizontal: 16,
     paddingBottom: 24,
