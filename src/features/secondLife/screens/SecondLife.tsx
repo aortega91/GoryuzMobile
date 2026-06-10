@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -14,12 +13,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 
 import Touchable from '@components/Touchable';
+import AuthedImage from '@components/AuthedImage';
 import BottomSheet from '@components/BottomSheet';
 import useSecondLifeTheme from '@hooks/useSecondLifeTheme';
 import { AppDispatch, RootState } from '@utilities/store';
 import { loadProfile } from '@features/home/profileSlice';
 import { removeItemLocally } from '@features/collection/collectionSlice';
-import { getImageSource } from '@api/client';
 import { logError } from '@utilities/crashlytics';
 import toast from '@utilities/toast';
 import {
@@ -318,7 +317,7 @@ function SecondLife() {
     >
       <View style={[styles.cardImage, { backgroundColor: sl.emptyIcon }]}>
         {item.imageData ? (
-          <Image source={getImageSource(item.imageData)} style={styles.cardImageFull} resizeMode="cover" />
+          <AuthedImage data={item.imageData} style={styles.cardImageFull} resizeMode="cover" />
         ) : (
           <ShirtIcon size={28} color={sl.cardMeta} strokeWidth={1.5} />
         )}
@@ -420,7 +419,7 @@ function SecondLife() {
       >
         <View style={[styles.cardImage, { backgroundColor: sl.emptyIcon }]}>
           {item.imageData ? (
-            <Image source={getImageSource(item.imageData)} style={styles.cardImageFull} resizeMode="cover" />
+            <AuthedImage data={item.imageData} style={styles.cardImageFull} resizeMode="cover" />
           ) : (
             <ShirtIcon size={28} color={sl.cardMeta} strokeWidth={1.5} />
           )}
@@ -655,7 +654,7 @@ function SecondLife() {
           <BottomSheet onClose={() => setSelectedItem(null)} backgroundColor={sl.modalBackground}>
             <ScrollView contentContainerStyle={styles.sheetBody} showsVerticalScrollIndicator={false}>
               {item.imageData ? (
-                <Image source={getImageSource(item.imageData)} style={styles.sheetImage} resizeMode="cover" />
+                <AuthedImage data={item.imageData} style={styles.sheetImage} resizeMode="cover" />
               ) : (
                 <View style={[styles.sheetImagePlaceholder, { backgroundColor: sl.emptyIcon }]}>
                   <ShirtIcon size={48} color={sl.cardMeta} strokeWidth={1.5} />
@@ -740,7 +739,7 @@ function SecondLife() {
           <BottomSheet onClose={() => setSelectedMarketItem(null)} backgroundColor={sl.modalBackground}>
             <ScrollView contentContainerStyle={styles.sheetBody} showsVerticalScrollIndicator={false}>
               {item.imageData ? (
-                <Image source={getImageSource(item.imageData)} style={styles.sheetImage} resizeMode="cover" />
+                <AuthedImage data={item.imageData} style={styles.sheetImage} resizeMode="cover" />
               ) : (
                 <View style={[styles.sheetImagePlaceholder, { backgroundColor: sl.emptyIcon }]}>
                   <ShirtIcon size={48} color={sl.cardMeta} strokeWidth={1.5} />
@@ -901,8 +900,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cardImageFull: {
-    width: '100%',
-    height: '100%',
+    // Absolute-fill instead of width/height: '100%'. The parent `cardImage`
+    // uses alignItems/justifyContent: 'center' (to center the ShirtIcon
+    // placeholder), and a percentage-sized child collapses to 0 inside a
+    // center-aligned Yoga container — which left the image invisible. Absolute
+    // positioning fills the container regardless of its alignment.
+    ...StyleSheet.absoluteFillObject,
   },
   cardBody: {
     padding: 10,

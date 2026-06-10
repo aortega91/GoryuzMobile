@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,8 +11,8 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import Touchable from '@components/Touchable';
+import AuthedImage from '@components/AuthedImage';
 import useStylesTheme from '@hooks/useStylesTheme';
-import { getImageSource } from '@api/client';
 import { ShirtIcon, SparklesIcon } from '@assets/icons';
 import {
   ClothingItem,
@@ -156,8 +155,8 @@ function OutfitCreator({ closetItems, closetLoading, saving, onSave }: OutfitCre
               style={[styles.gridItem, itemBorderStyle]}
             >
               {item.imageData ? (
-                <Image
-                  source={getImageSource(item.imageData)}
+                <AuthedImage
+                  data={item.imageData}
                   style={styles.gridImage}
                   resizeMode="cover"
                 />

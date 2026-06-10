@@ -5,13 +5,13 @@ import {
   TextInput,
   StyleSheet,
   ScrollView,
-  Image,
   ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import useScheduleTheme from '@hooks/useScheduleTheme';
 import BottomSheet from '@components/BottomSheet';
 import Touchable from '@components/Touchable';
+import AuthedImage from '@components/AuthedImage';
 import {
   PlaneIcon,
   BriefcaseIcon,
@@ -21,7 +21,6 @@ import {
   TrashIcon,
   AlertTriangleIcon,
 } from '@assets/icons';
-import { getImageSource } from '@api/client';
 import { Trip, CalendarEvent, DailyWeather } from '../types';
 import { geocodeDestination, fetchWeatherForecast } from '../api/weatherApi';
 import DatePickerModal from './DatePickerModal';
@@ -368,8 +367,8 @@ function TripModal({ existingTrip, eventsInTrip = [], onClose, onSave, onDelete 
                       ]}
                     >
                       {item.imageData ? (
-                        <Image
-                          source={getImageSource(item.imageData)}
+                        <AuthedImage
+                          data={item.imageData}
                           style={styles.packingImage}
                           resizeMode="cover"
                         />

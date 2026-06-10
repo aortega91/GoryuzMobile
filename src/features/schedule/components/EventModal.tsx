@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import useScheduleTheme from '@hooks/useScheduleTheme';
 import BottomSheet from '@components/BottomSheet';
 import Touchable from '@components/Touchable';
+import AuthedImage from '@components/AuthedImage';
 import { TrashIcon, CalendarIcon, RefreshCwIcon } from '@assets/icons';
-import { getImageSource } from '@api/client';
 import { CalendarEvent } from '../types';
 import DatePickerModal from './DatePickerModal';
 
@@ -58,8 +58,8 @@ function EventModal({ event, onClose, onRemove, onMove, onChangeOutfit }: Props)
               {event.outfit.items.map(item => (
                 <View key={item.id} style={styles.itemCard}>
                   {item.imageData ? (
-                    <Image
-                      source={getImageSource(item.imageData)}
+                    <AuthedImage
+                      data={item.imageData}
                       style={styles.itemImage}
                       resizeMode="cover"
                     />

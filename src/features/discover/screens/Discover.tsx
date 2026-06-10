@@ -17,6 +17,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 
 import Touchable from '@components/Touchable';
+import AuthedImage from '@components/AuthedImage';
 import UpgradeModal from '@components/UpgradeModal';
 import useDiscoverTheme from '@hooks/useDiscoverTheme';
 import useCameraPermission from '@hooks/useCameraPermission';
@@ -36,7 +37,7 @@ import { loadProfile } from '@features/home/profileSlice';
 import { loadCollection } from '@features/collection/collectionSlice';
 import { addOutfit } from '@features/styles/stylesSlice';
 import { suggestOutfit } from '@features/styles/api/stylesApi';
-import { getImageSource, imageUrlToBase64 } from '@api/client';
+import { imageUrlToBase64 } from '@api/client';
 import { logError } from '@utilities/crashlytics';
 import { AppDispatch, RootState } from '@utilities/store';
 import {
@@ -755,7 +756,7 @@ function Discover() {
               {flashItems.map(item => (
                 <View key={item.id} style={[styles.flashItem, { backgroundColor: d.cardBackground, borderColor: d.cardBorder }]}>
                   {item.imageData ? (
-                    <Image source={getImageSource(item.imageData)} style={styles.flashItemImage} resizeMode="cover" />
+                    <AuthedImage data={item.imageData} style={styles.flashItemImage} resizeMode="cover" />
                   ) : null}
                   <Text style={[styles.flashItemName, { color: d.cardName }]} numberOfLines={2}>{item.name}</Text>
                 </View>
@@ -803,8 +804,8 @@ function Discover() {
         <>
           {/* Avatar preview */}
           <View style={styles.proAvatarRow}>
-            <Image
-              source={getImageSource(avatarImage)}
+            <AuthedImage
+              data={avatarImage}
               style={[styles.proAvatar, { borderColor: d.cardBorder }]}
               resizeMode="contain"
             />
@@ -835,7 +836,7 @@ function Discover() {
                     ]}
                   >
                     {item.imageData ? (
-                      <Image source={getImageSource(item.imageData)} style={styles.proClosetImage} resizeMode="cover" />
+                      <AuthedImage data={item.imageData} style={styles.proClosetImage} resizeMode="cover" />
                     ) : null}
                     {isSelected && (
                       <View style={[styles.proSelectedBadge, { backgroundColor: d.closetItemSelectedBadge }]}>

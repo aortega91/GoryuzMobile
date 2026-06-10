@@ -6,72 +6,57 @@ import {
   View,
 } from 'react-native';
 import { WebView, WebViewNavigation } from 'react-native-webview';
-import CookieManager from '@preeternal/react-native-cookie-manager';
+import auth from '@react-native-firebase/auth';
 import { useTranslation } from 'react-i18next';
 
 import Touchable from '@components/Touchable';
-import { FALLBACK_COOKIE, ORIGIN } from '@api/client';
+import { ORIGIN } from '@api/client';
+import { logError } from '@utilities/crashlytics';
 import useSubscriptionTheme from '@hooks/useSubscriptionTheme';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const SUBSCRIPTION_URL = ORIGIN;
-
-// Runs at document start — seeds sessionStorage so the web app navigates
-// directly to the subscription view (same mechanism zena uses post-login).
-const INJECTED_JS_BEFORE_LOAD = `
-  (function() {
-    sessionStorage.setItem(
-      'zena-view-storage',
-      JSON.stringify({ state: { activeView: 'subscription' }, version: 0 })
-    );
-  })();
-  true;
-`;
-
-// Runs after DOMContentLoaded — injects CSS to hide the web app's navigation.
-//
-// NOTE (brittle): Selectors target zena Layout.tsx by Tailwind class names:
-//   - <header>  → top bar (gems, notifications, avatar)
-//   - div[class*="w-64"][class*="bg-primary"]  → left sidebar
-// If zena's markup or class names change, nav elements will reappear.
-// Proper fix: Option B — have zena check `?embedded=1` and skip rendering
-// the header/sidebar (one-line change in zena/src/components/Layout.tsx).
-const INJECTED_JS_AFTER_LOAD = `
-  (function() {
-    var style = document.createElement('style');
-    style.textContent = 'header, [class*="w-64"][class*="bg-primary"] { display: none !important; }';
-    document.head.appendChild(style);
-  })();
-  true;
-`;
-
-// ─── Cookie helpers ───────────────────────────────────────────────────────────
+// We first load /login (an unauthenticated route excluded from the API guard),
+// establish a Firebase session cookie there, then redirect to the subscription
+// view. /login renders no chrome we need to hide, so the flash is masked by the
+// loader overlay.
+const LOGIN_URL = `${ORIGIN}/login`;
 
 /**
- * Parses the semicolon-separated FALLBACK_COOKIE string and sets each cookie
- * in the OS-level cookie store for the given origin, so the WebView includes
- * them in all requests (SSR + client-side XHR/fetch), not just the first.
+ * Builds the script injected after each page load. On /login it exchanges the
+ * Firebase ID token for a `__session` cookie via POST /api/firebase/session
+ * (zena verifies the token with the Admin SDK and Set-Cookies the session),
+ * seeds sessionStorage so the web app opens straight on the subscription view,
+ * then navigates to /. On every other page it hides the web app's nav chrome.
+ *
+ * NOTE (brittle): the CSS selectors target zena Layout.tsx by Tailwind class
+ * names (<header> = top bar, div[class*="w-64"][class*="bg-primary"] = sidebar).
+ * If zena's markup changes, nav elements will reappear.
  */
-async function seedCookies(origin: string): Promise<void> {
-  await CookieManager.clearAll();
-  const entries = FALLBACK_COOKIE.split('; ').filter(e => e.includes('='));
-  await Promise.all(
-    entries.map(entry => {
-      const eqIdx = entry.indexOf('=');
-      const name = entry.slice(0, eqIdx);
-      const value = entry.slice(eqIdx + 1);
-      const isSecurePrefixed =
-        name.startsWith('__Secure-') || name.startsWith('__Host-');
-      return CookieManager.set(origin, {
-        name,
-        value,
-        path: '/',
-        secure: isSecurePrefixed,
-        httpOnly: name !== 'goryuz-language',
-      });
-    }),
-  );
+function buildInjectedJs(idToken: string): string {
+  return `
+  (function() {
+    if (location.pathname === '/login') {
+      fetch('/api/firebase/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: '${idToken}' }),
+        credentials: 'include'
+      }).then(function() {
+        sessionStorage.setItem(
+          'zena-view-storage',
+          JSON.stringify({ state: { activeView: 'subscription' }, version: 0 })
+        );
+        window.location.replace('/');
+      }).catch(function() { window.location.replace('/'); });
+    } else {
+      var style = document.createElement('style');
+      style.textContent = 'header, [class*="w-64"][class*="bg-primary"] { display: none !important; }';
+      document.head.appendChild(style);
+    }
+  })();
+  true;
+`;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -82,14 +67,22 @@ function Subscription() {
   const { t } = useTranslation();
 
   const webViewRef = useRef<WebView>(null);
-  const [cookiesReady, setCookiesReady] = useState(false);
+  const [idToken, setIdToken] = useState<string | null>(null);
+  const [tokenReady, setTokenReady] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    seedCookies(SUBSCRIPTION_URL)
-      .then(() => setCookiesReady(true))
-      .catch(() => setCookiesReady(true)); // proceed even if seeding partially fails
+    const { currentUser } = auth();
+    if (!currentUser) {
+      setTokenReady(true);
+      return;
+    }
+    currentUser
+      .getIdToken()
+      .then(token => setIdToken(token))
+      .catch(err => logError(err, 'Subscription:getIdToken'))
+      .finally(() => setTokenReady(true));
   }, []);
 
   const handleRetry = useCallback(() => {
@@ -107,7 +100,7 @@ function Subscription() {
     [],
   );
 
-  if (!cookiesReady) {
+  if (!tokenReady) {
     return (
       <View style={[styles.centered, { backgroundColor: st.background }]}>
         <ActivityIndicator size="large" color={st.loaderColor} />
@@ -138,9 +131,8 @@ function Subscription() {
     <View style={[styles.root, { backgroundColor: st.background }]}>
       <WebView
         ref={webViewRef}
-        source={{ uri: SUBSCRIPTION_URL }}
-        injectedJavaScriptBeforeContentLoaded={INJECTED_JS_BEFORE_LOAD}
-        injectedJavaScript={INJECTED_JS_AFTER_LOAD}
+        source={{ uri: idToken ? LOGIN_URL : ORIGIN }}
+        injectedJavaScript={idToken ? buildInjectedJs(idToken) : undefined}
         onNavigationStateChange={handleNavigationStateChange}
         onLoadStart={() => setLoading(true)}
         onLoadEnd={() => setLoading(false)}

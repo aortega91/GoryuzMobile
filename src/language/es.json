@@ -10,7 +10,8 @@
     "loginErrorGeneric": "Algo salió mal. Por favor intenta de nuevo.",
     "loginErrorNetwork": "Sin conexión. Verifica tu red e intenta de nuevo.",
     "loginErrorCancelled": "Inicio de sesión cancelado.",
-    "loginErrorAccountExists": "Esta cuenta ya existe con un método de inicio de sesión diferente."
+    "loginErrorAccountExists": "Esta cuenta ya existe con un método de inicio de sesión diferente.",
+    "sessionExpired": "Tu sesión ha expirado. Inicia sesión de nuevo."
   },
   "home": {
     "greeting": "Hola, {{name}}",

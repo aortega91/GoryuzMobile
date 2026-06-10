@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 
-import { getImageSource } from '@api/client';
+import AuthedImage from '@components/AuthedImage';
 import Touchable from '@components/Touchable';
 import BottomSheet from '@components/BottomSheet';
 import UpgradeModal from '@components/UpgradeModal';
@@ -97,8 +97,8 @@ function OutfitCard({ outfit, onPress }: OutfitCardProps) {
       {/* Square image area */}
       <View style={[styles.cardMedia, { backgroundColor: s.outfitCardMosaicBackground }]}>
         {outfit.imageData ? (
-          <Image
-            source={getImageSource(outfit.imageData)}
+          <AuthedImage
+            data={outfit.imageData}
             style={StyleSheet.absoluteFill}
             resizeMode="contain"
           />
@@ -113,8 +113,8 @@ function OutfitCard({ outfit, onPress }: OutfitCardProps) {
                     style={[styles.mosaicCell, { backgroundColor: s.outfitCardBackground }]}
                   >
                     {items[i]?.imageData ? (
-                      <Image
-                        source={getImageSource(items[i].imageData!)}
+                      <AuthedImage
+                        data={items[i].imageData!}
                         style={StyleSheet.absoluteFill}
                         resizeMode="cover"
                       />
@@ -803,7 +803,7 @@ function Styles() {
             <View style={[essenceStyles.avatarPreview, { borderColor: s.essenceInputBorder, backgroundColor: s.essenceInputBackground }]}>
               {avatarPreview ? (
                 <>
-                  <Image source={getImageSource(avatarPreview)} style={essenceStyles.avatarImg} resizeMode="contain" />
+                  <AuthedImage data={avatarPreview} style={essenceStyles.avatarImg} resizeMode="contain" />
                   <View style={essenceStyles.avatarActiveBadge}>
                     <Text style={essenceStyles.avatarActiveBadgeText}>{t('styles.essenceAvatarActive')}</Text>
                   </View>

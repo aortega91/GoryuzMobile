@@ -3,7 +3,7 @@
  *
  * Provides a single `apiClient` with:
  *   - baseURL sourced from react-native-config (API_URL)
- *   - Automatic auth headers (Firebase Bearer token, or fallback cookie)
+ *   - Automatic auth headers (Firebase ID token as `Authorization: Bearer`)
  *   - Automatic Crashlytics logging on every failed request
  *
  * Why native fetch instead of axios:
@@ -13,9 +13,10 @@
  */
 
 import Config from 'react-native-config';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in dormant Firebase auth block; restore when backend is ready
 import auth from '@react-native-firebase/auth';
 import { logApiError } from '@utilities/crashlytics';
+import toast from '@utilities/toast';
+import i18n from '@language/index';
 
 // ─── Base URL ────────────────────────────────────────────────────────────────
 
@@ -28,39 +29,96 @@ const BASE_URL = (Config.API_URL ?? 'https://preview.goryuz.com/api').replace(
 // Exported for WebView-based screens that need to load the web app directly.
 export const ORIGIN = BASE_URL.replace(/\/api$/, '');
 
-// ─── Fallback token (from zena/Untitled-1.json — used while backend auth is
-//     being aligned with Firebase ID tokens) ──────────────────────────────────
-
-// Full cookie string copied from browser DevTools (preview.goryuz.com)
-// Replace this whenever the session expires.
-// Exported so WebView-based screens (e.g. Subscription) can pre-seed the same session cookie.
-export const FALLBACK_COOKIE =
-  '__Host-authjs.csrf-token=11e92702d1951daf8e22bcc48d3a24da47a54d505967efd62d34be6a5622aa6b%7Cdb17ab489780169cb0551bf700949a02b0c02ed881335f7f3994f58c031356cc; __Secure-authjs.callback-url=https%3A%2F%2Fpreview.goryuz.com%2F; goryuz-language=es; __Secure-authjs.session-token=eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2Q0JDLUhTNTEyIiwia2lkIjoiM0U1NTNVWW15MU45MmNqdHoyWHV1WWZPMGcyUVI0bF9sdGVIckZqX1hPS2lHN29DcEVNaWZrQ1Y4aDItRDk4djZFN2pCNi1haF92YXJSOFktR0l4OGcifQ..jfv0R1exRlhozQOJj90kEA.vxSw7SEJtEl_DBK39LEtwDlZ8V0L1dY51fjYUDo-sLgvHjm305ssRsuzZfxWwJKECYmbcXuL8pEAOUIntFbh2N9fzN4nfE1Ml3wgQVwLdGZp2hLMcNIY_ENBldcLgsx7khaIjOoh9PDYrXuGZXbwKCg0-i0jVW08cYeGOY1cCMZTcugxRVIBP8MyWjv564OzPF8NJ1rGstu2OdvQ7_DruqTrj2sToEIXMyFWd6jREIVa4mSOy03y6lU_K97_yDHW7ifKzOMuZMqhIcVfP66k-8JuwQWJmmyFNg3aFKAnODLM3ACfDIrT_s49Qf640QU0dyMDbGEKlnXzGw5F80_YCPEmFfR0jB6ieHyeM85BsyBWjW56NrwVUqWxOMwQ3x9kuiCejOXlPuMArJDkaVo-GyxylP0-jG8GmajLMdiCjEJtiD3q46MTDcwFRT1LVWEH6V8elM3FFJeTzq1Bem0QUQ._Nc_efl7fHcWiOZVfEQJSKJhz4ikprMNKv6Zrtqg8kU';
-
 // ─── Auth headers ─────────────────────────────────────────────────────────────
+//
+// The backend (zena) authenticates API requests with a Firebase ID token sent
+// as `Authorization: Bearer <idToken>` on every /api/* route — it verifies the
+// token with the Firebase Admin SDK (see zena/src/firebase/server.ts →
+// getFirebaseSession). ID tokens are short-lived (~1h); the Firebase SDK serves
+// a cached token until it nears expiry then refreshes transparently, and
+// `onIdTokenChanged` fires on login, logout and every refresh.
+
+// Latest ID token, cached synchronously so image helpers — which build an
+// <Image> `source` prop and cannot await — can still attach the auth header.
+let cachedIdToken: string | null = null;
+
+// Image components subscribe here (via useSyncExternalStore in AuthedImage) so
+// they re-render with a fresh Bearer header whenever the ID token changes
+// (login / ~hourly refresh). A long-mounted <Image> would otherwise keep a
+// stale token and 401 on a cache-miss re-fetch.
+const tokenListeners = new Set<() => void>();
+export function subscribeAuthToken(cb: () => void): () => void {
+  tokenListeners.add(cb);
+  return () => {
+    tokenListeners.delete(cb);
+  };
+}
+export function getAuthTokenSnapshot(): string | null {
+  return cachedIdToken;
+}
+function notifyTokenListeners(): void {
+  tokenListeners.forEach(cb => cb());
+}
+
+// Guards the one-shot "session expired" toast + sign-out, since
+// resolveAuthHeaders can be hit by many concurrent requests on a dead token.
+let sessionExpiredNotified = false;
+
+auth().onIdTokenChanged(user => {
+  if (!user) {
+    cachedIdToken = null;
+    notifyTokenListeners();
+    return;
+  }
+  user
+    .getIdToken()
+    .then(token => {
+      cachedIdToken = token;
+      sessionExpiredNotified = false; // a valid token means we're healthy again
+    })
+    .catch(() => {
+      cachedIdToken = null;
+    })
+    .finally(notifyTokenListeners);
+});
 
 /**
- * Resolve the appropriate auth headers for the current session.
- *
- * CURRENT BEHAVIOUR: always returns the hardcoded fallback cookie.
- * The backend (Auth.js / iron-session) does not yet accept Firebase ID tokens.
- *
- * TO ENABLE FIREBASE AUTH (once backend implements /api/auth/firebase):
- *   1. Delete the early-return line and FALLBACK_COOKIE constant above.
- *   2. Uncomment the Firebase block below.
- *   3. Make the function async again.
+ * Resolve the Bearer auth header for an API request. Awaits the Firebase SDK,
+ * which returns the cached token until it nears expiry, then refreshes it.
+ * Pass `forceRefresh` to bypass the cache — used to recover from a 401.
+ * Returns an empty object when no user is signed in.
  */
-function resolveAuthHeaders(): { Cookie: string } | { Authorization: string } {
-  // --- TEMPORARY: remove this return when backend is ready ---
-  return { Cookie: FALLBACK_COOKIE };
+async function resolveAuthHeaders(
+  forceRefresh = false,
+): Promise<Record<string, string>> {
+  const { currentUser } = auth();
+  if (!currentUser) return {};
+  try {
+    const idToken = await currentUser.getIdToken(forceRefresh);
+    cachedIdToken = idToken;
+    return { Authorization: `Bearer ${idToken}` };
+  } catch (err) {
+    // A forced refresh (triggered by a 401) that still fails means the refresh
+    // token itself is dead — the account was disabled/deleted, the password
+    // changed, or the token was revoked. Notify the user once, then sign out so
+    // the app-level onAuthStateChanged listener clears the session and bounces
+    // to Login. A transient `auth/network-request-failed` is NOT terminal — we
+    // leave the session intact and let the caller's error surface so a retry
+    // can recover.
+    if (forceRefresh && (err as { code?: string })?.code !== 'auth/network-request-failed') {
+      if (!sessionExpiredNotified) {
+        sessionExpiredNotified = true;
+        toast.info(i18n.t('auth.sessionExpired'));
+      }
+      auth().signOut().catch(() => {});
+    }
+    return {};
+  }
+}
 
-  // --- Restore when backend accepts Firebase ID tokens ---
-  // const { currentUser } = auth();
-  // if (currentUser) {
-  //   const idToken = await currentUser.getIdToken(false);
-  //   if (idToken) return { Authorization: `Bearer ${idToken}` };
-  // }
-  // return { Cookie: FALLBACK_COOKIE };
+/** Synchronous Bearer header built from the cached token, for <Image> sources. */
+function authHeadersSync(): Record<string, string> {
+  return cachedIdToken ? { Authorization: `Bearer ${cachedIdToken}` } : {};
 }
 
 // ─── Response types ───────────────────────────────────────────────────────────
@@ -100,27 +158,36 @@ export async function apiRequest<T>(
   const endpoint = path.startsWith('/') ? path : `/${path}`;
   const url = `${BASE_URL}${endpoint}`;
 
-  const authHeaders = resolveAuthHeaders();
+  const sendRequest = async (forceRefresh: boolean) => {
+    const authHeaders = await resolveAuthHeaders(forceRefresh);
+    return fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        ...authHeaders,
+        ...(options.headers ?? {}),
+      },
+    }).catch((networkError: unknown) => {
+      // Network-level failure (no response at all)
+      logApiError(endpoint, networkError);
+      throw new ApiError(
+        0,
+        endpoint,
+        networkError instanceof Error
+          ? networkError.message
+          : 'Network request failed',
+      );
+    });
+  };
 
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      ...authHeaders,
-      ...(options.headers ?? {}),
-    },
-  }).catch((networkError: unknown) => {
-    // Network-level failure (no response at all)
-    logApiError(endpoint, networkError);
-    throw new ApiError(
-      0,
-      endpoint,
-      networkError instanceof Error
-        ? networkError.message
-        : 'Network request failed',
-    );
-  });
+  let response = await sendRequest(false);
+
+  // A 401 typically means the ID token expired between requests. Force a
+  // fresh token from Firebase and retry once before surfacing the error.
+  if (response.status === 401) {
+    response = await sendRequest(true);
+  }
 
   if (!response.ok) {
     let responseBody = '<unreadable>';
@@ -152,8 +219,8 @@ export async function apiRequest<T>(
  * Builds the correct RN Image `source` prop for any imageData value stored in
  * the backend:
  *  - Base64 data URLs → returned as-is (no auth needed)
- *  - Relative paths (/api/images/...) → prefixed with ORIGIN + session cookie
- *  - Absolute network URLs → passed through + session cookie (private R2 proxy)
+ *  - Relative paths (/api/images/...) → prefixed with ORIGIN + Bearer token
+ *  - Absolute network URLs → passed through + Bearer token (private R2 proxy)
  */
 export function getImageSource(
   imageData: string,
@@ -161,11 +228,10 @@ export function getImageSource(
   if (imageData.startsWith('data:')) {
     return { uri: imageData };
   }
-  const authHeaders = resolveAuthHeaders() as Record<string, string>;
   const uri = imageData.startsWith('/')
     ? `${ORIGIN}${imageData}`
     : imageData;
-  return { uri, headers: authHeaders };
+  return { uri, headers: authHeadersSync() };
 }
 
 // ─── Image → base64 helper ───────────────────────────────────────────────────
@@ -173,14 +239,14 @@ export function getImageSource(
 /**
  * Fetches an image (relative path, absolute URL, or existing data URL) and
  * returns it as a base64 data URL suitable for sending to AI endpoints.
- * Relative paths are prefixed with ORIGIN and sent with session auth headers.
+ * Relative paths are prefixed with ORIGIN and sent with the Bearer token.
  */
 export async function imageUrlToBase64(imageData: string): Promise<string> {
   if (imageData.startsWith('data:')) {
     return imageData;
   }
   const uri = imageData.startsWith('/') ? `${ORIGIN}${imageData}` : imageData;
-  const authHeaders = resolveAuthHeaders() as Record<string, string>;
+  const authHeaders = await resolveAuthHeaders();
   const response = await fetch(uri, { headers: authHeaders });
   if (!response.ok) {
     throw new Error(`Failed to fetch image: ${uri} (${response.status})`);

@@ -10,7 +10,8 @@
     "loginErrorGeneric": "Algo deu errado. Por favor, tente novamente.",
     "loginErrorNetwork": "Sem conexão. Verifique sua rede e tente novamente.",
     "loginErrorCancelled": "Login cancelado.",
-    "loginErrorAccountExists": "Esta conta já existe com um método de login diferente."
+    "loginErrorAccountExists": "Esta conta já existe com um método de login diferente.",
+    "sessionExpired": "Sua sessão expirou. Faça login novamente."
   },
   "home": {
     "greeting": "Olá, {{name}}",

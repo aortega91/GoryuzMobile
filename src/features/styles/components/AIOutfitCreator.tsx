@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   Modal,
   ScrollView,
   StyleSheet,
@@ -16,8 +15,8 @@ import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 
 import Touchable from '@components/Touchable';
+import AuthedImage from '@components/AuthedImage';
 import useStylesTheme from '@hooks/useStylesTheme';
-import { getImageSource } from '@api/client';
 import { ArrowLeftIcon, SparklesIcon, RefreshCwIcon, ShirtIcon } from '@assets/icons';
 import { logError } from '@utilities/crashlytics';
 import { AppDispatch } from '@utilities/store';
@@ -155,7 +154,7 @@ function AIOutfitCreator({ visible, closetItems, closetLoading, saving, onClose,
                     contentContainerStyle={styles.previewStrip}
                     renderItem={({ item }) =>
                       item.imageData ? (
-                        <Image source={getImageSource(item.imageData)} style={styles.previewThumb} resizeMode="cover" />
+                        <AuthedImage data={item.imageData} style={styles.previewThumb} resizeMode="cover" />
                       ) : null
                     }
                   />
@@ -217,8 +216,8 @@ function AIOutfitCreator({ visible, closetItems, closetLoading, saving, onClose,
                   {pair.map(i => (
                     <View key={i} style={[styles.resultCell, { backgroundColor: s.outfitCardBackground }]}>
                       {suggestedItems[i]?.imageData ? (
-                        <Image
-                          source={getImageSource(suggestedItems[i].imageData!)}
+                        <AuthedImage
+                          data={suggestedItems[i].imageData!}
                           style={StyleSheet.absoluteFill}
                           resizeMode="cover"
                         />

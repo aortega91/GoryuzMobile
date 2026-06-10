@@ -1,11 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import useScheduleTheme from '@hooks/useScheduleTheme';
 import BottomSheet from '@components/BottomSheet';
 import Touchable from '@components/Touchable';
+import AuthedImage from '@components/AuthedImage';
 import { ShirtIcon } from '@assets/icons';
-import { getImageSource } from '@api/client';
 import { ScheduleOutfit } from '../types';
 
 interface Props {
@@ -44,14 +44,14 @@ function OutfitPickerSheet({ outfits, onSelect, onClose }: Props) {
               >
                 <View style={styles.imageContainer}>
                   {outfit.imageData ? (
-                    <Image source={getImageSource(outfit.imageData)} style={styles.image} resizeMode="cover" />
+                    <AuthedImage data={outfit.imageData} style={styles.image} resizeMode="cover" />
                   ) : outfit.items.length > 0 ? (
                     <View style={styles.grid2x2}>
                       {[0, 1, 2, 3].map(i => (
                         <View key={i} style={styles.gridCell}>
                           {outfit.items[i]?.imageData ? (
-                            <Image
-                              source={getImageSource(outfit.items[i].imageData!)}
+                            <AuthedImage
+                              data={outfit.items[i].imageData!}
                               style={styles.gridImage}
                               resizeMode="cover"
                             />

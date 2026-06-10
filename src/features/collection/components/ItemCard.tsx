@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import {
-  Image,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { getImageSource } from '@api/client';
+import AuthedImage from '@components/AuthedImage';
 import BottomSheet from '@components/BottomSheet';
 import Touchable from '@components/Touchable';
 import useCollectionTheme from '@hooks/useCollectionTheme';
@@ -54,8 +53,8 @@ function ItemCard({ item, onRename, onSecondLife, onDelete }: ItemCardProps) {
         ]}
       >
         <View style={styles.imageContainer}>
-          <Image
-            source={getImageSource(item.imageData)}
+          <AuthedImage
+            data={item.imageData}
             style={styles.image}
             resizeMode="cover"
           />

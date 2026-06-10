@@ -6,7 +6,6 @@ import React, {
 } from 'react';
 import {
   Alert,
-  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -23,6 +22,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import auth from '@react-native-firebase/auth';
 
+import AuthedImage from '@components/AuthedImage';
 import Touchable from '@components/Touchable';
 import PermissionModal from '@components/PermissionModal';
 import { RootState, AppDispatch } from '@utilities/store';
@@ -44,7 +44,6 @@ import {
   MonitorIcon,
 } from '@assets/icons';
 
-import { getImageSource } from '@api/client';
 import useProfileTheme from '@hooks/useProfileTheme';
 import toast from '@utilities/toast';
 import { updateProfile, deleteAccount } from '../api/profileUpdateApi';
@@ -790,7 +789,7 @@ function Profile({ onViewPlans }: ProfileProps) {
                 disabled={isUploadingAvatar}
               >
                 {avatarUrl ? (
-                  <Image source={getImageSource(avatarUrl)} style={styles.avatar} />
+                  <AuthedImage data={avatarUrl} style={styles.avatar} />
                 ) : (
                   <View
                     style={[

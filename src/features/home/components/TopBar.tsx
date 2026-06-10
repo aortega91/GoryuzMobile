@@ -1,13 +1,12 @@
 import React from 'react';
 import {
   Text,
-  Image,
   StyleSheet,
   View,
 } from 'react-native';
 
+import AuthedImage from '@components/AuthedImage';
 import Touchable from '@components/Touchable';
-import { getImageSource } from '@api/client';
 
 import useHomeTheme from '@hooks/useHomeTheme';
 import {
@@ -157,7 +156,7 @@ function TopBar({
           borderRadius={16}
         >
           {avatarUrl ? (
-            <Image source={getImageSource(avatarUrl)} style={styles.avatar} />
+            <AuthedImage data={avatarUrl} style={styles.avatar} />
           ) : (
             <View
               style={[

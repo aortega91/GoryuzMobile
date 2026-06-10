@@ -1,18 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { getImageSource } from '@api/client';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 
 import Touchable from '@components/Touchable';
+import AuthedImage from '@components/AuthedImage';
 import useScheduleTheme from '@hooks/useScheduleTheme';
 import {
   ChevronLeftIcon,
@@ -285,8 +284,8 @@ function Schedule() {
                   ]}
                 >
                   {outfitImg != null && (
-                    <Image
-                      source={getImageSource(outfitImg)}
+                    <AuthedImage
+                      data={outfitImg}
                       style={StyleSheet.absoluteFill}
                       resizeMode="cover"
                     />
@@ -418,14 +417,14 @@ function Schedule() {
             >
               <View style={styles.eventCardImageWrap}>
                 {event.outfit?.imageData ? (
-                  <Image
-                    source={getImageSource(event.outfit.imageData)}
+                  <AuthedImage
+                    data={event.outfit.imageData}
                     style={styles.eventCardImage}
                     resizeMode="cover"
                   />
                 ) : event.outfit?.items[0]?.imageData ? (
-                  <Image
-                    source={getImageSource(event.outfit.items[0].imageData!)}
+                  <AuthedImage
+                    data={event.outfit.items[0].imageData!}
                     style={styles.eventCardImage}
                     resizeMode="cover"
                   />
@@ -452,8 +451,8 @@ function Schedule() {
                   {event.outfit?.items.slice(0, 5).map(item => (
                     <View key={item.id} style={styles.itemMini}>
                       {item.imageData ? (
-                        <Image
-                          source={getImageSource(item.imageData)}
+                        <AuthedImage
+                          data={item.imageData}
                           style={styles.itemMiniImage}
                           resizeMode="cover"
                         />

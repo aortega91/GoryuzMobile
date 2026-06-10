@@ -21,7 +21,6 @@ import i18n from '@language/index';
 import Touchable from '@components/Touchable';
 import BottomSheet from '@components/BottomSheet';
 import PermissionModal from '@components/PermissionModal';
-import Toast from '@components/Toast';
 import useHomeTheme from '@hooks/useHomeTheme';
 import useLocation from '@hooks/useLocation';
 import useCameraPermission from '@hooks/useCameraPermission';
@@ -613,8 +612,6 @@ function Home() {
           tokens={homeTokens}
         />
       )}
-
-      <Toast />
     </View>
   );
 }

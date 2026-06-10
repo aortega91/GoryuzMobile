@@ -1,13 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import {
   ActivityIndicator,
-  Image,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import AuthedImage from '@components/AuthedImage';
 import BottomSheet from '@components/BottomSheet';
 import PermissionModal from '@components/PermissionModal';
 import Touchable from '@components/Touchable';
@@ -15,7 +15,6 @@ import useCollectionTheme from '@hooks/useCollectionTheme';
 import useCameraPermission from '@hooks/useCameraPermission';
 import { logError } from '@utilities/crashlytics';
 import { CameraIcon, ImageIcon, GemIcon, CheckIcon } from '@assets/icons';
-import { getImageSource } from '@api/client';
 import { identifyItems, extractItem } from '../api/aiApi';
 import { ClothingCategory, ScannedItem } from '../types';
 
@@ -315,8 +314,8 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
               style={[styles.itemRow, itemRowActiveStyle]}
             >
               {item.imageData ? (
-                <Image
-                  source={getImageSource(item.imageData)}
+                <AuthedImage
+                  data={item.imageData}
                   style={styles.itemThumb}
                   resizeMode="cover"
                 />
