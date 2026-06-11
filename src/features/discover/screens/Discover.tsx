@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -41,11 +41,11 @@ import { imageUrlToBase64 } from '@api/client';
 import { logError } from '@utilities/crashlytics';
 import { AppDispatch, RootState } from '@utilities/store';
 import {
-  fetchRecommendations,
   identifyImage,
   findSimilar,
   combineOutfit,
 } from '../api/discoverApi';
+import { loadRecommendations } from '../discoverSlice';
 import { RecommendedItem, IdentifiedItem, SourceChunk } from '../types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -176,52 +176,53 @@ function Discover() {
 
   // ─── Catalog tab state ────────────────────────────────────────────────────────
 
-  const [catalogItems, setCatalogItems] = useState<RecommendedItem[]>([]);
-  const [catalogStatus, setCatalogStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [catalogError, setCatalogError] = useState<string | null>(null);
+  // Catalog lives in Redux so it survives this screen unmounting on drawer
+  // navigation — otherwise each remount would re-trigger the gem-charged fetch.
+  const catalogItems = useSelector((state: RootState) => state.discover.catalog);
+  const catalogStatus = useSelector((state: RootState) => state.discover.status);
   const [brandFilter, setBrandFilter] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [showBrandSheet, setShowBrandSheet] = useState(false);
   const [showCategorySheet, setShowCategorySheet] = useState(false);
   const [catalogRefreshing, setCatalogRefreshing] = useState(false);
-  const catalogAutoFetched = useRef(false);
 
+  // Generating recommendations costs gems, so this only runs on an explicit
+  // user action (Generate button / pull-to-refresh / refresh FAB) — never on
+  // mount. Results are cached in Redux, so revisiting Discover never re-charges.
   const fetchCatalog = useCallback(async (isRefresh = false) => {
     if (closetItems.length === 0) return;
     if (isRefresh) {
       setCatalogRefreshing(true);
-    } else {
-      setCatalogStatus('loading');
     }
-    setCatalogError(null);
     try {
-      const items = await fetchRecommendations({
-        closet: closetItems,
-        profile: {
-          stylePrompt: profile?.stylePrompt ?? null,
-          gender: profile?.gender ?? null,
-          styleSummary: profile?.styleSummary ?? null,
-        },
-      });
-      setCatalogItems(items);
-      setCatalogStatus('success');
+      await dispatch(
+        loadRecommendations({
+          closet: closetItems,
+          profile: {
+            stylePrompt: profile?.stylePrompt ?? null,
+            gender: profile?.gender ?? null,
+            styleSummary: profile?.styleSummary ?? null,
+          },
+        }),
+      ).unwrap();
       dispatch(loadProfile());
     } catch (err) {
       logError(err instanceof Error ? err : new Error(String(err)), 'discover/fetchCatalog');
-      setCatalogError(t('discover.catalogError'));
-      setCatalogStatus('error');
     } finally {
-      setCatalogRefreshing(false);
+      if (isRefresh) {
+        setCatalogRefreshing(false);
+      }
     }
-  }, [closetItems, profile, dispatch, t]);
+  }, [closetItems, profile, dispatch]);
 
-  // Auto-fetch on first open when closet is non-empty
+  // Discover can be opened directly (e.g. from the drawer) before the
+  // Collection screen has loaded the closet into Redux. Load it here when idle
+  // so the catalog has the closet to work from regardless of entry point.
   useEffect(() => {
-    if (!catalogAutoFetched.current && closetStatus === 'succeeded' && closetItems.length > 0) {
-      catalogAutoFetched.current = true;
-      fetchCatalog();
+    if (closetStatus === 'idle') {
+      dispatch(loadCollection());
     }
-  }, [closetStatus, closetItems.length, fetchCatalog]);
+  }, [closetStatus, dispatch]);
 
   const allBrands = Array.from(new Set(catalogItems.map(i => i.brand).filter(Boolean))).sort();
   const allCategories = Array.from(new Set(catalogItems.map(i => i.category).filter(Boolean))).sort();
@@ -410,7 +411,18 @@ function Discover() {
   );
 
   const renderCatalogTab = () => {
-    const hasEmptyCloset = closetItems.length === 0 && closetStatus !== 'loading';
+    const closetResolving = closetStatus === 'idle' || closetStatus === 'loading';
+    const hasEmptyCloset = closetStatus === 'succeeded' && closetItems.length === 0;
+
+    // Closet still loading (e.g. Discover opened before Collection) or catalog
+    // being generated — show a spinner rather than a misleading empty state.
+    if (closetResolving || (catalogStatus === 'loading' && !catalogRefreshing)) {
+      return (
+        <View style={styles.center}>
+          <ActivityIndicator color={d.bottomBarActive} />
+        </View>
+      );
+    }
 
     if (hasEmptyCloset) {
       return (
@@ -424,19 +436,31 @@ function Discover() {
       );
     }
 
-    if (catalogStatus === 'loading' && !catalogRefreshing) {
+    // Recommendations cost gems, so they are only generated on explicit request.
+    if (catalogStatus === 'idle') {
       return (
-        <View style={styles.center}>
-          <ActivityIndicator color={d.bottomBarActive} />
+        <View style={[styles.dashedContainer, { paddingBottom: bottomBarTotalHeight + 16 }]}>
+          <View style={[styles.dashedBox, { borderColor: d.dashedBorder, backgroundColor: d.dashedBackground }]}>
+            <SparklesIcon size={44} color={d.emptyIcon} strokeWidth={1.5} />
+            <Text style={[styles.emptyTitle, { color: d.emptyText }]}>{t('discover.catalogGenerateTitle')}</Text>
+            <Text style={[styles.emptySub, { color: d.emptySubtitle }]}>{t('discover.catalogGenerateDesc')}</Text>
+            <Touchable
+              onPress={() => fetchCatalog()}
+              borderRadius={24}
+              style={[styles.retryBtn, { backgroundColor: d.buttonPrimary }]}
+            >
+              <Text style={[styles.retryBtnText, { color: d.buttonPrimaryText }]}>{t('discover.catalogGenerateButton')}</Text>
+            </Touchable>
+          </View>
         </View>
       );
     }
 
-    if (catalogStatus === 'error') {
+    if (catalogStatus === 'failed') {
       return (
         <View style={styles.center}>
           <AlertCircleIcon size={36} color={d.buttonDangerText} />
-          <Text style={[styles.errorText, { color: d.buttonDangerText }]}>{catalogError}</Text>
+          <Text style={[styles.errorText, { color: d.buttonDangerText }]}>{t('discover.catalogError')}</Text>
           <Touchable
             onPress={() => fetchCatalog()}
             borderRadius={24}
@@ -483,7 +507,7 @@ function Discover() {
           </Touchable>
         </View>
 
-        {catalogStatus === 'idle' && catalogItems.length === 0 ? (
+        {catalogItems.length === 0 ? (
           <View style={[styles.dashedContainer, { paddingBottom: bottomBarTotalHeight + 16 }]}>
             <View style={[styles.dashedBox, { borderColor: d.dashedBorder, backgroundColor: d.dashedBackground }]}>
               <SearchIcon size={44} color={d.emptyIcon} strokeWidth={1.5} />
@@ -515,7 +539,7 @@ function Discover() {
 
         {/* Refresh FAB */}
         <View style={[styles.fabContainer, { bottom: bottomBarTotalHeight + 16 }]}>
-          {renderGemBadge(15)}
+          {renderGemBadge(2)}
           <Touchable
             onPress={() => fetchCatalog(true)}
             disabled={catalogRefreshing}
