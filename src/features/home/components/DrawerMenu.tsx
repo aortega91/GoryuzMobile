@@ -37,13 +37,16 @@ interface NavItem {
   module: ActiveModule;
   labelKey: string;
   icon: (color: string) => React.ReactNode;
+  /** Hidden items stay defined (and routable) but are not shown in the drawer */
+  hidden?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
   {
     module: 'home',
-    labelKey: 'menu.home',
+    labelKey: 'menu.lookbook',
     icon: color => <HomeIcon size={20} color={color} />,
+    hidden: true,
   },
   {
     module: 'closet',
@@ -64,6 +67,7 @@ const NAV_ITEMS: NavItem[] = [
     module: 'discover',
     labelKey: 'menu.discover',
     icon: color => <SparklesIcon size={20} color={color} />,
+    hidden: true,
   },
   {
     module: 'second_life',
@@ -179,7 +183,7 @@ const DrawerMenu = forwardRef<DrawerMenuHandle, DrawerMenuProps>(
 
         {/* Nav items */}
         <View style={styles.nav}>
-          {NAV_ITEMS.map(item => {
+          {NAV_ITEMS.filter(item => !item.hidden).map(item => {
             const isActive = activeModule === item.module;
             return (
               <Touchable

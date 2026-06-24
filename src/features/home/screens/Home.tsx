@@ -234,7 +234,7 @@ function Home() {
 
   const insets = useSafeAreaInsets();
 
-  const [activeModule, setActiveModule] = useState<ActiveModule>('home');
+  const [activeModule, setActiveModule] = useState<ActiveModule>('styles');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const drawerRef = useRef<DrawerMenuHandle>(null);
   const [activeTab, setActiveTab] = useState<HomeTab>('feed');
@@ -538,7 +538,7 @@ function Home() {
           {activeModule === 'subscription' && <Subscription />}
           {activeModule === 'support' && <Support />}
           {activeModule === 'notifications' && (
-            <Notifications onClose={() => setActiveModule('home')} />
+            <Notifications onClose={() => setActiveModule('styles')} />
           )}
         </View>
 
