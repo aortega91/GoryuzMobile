@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,10 +7,9 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import AuthedImage from '@components/AuthedImage';
-import BottomSheet from '@components/BottomSheet';
 import Touchable from '@components/Touchable';
 import useCollectionTheme from '@hooks/useCollectionTheme';
-import { MoreVerticalIcon, PencilIcon, GiftIcon, TrashIcon } from '@assets/icons';
+import { PencilIcon, GiftIcon, TrashIcon } from '@assets/icons';
 import { ClothingItem } from '../types';
 
 interface ItemCardProps {
@@ -24,105 +23,71 @@ function ItemCard({ item, onRename, onSecondLife, onDelete }: ItemCardProps) {
   const theme = useCollectionTheme();
   const tokens = theme.collection;
   const { t } = useTranslation();
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  const handleRename = () => {
-    setMenuOpen(false);
-    onRename();
-  };
-
-  const handleSecondLife = () => {
-    setMenuOpen(false);
-    onSecondLife();
-  };
-
-  const handleDelete = () => {
-    setMenuOpen(false);
-    onDelete();
-  };
 
   return (
-    <>
-      <View
-        style={[
-          styles.card,
-          {
-            backgroundColor: tokens.cardBackground,
-            borderColor: tokens.cardBorder,
-          },
-        ]}
-      >
-        <View style={styles.imageContainer}>
-          <AuthedImage
-            data={item.imageData}
-            style={styles.image}
-            resizeMode="cover"
-          />
-          <Touchable
-            onPress={() => setMenuOpen(true)}
-            style={styles.menuBtn}
-            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-            borderRadius={14}
-          >
-            <MoreVerticalIcon size={16} color="#FFFFFF" />
-          </Touchable>
-        </View>
-        <View style={styles.info}>
-          <Text
-            style={[styles.name, { color: tokens.cardName }]}
-            numberOfLines={2}
-          >
-            {item.name}
-          </Text>
-        </View>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: tokens.cardBackground,
+          borderColor: tokens.cardBorder,
+        },
+      ]}
+    >
+      <View style={styles.imageContainer}>
+        <AuthedImage
+          data={item.imageData}
+          style={styles.image}
+          resizeMode="cover"
+        />
       </View>
 
-      {menuOpen && (
-        <BottomSheet
-          onClose={() => setMenuOpen(false)}
-          backgroundColor={tokens.modalBackground}
+      <View style={styles.info}>
+        <Text
+          style={[styles.name, { color: tokens.cardName }]}
+          numberOfLines={2}
         >
-          <View style={styles.sheetContent}>
-            <Text style={[styles.sheetTitle, { color: tokens.modalTitle }]} numberOfLines={1}>
-              {item.name}
-            </Text>
+          {item.name}
+        </Text>
+      </View>
 
-            <Touchable
-              onPress={handleRename}
-              style={[styles.actionRow, { borderBottomColor: tokens.cardBorder }]}
-            >
-              <View style={[styles.actionIcon, styles.actionIconBlue]}>
-                <PencilIcon size={16} color="#6366F1" />
-              </View>
-              <Text style={[styles.actionLabel, { color: tokens.cardName }]}>
-                {t('collection.renameTitle')}
-              </Text>
-            </Touchable>
+      {/* Always-visible action row */}
+      <View style={[styles.actions, { borderTopColor: tokens.cardBorder }]}>
+        <Touchable
+          onPress={onRename}
+          style={styles.actionBtn}
+          borderRadius={8}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          accessibilityLabel={t('collection.renameTitle')}
+        >
+          <PencilIcon size={17} color="#6366F1" />
+        </Touchable>
 
-            <Touchable
-              onPress={handleSecondLife}
-              style={[styles.actionRow, { borderBottomColor: tokens.cardBorder }]}
-            >
-              <View style={[styles.actionIcon, styles.actionIconGreen]}>
-                <GiftIcon size={16} color="#10B981" />
-              </View>
-              <Text style={[styles.actionLabel, { color: tokens.cardName }]}>
-                {t('collection.secondLifeTitle')}
-              </Text>
-            </Touchable>
+        <View style={[styles.actionDivider, { backgroundColor: tokens.cardBorder }]} />
 
-            <Touchable onPress={handleDelete} style={styles.actionRow}>
-              <View style={[styles.actionIcon, styles.actionIconRed]}>
-                <TrashIcon size={16} color={theme.common.errorRed} />
-              </View>
-              <Text style={[styles.actionLabel, { color: theme.common.errorRed }]}>
-                {t('collection.deleteConfirm')}
-              </Text>
-            </Touchable>
-          </View>
-        </BottomSheet>
-      )}
-    </>
+        <Touchable
+          onPress={onSecondLife}
+          style={styles.actionBtn}
+          borderRadius={8}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          accessibilityLabel={t('collection.secondLifeTitle')}
+        >
+          <GiftIcon size={17} color="#10B981" />
+        </Touchable>
+
+        <View style={[styles.actionDivider, { backgroundColor: tokens.cardBorder }]} />
+
+        <Touchable
+          onPress={onDelete}
+          style={styles.actionBtn}
+          borderRadius={8}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          accessibilityLabel={t('collection.deleteConfirm')}
+        >
+          <TrashIcon size={17} color={theme.common.errorRed} />
+        </Touchable>
+      </View>
+    </View>
   );
 }
 
@@ -141,68 +106,35 @@ const styles = StyleSheet.create({
   imageContainer: {
     width: '100%',
     aspectRatio: 3 / 4,
-    position: 'relative',
   },
   image: {
     width: '100%',
     height: '100%',
   },
-  menuBtn: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(0,0,0,0.40)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   info: {
-    padding: 8,
+    paddingHorizontal: 8,
+    paddingTop: 8,
+    paddingBottom: 6,
   },
   name: {
     fontSize: 12,
     fontWeight: '600',
     lineHeight: 16,
   },
-  sheetContent: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 24,
-    gap: 4,
-  },
-  sheetTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-  actionRow: {
+  actions: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    gap: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
-  actionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+  actionBtn: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 10,
   },
-  actionIconBlue: {
-    backgroundColor: '#EEF2FF',
-  },
-  actionIconGreen: {
-    backgroundColor: '#ECFDF5',
-  },
-  actionIconRed: {
-    backgroundColor: '#FEF2F2',
-  },
-  actionLabel: {
-    fontSize: 15,
-    fontWeight: '500',
+  actionDivider: {
+    width: StyleSheet.hairlineWidth,
+    alignSelf: 'stretch',
   },
 });
 

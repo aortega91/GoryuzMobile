@@ -9,6 +9,15 @@ import { useTranslation } from 'react-i18next';
 
 import Touchable from '@components/Touchable';
 import useCollectionTheme from '@hooks/useCollectionTheme';
+import {
+  LayoutGridIcon,
+  ShirtIcon,
+  PantsIcon,
+  DressIcon,
+  JacketIcon,
+  FootprintsIcon,
+  GlassesIcon,
+} from '@assets/icons';
 import { ClothingCategory, CLOTHING_CATEGORIES, ClothingItem } from '../types';
 
 type FilterCategory = ClothingCategory | 'All';
@@ -27,6 +36,18 @@ const CATEGORY_KEY_MAP: Record<FilterCategory, string> = {
   Outerwear: 'collection.categoryOuterwear',
   Footwear: 'collection.categoryFootwear',
   Accessories: 'collection.categoryAccessories',
+};
+
+type IconComponent = (props: { size?: number; color?: string; strokeWidth?: number }) => React.ReactElement;
+
+const CATEGORY_ICON_MAP: Record<FilterCategory, IconComponent> = {
+  All: LayoutGridIcon,
+  Tops: ShirtIcon,
+  Bottoms: PantsIcon,
+  'One-Pieces': DressIcon,
+  Outerwear: JacketIcon,
+  Footwear: FootprintsIcon,
+  Accessories: GlassesIcon,
 };
 
 function CategoryTabs({ selected, onSelect, items }: CategoryTabsProps) {
@@ -59,6 +80,8 @@ function CategoryTabs({ selected, onSelect, items }: CategoryTabsProps) {
         {visibleTabs.map(category => {
           const isActive = selected === category;
           const count = getCount(category);
+          const Icon = CATEGORY_ICON_MAP[category];
+          const iconColor = isActive ? tokens.tabActiveText : tokens.tabText;
           return (
             <Touchable
               key={category}
@@ -67,10 +90,11 @@ function CategoryTabs({ selected, onSelect, items }: CategoryTabsProps) {
               style={styles.tab}
             >
               <View style={styles.tabInner}>
+                <Icon size={18} color={iconColor} strokeWidth={isActive ? 2.4 : 2} />
                 <Text
                   style={[
                     styles.tabText,
-                    { color: isActive ? tokens.tabActiveText : tokens.tabText },
+                    { color: iconColor },
                     isActive && styles.tabTextActive,
                   ]}
                 >
