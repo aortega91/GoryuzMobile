@@ -7,6 +7,15 @@ export interface StyleItem {
   imageData: string | null;
 }
 
+export type OutfitCategory = 'Outfits' | 'Corte/Barba' | 'Maquillaje' | 'Uñas';
+
+export const OUTFIT_CATEGORIES: OutfitCategory[] = [
+  'Outfits',
+  'Corte/Barba',
+  'Maquillaje',
+  'Uñas',
+];
+
 export interface Outfit {
   id: string;
   name: string;
@@ -16,4 +25,6 @@ export interface Outfit {
   rating: number | null;
   source: 'manual' | 'ai';
   createdAt: string;
+  /** Look category — defaults to 'Outfits' when the backend doesn't provide one */
+  category?: OutfitCategory;
 }

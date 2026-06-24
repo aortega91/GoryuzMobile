@@ -64,3 +64,6 @@ export { default as GlassesIcon } from './GlassesIcon';
 export { default as PantsIcon } from './PantsIcon';
 export { default as DressIcon } from './DressIcon';
 export { default as JacketIcon } from './JacketIcon';
+export { default as Wand2Icon } from './Wand2Icon';
+export { default as NailIcon } from './NailIcon';
+export { default as TagIcon } from './TagIcon';

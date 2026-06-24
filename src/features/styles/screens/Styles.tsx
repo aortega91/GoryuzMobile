@@ -38,6 +38,13 @@ import {
   ImageIcon,
   AlertCircleIcon,
   GemIcon,
+  EyeIcon,
+  TagIcon,
+  Share2Icon,
+  TrashIcon,
+  LayoutGridIcon,
+  Wand2Icon,
+  NailIcon,
 } from '@assets/icons';
 import { updateProfile } from '@features/profile/api/profileUpdateApi';
 import { updateProfileLocally, loadProfile } from '@features/home/profileSlice';
@@ -58,10 +65,8 @@ import {
   editOutfit,
   removeOutfit,
 } from '../stylesSlice';
-import { Outfit } from '../types';
-import OutfitActionSheet from '../components/OutfitActionSheet';
-import RenameOutfitSheet from '../components/RenameOutfitSheet';
-import RateOutfitSheet from '../components/RateOutfitSheet';
+import { Outfit, OutfitCategory, OUTFIT_CATEGORIES } from '../types';
+import OutfitDetailSheet from '../components/OutfitDetailSheet';
 import TagSheet from '../components/TagSheet';
 import ScheduleOutfitSheet from '../components/ScheduleOutfitSheet';
 import OutfitCreator from '../components/OutfitCreator';
@@ -69,33 +74,56 @@ import OutfitCreator from '../components/OutfitCreator';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Tab = 'looks' | 'essence' | 'runway';
-type Sheet = 'action' | 'rename' | 'rate' | 'tags' | 'schedule' | null;
+type Sheet = 'detail' | 'tags' | 'schedule' | null;
+type CategoryFilter = OutfitCategory | 'all';
 
 const BOTTOM_TAB_HEIGHT = 56;
+
+type CatIcon = (props: { size?: number; color?: string; strokeWidth?: number }) => React.ReactElement;
+
+const CATEGORY_ICONS: Record<OutfitCategory, CatIcon> = {
+  Outfits: ShirtIcon,
+  'Corte/Barba': ScissorsIcon,
+  Maquillaje: Wand2Icon,
+  'Uñas': NailIcon,
+};
+
+const CATEGORY_LABEL_KEYS: Record<OutfitCategory, string> = {
+  Outfits: 'styles.categoryOutfits',
+  'Corte/Barba': 'styles.categoryHaircut',
+  Maquillaje: 'styles.categoryMakeup',
+  'Uñas': 'styles.categoryNails',
+};
 
 // ─── Outfit card (portrait, native fashion-app style) ─────────────────────────
 
 interface OutfitCardProps {
   outfit: Outfit;
-  onPress: () => void;
+  onViewDetail: () => void;
+  onTags: () => void;
+  onShare: () => void;
+  onDelete: () => void;
 }
 
-function OutfitCard({ outfit, onPress }: OutfitCardProps) {
+function OutfitCard({ outfit, onViewDetail, onTags, onShare, onDelete }: OutfitCardProps) {
   const { styles: s } = useStylesTheme();
+  const { t } = useTranslation();
   const items = outfit.items.slice(0, 4);
   const isAI = outfit.source === 'ai';
 
   return (
-    <Touchable
-      onPress={onPress}
-      borderRadius={16}
+    <View
       style={[
         styles.card,
         { backgroundColor: s.outfitCardBackground, borderColor: s.outfitCardBorder },
       ]}
     >
-      {/* Square image area */}
-      <View style={[styles.cardMedia, { backgroundColor: s.outfitCardMosaicBackground }]}>
+      {/* Square image area — tap opens detail (the "eye") */}
+      <Touchable
+        onPress={onViewDetail}
+        borderRadius={0}
+        style={[styles.cardMedia, { backgroundColor: s.outfitCardMosaicBackground }]}
+      >
         {outfit.imageData ? (
           <AuthedImage
             data={outfit.imageData}
@@ -149,7 +177,7 @@ function OutfitCard({ outfit, onPress }: OutfitCardProps) {
             ))}
           </View>
         )}
-      </View>
+      </Touchable>
 
       {/* Info below image */}
       <View style={styles.cardInfo}>
@@ -185,8 +213,44 @@ function OutfitCard({ outfit, onPress }: OutfitCardProps) {
             </Text>
           </View>
         </View>
+
+        {/* Action row — always visible at the bottom of the card */}
+        <View style={[styles.cardActions, { borderTopColor: s.outfitCardBorder }]}>
+          <Touchable
+            onPress={onViewDetail}
+            borderRadius={8}
+            accessibilityLabel={t('styles.detailView')}
+            style={styles.cardActionBtn}
+          >
+            <EyeIcon size={16} color={s.actionIcon} />
+          </Touchable>
+          <Touchable
+            onPress={onTags}
+            borderRadius={8}
+            accessibilityLabel={t('styles.actionTags')}
+            style={styles.cardActionBtn}
+          >
+            <TagIcon size={16} color={s.actionIcon} />
+          </Touchable>
+          <Touchable
+            onPress={onShare}
+            borderRadius={8}
+            accessibilityLabel={t('styles.actionShare')}
+            style={styles.cardActionBtn}
+          >
+            <Share2Icon size={16} color={s.actionIcon} />
+          </Touchable>
+          <Touchable
+            onPress={onDelete}
+            borderRadius={8}
+            accessibilityLabel={t('styles.actionDelete')}
+            style={styles.cardActionBtn}
+          >
+            <TrashIcon size={16} color={s.actionDangerText} />
+          </Touchable>
+        </View>
       </View>
-    </Touchable>
+    </View>
   );
 }
 
@@ -210,6 +274,7 @@ function Styles() {
   const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [starFilter, setStarFilter] = useState<number | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
   const [filterSheet, setFilterSheet] = useState<'stars' | 'tags' | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [createStep, setCreateStep] = useState<1 | 2>(1);
@@ -242,23 +307,44 @@ function Styles() {
     [outfits],
   );
 
+  const hasItemsInCategory = useCallback(
+    (cat: OutfitCategory) =>
+      cat === 'Outfits'
+        ? outfits.some(o => !o.category || o.category === 'Outfits')
+        : outfits.some(o => o.category === cat),
+    [outfits],
+  );
+
+  const visibleCategories = useMemo(
+    () => OUTFIT_CATEGORIES.filter(hasItemsInCategory),
+    [hasItemsInCategory],
+  );
+
   const filteredOutfits = useMemo(() => {
     let result = outfits;
+    if (categoryFilter !== 'all') {
+      result = result.filter(o => (o.category ?? 'Outfits') === categoryFilter);
+    }
     if (tagFilter) result = result.filter(o => o.tags.includes(tagFilter));
     if (starFilter) result = result.filter(o => o.rating === starFilter);
     return result;
-  }, [outfits, tagFilter, starFilter]);
+  }, [outfits, categoryFilter, tagFilter, starFilter]);
 
-  const hasActiveFilter = tagFilter != null || starFilter != null;
+  const hasActiveFilter = tagFilter != null || starFilter != null || categoryFilter !== 'all';
 
   // Bottom bar height including safe area
   const bottomBarTotalHeight = BOTTOM_TAB_HEIGHT + insets.bottom;
 
   // ─── Handlers ────────────────────────────────────────────────────────────────
 
-  const openAction = useCallback((outfit: Outfit) => {
+  const openDetail = useCallback((outfit: Outfit) => {
     setSelectedOutfit(outfit);
-    setActiveSheet('action');
+    setActiveSheet('detail');
+  }, []);
+
+  const openTags = useCallback((outfit: Outfit) => {
+    setSelectedOutfit(outfit);
+    setActiveSheet('tags');
   }, []);
 
   const closeSheet = useCallback(() => {
@@ -267,17 +353,10 @@ function Styles() {
     setSheetLoading(false);
   }, []);
 
-  const handleRename = async (name: string) => {
+  const handleDetailSave = async ({ name, rating }: { name: string; rating: number | null }) => {
     if (!selectedOutfit) return;
     setSheetLoading(true);
-    await dispatch(editOutfit({ id: selectedOutfit.id, name }));
-    closeSheet();
-  };
-
-  const handleRate = async (rating: number | null) => {
-    if (!selectedOutfit) return;
-    setSheetLoading(true);
-    await dispatch(editOutfit({ id: selectedOutfit.id, rating }));
+    await dispatch(editOutfit({ id: selectedOutfit.id, name, rating }));
     closeSheet();
   };
 
@@ -298,23 +377,20 @@ function Styles() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!selectedOutfit) return;
-    await dispatch(removeOutfit(selectedOutfit.id));
-    closeSheet();
-  };
+  const handleDelete = useCallback(
+    (outfit: Outfit) => {
+      dispatch(removeOutfit(outfit.id));
+    },
+    [dispatch],
+  );
 
-  const handleShare = async () => {
-    if (!selectedOutfit) return;
-    closeSheet();
-    const pieces = selectedOutfit.items.map(i => i.name).join(', ');
+  const handleShare = useCallback(async (outfit: Outfit) => {
+    const pieces = outfit.items.map(i => i.name).join(', ');
     await Share.share({
-      title: selectedOutfit.name,
-      message: pieces
-        ? `${selectedOutfit.name} — ${pieces}`
-        : selectedOutfit.name,
+      title: outfit.name,
+      message: pieces ? `${outfit.name} — ${pieces}` : outfit.name,
     });
-  };
+  }, []);
 
   const handleCreatorSave = async (name: string, itemIds: string[]) => {
     setCreatorSaving(true);
@@ -346,6 +422,52 @@ function Styles() {
 
   const renderLooksTab = () => (
     <View style={styles.tabContent}>
+      {/* Category filter — rounded icon buttons at the top */}
+      {visibleCategories.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryRow}
+        >
+          <Touchable
+            onPress={() => setCategoryFilter('all')}
+            borderRadius={22}
+            accessibilityLabel={t('styles.categoryAll')}
+            style={[
+              styles.categoryBtn,
+              categoryFilter === 'all'
+                ? { backgroundColor: s.buttonPrimary, borderColor: s.buttonPrimary }
+                : { backgroundColor: s.filterPillBackground, borderColor: s.filterPillBorder },
+            ]}
+          >
+            <LayoutGridIcon
+              size={18}
+              color={categoryFilter === 'all' ? s.buttonPrimaryText : s.filterPillText}
+            />
+          </Touchable>
+          {visibleCategories.map(cat => {
+            const Icon = CATEGORY_ICONS[cat];
+            const isActive = categoryFilter === cat;
+            return (
+              <Touchable
+                key={cat}
+                onPress={() => setCategoryFilter(cat)}
+                borderRadius={22}
+                accessibilityLabel={t(CATEGORY_LABEL_KEYS[cat])}
+                style={[
+                  styles.categoryBtn,
+                  isActive
+                    ? { backgroundColor: s.buttonPrimary, borderColor: s.buttonPrimary }
+                    : { backgroundColor: s.filterPillBackground, borderColor: s.filterPillBorder },
+                ]}
+              >
+                <Icon size={18} color={isActive ? s.buttonPrimaryText : s.filterPillText} />
+              </Touchable>
+            );
+          })}
+        </ScrollView>
+      )}
+
       {/* Filter pills */}
       <View style={styles.filterRow}>
         <Touchable
@@ -414,7 +536,13 @@ function Styles() {
           contentContainerStyle={[styles.gridContent, { paddingBottom: bottomBarTotalHeight + 16 }]}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
-            <OutfitCard outfit={item} onPress={() => openAction(item)} />
+            <OutfitCard
+              outfit={item}
+              onViewDetail={() => openDetail(item)}
+              onTags={() => openTags(item)}
+              onShare={() => handleShare(item)}
+              onDelete={() => handleDelete(item)}
+            />
           )}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
@@ -1147,34 +1275,13 @@ function Styles() {
       )}
 
       {/* Sheets */}
-      {activeSheet === 'action' && selectedOutfit && (
-        <OutfitActionSheet
+      {activeSheet === 'detail' && selectedOutfit && (
+        <OutfitDetailSheet
           outfit={selectedOutfit}
-          onClose={closeSheet}
-          onSchedule={() => { setActiveSheet('schedule'); }}
-          onShare={handleShare}
-          onTags={() => { setActiveSheet('tags'); }}
-          onRename={() => { setActiveSheet('rename'); }}
-          onRate={() => { setActiveSheet('rate'); }}
-          onDelete={handleDelete}
-        />
-      )}
-
-      {activeSheet === 'rename' && selectedOutfit && (
-        <RenameOutfitSheet
-          currentName={selectedOutfit.name}
           loading={sheetLoading}
           onClose={closeSheet}
-          onSave={handleRename}
-        />
-      )}
-
-      {activeSheet === 'rate' && selectedOutfit && (
-        <RateOutfitSheet
-          currentRating={selectedOutfit.rating}
-          loading={sheetLoading}
-          onClose={closeSheet}
-          onSave={handleRate}
+          onSave={handleDetailSave}
+          onSchedule={() => setActiveSheet('schedule')}
         />
       )}
 
@@ -1271,6 +1378,22 @@ const styles = StyleSheet.create({
   tabContent: { flex: 1 },
 
   // Filter pills
+  categoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 10,
+    gap: 10,
+  },
+  categoryBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   filterRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
@@ -1380,6 +1503,23 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   sourceBadgeText: { fontSize: 8, fontWeight: '800', letterSpacing: 0.3 },
+
+  // Card action row
+  cardActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  cardActionBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
 
   // Empty / loading
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, gap: 12 },
