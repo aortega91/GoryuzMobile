@@ -43,8 +43,10 @@ import Notifications from '@features/notifications/screens/Notifications';
 import Subscription from '@features/subscription/screens/Subscription';
 import Support from '@features/support/screens/Support';
 import Community from '@features/community/screens/Community';
+import { fetchConversations } from '@features/community/api/communityApi';
 import { addNotification } from '@features/notifications/notificationsSlice';
 import { loadEvents } from '@features/schedule/scheduleSlice';
+import { logError } from '@utilities/crashlytics';
 import { loadProfile } from '../profileSlice';
 import { MOCK_FEED_POSTS, MOCK_OWN_POSTS, MOCK_SAVED_POSTS } from '../mockFeedData';
 import { ActiveModule, FeedPost as FeedPostType } from '../types';
@@ -240,6 +242,7 @@ function Home() {
   const [activeTab, setActiveTab] = useState<HomeTab>('feed');
   const [tabContentHeight, setTabContentHeight] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   // Mi Visión state
   const [ownPosts, setOwnPosts] = useState<FeedPostType[]>(MOCK_OWN_POSTS);
@@ -253,6 +256,29 @@ function Home() {
       dispatch(loadProfile());
     }
   }, [dispatch, profileStatus]);
+
+  // Total unread direct messages, surfaced as a bubble on the TopBar message
+  // icon. Recomputed when the active module changes (so it clears after the
+  // user visits Community) and polled on a light interval so a new incoming
+  // message lights up the bubble without needing a navigation.
+  const profileId = profile?.id;
+  const refreshUnreadMessages = useCallback(async () => {
+    if (!profileId) { return; }
+    try {
+      const conversations = await fetchConversations(profileId);
+      setUnreadMessages(
+        conversations.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0),
+      );
+    } catch (err) {
+      logError(err, 'Home.refreshUnreadMessages');
+    }
+  }, [profileId]);
+
+  useEffect(() => {
+    refreshUnreadMessages();
+    const interval = setInterval(refreshUnreadMessages, 30000);
+    return () => clearInterval(interval);
+  }, [refreshUnreadMessages, activeModule]);
 
   useEffect(() => {
     detectLocation();
@@ -509,6 +535,8 @@ function Home() {
           location={location}
           onLocationPress={detectLocation}
           onAvatarPress={() => setActiveModule('profile')}
+          onMessagePress={() => setActiveModule('community')}
+          unreadMessages={unreadMessages}
           onNotificationPress={() => setActiveModule('notifications')}
           unreadNotifications={unreadNotifications}
         />
