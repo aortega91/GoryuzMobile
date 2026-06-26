@@ -24,7 +24,7 @@ import toast from '@utilities/toast';
 import {
   ShoppingBagIcon,
   GiftIcon,
-  HandIcon,
+  RepeatIcon,
   CheckIcon,
   MessageIcon,
   HeartIcon,
@@ -299,6 +299,13 @@ function SecondLife() {
     return map[status] ?? t('secondLife.finalize');
   };
 
+  const renderFinalizeIcon = (status: SecondLifeStatus, color: string) => {
+    if (status === 'gift') { return <GiftIcon size={16} color={color} strokeWidth={2} />; }
+    if (status === 'trade') { return <RepeatIcon size={16} color={color} strokeWidth={2} />; }
+    if (status === 'sale') { return <ShoppingBagIcon size={16} color={color} strokeWidth={2} />; }
+    return <CheckIcon size={16} color={color} />;
+  };
+
   // ─── Vitrina tab ───────────────────────────────────────────────────────────
 
   const VITRINA_FILTERS: { id: VitrinaFilter; label: string }[] = [
@@ -338,12 +345,7 @@ function SecondLife() {
   const renderVitrinaTab = () => (
     <View style={styles.tabContent}>
       {/* Filter pills */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.pillScroll}
-        contentContainerStyle={styles.pillRow}
-      >
+      <View style={styles.pillRow}>
         {VITRINA_FILTERS.map(f => (
           <Touchable
             key={f.id}
@@ -366,7 +368,7 @@ function SecondLife() {
             </Text>
           </Touchable>
         ))}
-      </ScrollView>
+      </View>
 
       {myLoading ? (
         <View style={styles.centered}>
@@ -466,12 +468,7 @@ function SecondLife() {
       </View>
 
       {/* Filter pills */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.pillScroll}
-        contentContainerStyle={styles.pillRow}
-      >
+      <View style={styles.pillRow}>
         {MARKET_FILTERS.map(f => (
           <Touchable
             key={f.id}
@@ -494,7 +491,7 @@ function SecondLife() {
             </Text>
           </Touchable>
         ))}
-      </ScrollView>
+      </View>
 
       {mktLoading ? (
         <View style={styles.centered}>
@@ -537,7 +534,7 @@ function SecondLife() {
   const IMPACT_STATS = [
     { key: 'sold', value: impactStats.sold, label: t('secondLife.impactSold'), icon: <ShoppingBagIcon size={24} color={sl.badgeSaleText} strokeWidth={1.5} /> },
     { key: 'gifted', value: impactStats.gifted, label: t('secondLife.impactGifted'), icon: <GiftIcon size={24} color={sl.badgeGiftText} strokeWidth={1.5} /> },
-    { key: 'traded', value: impactStats.traded, label: t('secondLife.impactTraded'), icon: <HandIcon size={24} color={sl.badgeTradeText} strokeWidth={1.5} /> },
+    { key: 'traded', value: impactStats.traded, label: t('secondLife.impactTraded'), icon: <RepeatIcon size={24} color={sl.badgeTradeText} strokeWidth={1.5} /> },
   ];
 
   const renderImpactTab = () => (
@@ -719,7 +716,7 @@ function SecondLife() {
                         <ActivityIndicator size="small" color={sl.buttonPrimaryText} />
                       ) : (
                         <>
-                          <CheckIcon size={16} color={sl.buttonPrimaryText} />
+                          {renderFinalizeIcon(item.status, sl.buttonPrimaryText)}
                           <Text style={[styles.actionBtnText, { color: sl.buttonPrimaryText }]}>{getFinalizeLabel(item.status)}</Text>
                         </>
                       )}
@@ -860,12 +857,9 @@ const styles = StyleSheet.create({
     borderRadius: 1,
   },
   // ─── Filter pills ────────────────────────────────────────────────────────────
-  pillScroll: {
-    flexGrow: 0,
-    flexShrink: 0,
-  },
   pillRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     paddingHorizontal: 16,
     paddingVertical: 10,
     gap: 8,

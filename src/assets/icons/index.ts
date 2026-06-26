@@ -20,6 +20,7 @@ export { default as MessageIcon } from './MessageIcon';
 export { default as MoreVerticalIcon } from './MoreVerticalIcon';
 export { default as PencilIcon } from './PencilIcon';
 export { default as PlusCircleIcon } from './PlusCircleIcon';
+export { default as RepeatIcon } from './RepeatIcon';
 export { default as SearchIcon } from './SearchIcon';
 export { default as ShirtIcon } from './ShirtIcon';
 export { default as RefreshCwIcon } from './RefreshCwIcon';
