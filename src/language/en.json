@@ -539,7 +539,9 @@
     "minutesAgo": "{{count}}m ago",
     "hoursAgo": "{{count}}h ago",
     "daysAgo": "{{count}}d ago",
-    "outfitToday": "You have an outfit planned for today: {{name}}"
+    "outfitToday": "You have an outfit planned for today: {{name}}",
+    "gemsUsed": "You used {{count}} gems",
+    "newMessage": "You have a new message"
   },
   "community": {
     "tabConnections": "Connections",

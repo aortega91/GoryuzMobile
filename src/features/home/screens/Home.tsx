@@ -244,6 +244,8 @@ function Home() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
 
+  const gemCount = profile?.tokens ?? 0;
+
   // Mi Visión state
   const [ownPosts, setOwnPosts] = useState<FeedPostType[]>(MOCK_OWN_POSTS);
   const [showPublishSheet, setShowPublishSheet] = useState(false);
@@ -310,6 +312,37 @@ function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scheduleStatus]);
 
+  // Notify whenever gems are spent (the balance drops). The first observed
+  // value just seeds the baseline so loading the profile doesn't fire one.
+  const prevGemCountRef = useRef<number | null>(null);
+  useEffect(() => {
+    const prev = prevGemCountRef.current;
+    if (prev != null && profile != null && gemCount < prev) {
+      dispatch(addNotification({
+        id: `gem-use-${new Date().toISOString()}`,
+        text: t('notifications.gemsUsed', { count: prev - gemCount }),
+        timestamp: new Date().toISOString(),
+      }));
+    }
+    prevGemCountRef.current = gemCount;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gemCount]);
+
+  // Notify whenever the unread-message count climbs (a new message arrived).
+  const prevUnreadMessagesRef = useRef<number | null>(null);
+  useEffect(() => {
+    const prev = prevUnreadMessagesRef.current;
+    if (prev != null && unreadMessages > prev) {
+      dispatch(addNotification({
+        id: `msg-${new Date().toISOString()}`,
+        text: t('notifications.newMessage'),
+        timestamp: new Date().toISOString(),
+      }));
+    }
+    prevUnreadMessagesRef.current = unreadMessages;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unreadMessages]);
+
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
@@ -339,7 +372,6 @@ function Home() {
     );
   };
 
-  const gemCount = profile?.tokens ?? 0;
   const location = cityName ?? undefined;
 
   // ─── Home panel tabs ─────────────────────────────────────────────────────────
