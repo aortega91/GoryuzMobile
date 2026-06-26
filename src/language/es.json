@@ -278,6 +278,7 @@
     "pickOutfit": "Elige un Atuendo",
     "noOutfits": "Aún no tienes atuendos guardados.",
     "emptyDay": "Sin atuendos agendados. ¡Empieza a planificar!",
+    "emptyDayShort": "Sin atuendos",
     "emptyPacking": "Tu maleta está vacía.",
     "emptyPackingHint": "Agrega atuendos en las fechas del viaje para llenar tu maleta.",
     "changeOutfit": "Cambiar Atuendo",
@@ -310,7 +311,8 @@
     "dayWed": "X",
     "dayThu": "J",
     "dayFri": "V",
-    "daySat": "S"
+    "daySat": "S",
+    "autoAssign": "Autoasignar"
   },
   "styles": {
     "title": "Estilos",

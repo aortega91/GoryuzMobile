@@ -22,6 +22,7 @@ import {
   PlaneIcon,
   ShirtIcon,
   PlusCircleIcon,
+  Wand2Icon,
 } from '@assets/icons';
 import { AppDispatch, RootState } from '@utilities/store';
 import { logError } from '@utilities/crashlytics';
@@ -56,39 +57,32 @@ function toDateStr(date: Date): string {
   return date.toISOString().split('T')[0];
 }
 
-function getMonthDays(date: Date): Date[] {
-  const year = date.getFullYear();
-  const month = date.getMonth();
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
+// Week starts on Sunday — matches the zena web implementation.
+function getWeekDays(date: Date): Date[] {
+  const startOfWeek = new Date(date);
+  startOfWeek.setDate(date.getDate() - date.getDay());
   const days: Date[] = [];
-
-  for (let i = firstDay.getDay() - 1; i >= 0; i--) {
-    days.push(new Date(year, month, -i));
-  }
-  for (let d = 1; d <= lastDay.getDate(); d++) {
-    days.push(new Date(year, month, d));
-  }
-  const remaining = (7 - (days.length % 7)) % 7;
-  for (let i = 1; i <= remaining; i++) {
-    days.push(new Date(year, month + 1, i));
+  for (let i = 0; i < 7; i++) {
+    days.push(addDays(startOfWeek, i));
   }
   return days;
 }
 
-function chunk<T>(arr: T[], size: number): T[][] {
-  const result: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) {
-    result.push(arr.slice(i, i + size));
+function weekRangeLabel(days: Date[]): string {
+  const start = days[0];
+  const end = days[days.length - 1];
+  const startMonth = start.toLocaleDateString('es-ES', { month: 'short' });
+  const endMonth = end.toLocaleDateString('es-ES', { month: 'short' });
+  if (start.getMonth() === end.getMonth()) {
+    return `${start.getDate()} – ${end.getDate()} ${startMonth}`;
   }
-  return result;
+  return `${start.getDate()} ${startMonth} – ${end.getDate()} ${endMonth}`;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-type ViewMode = 'month' | 'day';
+type ViewMode = 'week' | 'day';
 
-const DAY_NAMES_SHORT = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 const MAX_EVENTS_PER_DAY = 3;
 
 function Schedule() {
@@ -106,7 +100,7 @@ function Schedule() {
   const longitude = useSelector((state: RootState) => state.location.longitude);
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<ViewMode>('month');
+  const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [locationWeather, setLocationWeather] = useState<Record<string, DailyWeather>>({});
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isTripModalOpen, setIsTripModalOpen] = useState(false);
@@ -157,10 +151,7 @@ function Schedule() {
 
   // ─── Derived data ─────────────────────────────────────────────────────────
 
-  const monthDays = useMemo(
-    () => (viewMode === 'month' ? getMonthDays(currentDate) : []),
-    [currentDate, viewMode],
-  );
+  const weekDays = useMemo(() => getWeekDays(currentDate), [currentDate]);
 
   const eventsByDate = useMemo(() => {
     const map: Record<string, CalendarEvent[]> = {};
@@ -187,12 +178,7 @@ function Schedule() {
   // ─── Handlers ─────────────────────────────────────────────────────────────
 
   const navigateDate = (offset: number) => {
-    setCurrentDate(prev => {
-      if (viewMode === 'month') {
-        return new Date(prev.getFullYear(), prev.getMonth() + offset, 1);
-      }
-      return addDays(prev, offset);
-    });
+    setCurrentDate(prev => addDays(prev, viewMode === 'week' ? offset * 7 : offset));
   };
 
   const handleSelectDay = (date: Date) => {
@@ -203,6 +189,29 @@ function Schedule() {
   const handleAddOutfit = (dateStr: string) => {
     setPickingForDate(dateStr);
   };
+
+  // Auto-fill every empty day of the visible week, rotating through the
+  // user's saved outfits. Local-only — no AI, no gem cost.
+  const handleAutoAssign = () => {
+    if (outfits.length === 0) { return; }
+    let outfitIdx = 0;
+    weekDays.forEach(date => {
+      const dateStr = toDateStr(date);
+      if ((eventsByDate[dateStr] ?? []).length > 0) { return; }
+      const outfit = outfits[outfitIdx % outfits.length];
+      outfitIdx += 1;
+      const weather = locationWeather[dateStr];
+      const weatherSnapshot = weather
+        ? `${weather.tempMax}°/${weather.tempMin}°`
+        : undefined;
+      dispatch(addEvent({ date: dateStr, outfitId: outfit.id, weatherSnapshot }));
+    });
+  };
+
+  const weekHasEmptyDay = useMemo(
+    () => weekDays.some(date => (eventsByDate[toDateStr(date)] ?? []).length === 0),
+    [weekDays, eventsByDate],
+  );
 
   const handleOutfitSelected = (outfit: { id: string }) => {
     if (pickingForDate) {
@@ -262,113 +271,181 @@ function Schedule() {
 
   const today = toDateStr(new Date());
 
-  const renderMonthGrid = () => {
-    const weeks = chunk(monthDays, 7);
-    const currentMonth = currentDate.getMonth();
+  const renderWeekDay = (date: Date) => {
+    const dateStr = toDateStr(date);
+    const dayEvents = eventsByDate[dateStr] ?? [];
+    const isToday = dateStr === today;
+    const isMaxed = dayEvents.length >= MAX_EVENTS_PER_DAY;
+    const trip = tripForDate(dateStr);
+    const dayWeather = locationWeather[dateStr];
 
     return (
-      <ScrollView
-        style={styles.scroll}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.monthContainer, { paddingBottom: insets.bottom + 16 }]}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={s.headerTitle}
-          />
-        }
+      <View
+        key={dateStr}
+        style={[
+          styles.weekDayCard,
+          {
+            backgroundColor: s.columnBackground,
+            borderColor: isToday ? s.columnTodayBackground : s.columnBorder,
+          },
+          isToday && styles.weekDayCardToday,
+        ]}
       >
-        {/* Day name headers */}
-        <View style={styles.monthHeaderRow}>
-          {DAY_NAMES_SHORT.map(name => (
-            <View key={name} style={styles.monthHeaderCell}>
-              <Text style={[styles.monthHeaderText, { color: s.columnDayName }]}>{name}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Week rows */}
-        {weeks.map(week => (
-          <View key={toDateStr(week[0])} style={styles.monthWeekRow}>
-            {week.map(date => {
-              const dateStr = toDateStr(date);
-              const dayEvents = eventsByDate[dateStr] ?? [];
-              const isToday = dateStr === today;
-              const isCurrentMonth = date.getMonth() === currentMonth;
-              const trip = tripForDate(dateStr);
-              const outfitImg = dayEvents[0]?.outfit?.items[0]?.imageData;
-
-              return (
-                <Touchable
-                  key={dateStr}
-                  onPress={() => handleSelectDay(date)}
-                  borderRadius={8}
+        {/* Day header */}
+        <View style={styles.weekDayHeader}>
+          <View style={styles.weekDayHeaderLeft}>
+            <Touchable
+              onPress={() => handleSelectDay(date)}
+              borderRadius={8}
+              style={styles.weekDayDateTap}
+            >
+              <Text style={[styles.weekDayName, { color: s.columnDayName }]}>
+                {date.toLocaleDateString('es-ES', { weekday: 'short' }).replace('.', '')}
+              </Text>
+              <View
+                style={[
+                  styles.weekDateCircle,
+                  isToday && { backgroundColor: s.columnTodayBackground },
+                ]}
+              >
+                <Text
                   style={[
-                    styles.monthCell,
-                    {
-                      backgroundColor: s.columnBackground,
-                      borderColor: s.columnBorder,
-                      opacity: isCurrentMonth ? 1 : 0.35,
-                    },
+                    styles.weekDateText,
+                    { color: isToday ? s.columnTodayText : s.columnDayNumber },
                   ]}
                 >
-                  {outfitImg != null && (
+                  {date.getDate()}
+                </Text>
+              </View>
+            </Touchable>
+            {trip != null && (
+              <Touchable
+                onPress={() => handleOpenTrip(trip)}
+                borderRadius={20}
+                style={[styles.weekTripPill, { backgroundColor: s.tripBadgeBackground }]}
+              >
+                <PlaneIcon size={10} color={s.tripBadgeText} />
+                <Text
+                  style={[styles.weekTripPillText, { color: s.tripBadgeText }]}
+                  numberOfLines={1}
+                >
+                  {trip.name}
+                </Text>
+              </Touchable>
+            )}
+          </View>
+
+          <View style={styles.weekDayHeaderRight}>
+            {dayWeather && (
+              <WeatherBadge
+                weatherCode={dayWeather.weatherCode}
+                tempMax={dayWeather.tempMax}
+                tempMin={dayWeather.tempMin}
+              />
+            )}
+            {!isMaxed && (
+              <Touchable
+                onPress={() => handleAddOutfit(dateStr)}
+                hitSlop={6}
+                borderRadius={16}
+                style={[styles.weekAddBtn, { backgroundColor: s.buttonPrimary }]}
+              >
+                <PlusCircleIcon size={16} color={s.buttonPrimaryText} />
+              </Touchable>
+            )}
+          </View>
+        </View>
+
+        {/* Outfits */}
+        {dayEvents.length === 0 ? (
+          <Touchable
+            onPress={() => handleAddOutfit(dateStr)}
+            borderRadius={12}
+            style={[styles.weekEmptyRow, { borderColor: s.addButtonBorder }]}
+          >
+            <Text style={[styles.weekEmptyText, { color: s.emptyText }]}>
+              {t('schedule.emptyDayShort')}
+            </Text>
+          </Touchable>
+        ) : (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.weekOutfitsRow}
+          >
+            {dayEvents.map(event => {
+              const outfitImg =
+                event.outfit?.imageData ?? event.outfit?.items[0]?.imageData ?? null;
+              return (
+                <Touchable
+                  key={event.id}
+                  onPress={() => setSelectedEvent(event)}
+                  borderRadius={12}
+                  style={[
+                    styles.weekOutfitCard,
+                    { backgroundColor: s.eventCardBackground, borderColor: s.eventCardBorder },
+                  ]}
+                >
+                  {outfitImg != null ? (
                     <AuthedImage
                       data={outfitImg}
-                      style={StyleSheet.absoluteFill}
+                      style={styles.weekOutfitImage}
                       resizeMode="cover"
                     />
-                  )}
-                  {outfitImg != null && (
-                    <View style={[StyleSheet.absoluteFill, styles.monthCellOverlay]} />
-                  )}
-
-                  {/* Date + trip indicator */}
-                  <View style={styles.monthCellTop}>
+                  ) : (
                     <View
                       style={[
-                        styles.monthDateCircle,
-                        isToday && { backgroundColor: s.columnTodayBackground },
+                        styles.weekOutfitImage,
+                        styles.weekOutfitPlaceholder,
+                        { backgroundColor: s.emptyIcon },
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.monthDateText,
-                          {
-                            color: isToday
-                              ? s.columnTodayText
-                              : outfitImg != null
-                              ? s.columnTodayText
-                              : s.columnDayNumber,
-                          },
-                        ]}
-                      >
-                        {date.getDate()}
-                      </Text>
+                      <ShirtIcon size={24} color={s.emptyText} />
                     </View>
-                    {trip != null && (
-                      <PlaneIcon
-                        size={8}
-                        color={outfitImg != null ? s.columnTodayText : s.tripBadgeText}
-                      />
-                    )}
-                  </View>
-
-                  {/* Dot indicator when there's an event but no image */}
-                  {dayEvents.length > 0 && outfitImg == null && (
-                    <View
-                      style={[styles.monthEventDot, { backgroundColor: s.buttonPrimary }]}
-                    />
                   )}
+                  <Text
+                    style={[styles.weekOutfitName, { color: s.eventCardName }]}
+                    numberOfLines={1}
+                  >
+                    {event.outfit?.name ?? t('schedule.unknownOutfit')}
+                  </Text>
                 </Touchable>
               );
             })}
-          </View>
-        ))}
-      </ScrollView>
+          </ScrollView>
+        )}
+      </View>
     );
   };
+
+  const renderWeekView = () => (
+    <ScrollView
+      style={styles.scroll}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={[styles.weekContainer, { paddingBottom: insets.bottom + 16 }]}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          tintColor={s.headerTitle}
+        />
+      }
+    >
+      {outfits.length > 0 && weekHasEmptyDay && (
+        <Touchable
+          onPress={handleAutoAssign}
+          borderRadius={12}
+          style={[styles.autoAssignBtn, { backgroundColor: s.buttonPrimary }]}
+        >
+          <Wand2Icon size={16} color={s.buttonPrimaryText} />
+          <Text style={[styles.autoAssignText, { color: s.buttonPrimaryText }]}>
+            {t('schedule.autoAssign')}
+          </Text>
+        </Touchable>
+      )}
+      {weekDays.map(renderWeekDay)}
+    </ScrollView>
+  );
 
   const renderDayView = () => {
     const dateStr = toDateStr(currentDate);
@@ -514,8 +591,8 @@ function Schedule() {
   };
 
   const dateLabel =
-    viewMode === 'month'
-      ? currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+    viewMode === 'week'
+      ? weekRangeLabel(weekDays)
       : currentDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
 
   return (
@@ -532,16 +609,16 @@ function Schedule() {
         <View style={styles.headerActions}>
           <View style={[styles.toggle, { backgroundColor: s.toggleBackground }]}>
             <Touchable
-              onPress={() => setViewMode('month')}
+              onPress={() => setViewMode('week')}
               borderRadius={7}
               style={[
                 styles.toggleBtn,
-                viewMode === 'month' && { backgroundColor: s.toggleActiveBackground },
+                viewMode === 'week' && { backgroundColor: s.toggleActiveBackground },
               ]}
             >
               <ColumnsIcon
                 size={15}
-                color={viewMode === 'month' ? s.toggleActiveText : s.toggleInactiveText}
+                color={viewMode === 'week' ? s.toggleActiveText : s.toggleInactiveText}
               />
             </Touchable>
             <Touchable
@@ -592,8 +669,8 @@ function Schedule() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator color={s.buttonPrimary} />
         </View>
-      ) : viewMode === 'month' ? (
-        renderMonthGrid()
+      ) : viewMode === 'week' ? (
+        renderWeekView()
       ) : (
         renderDayView()
       )}
@@ -679,32 +756,90 @@ const styles = StyleSheet.create({
   },
   navLabel: { fontSize: 15, fontWeight: '600', textTransform: 'capitalize' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  // Month grid
-  monthContainer: { paddingHorizontal: 12 },
-  monthHeaderRow: { flexDirection: 'row', marginBottom: 4 },
-  monthHeaderCell: { flex: 1, alignItems: 'center', paddingVertical: 4 },
-  monthHeaderText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
-  monthWeekRow: { flexDirection: 'row', gap: 3, marginBottom: 3 },
-  monthCell: {
-    flex: 1,
-    aspectRatio: 0.85,
-    borderRadius: 8,
-    borderWidth: 1,
-    overflow: 'hidden',
-    padding: 4,
-    justifyContent: 'space-between',
+  // Week view
+  weekContainer: { paddingHorizontal: 16, gap: 10 },
+  autoAssignBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginBottom: 2,
   },
-  monthCellOverlay: { backgroundColor: 'rgba(0,0,0,0.30)' },
-  monthCellTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  monthDateCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+  autoAssignText: { fontSize: 14, fontWeight: '700' },
+  weekDayCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 12,
+    gap: 10,
+  },
+  weekDayCardToday: { borderWidth: 2 },
+  weekDayHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  weekDayHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  weekDayDateTap: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  weekDayName: {
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    width: 34,
+  },
+  weekDateCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  monthDateText: { fontSize: 11, fontWeight: '700' },
-  monthEventDot: { width: 5, height: 5, borderRadius: 3, alignSelf: 'center' },
+  weekDateText: { fontSize: 14, fontWeight: '700' },
+  weekTripPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 20,
+    flexShrink: 1,
+  },
+  weekTripPillText: { fontSize: 10, fontWeight: '700' },
+  weekDayHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  weekAddBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  weekEmptyRow: {
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  weekEmptyText: { fontSize: 13 },
+  weekOutfitsRow: { gap: 10, paddingVertical: 2 },
+  weekOutfitCard: {
+    width: 88,
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+    padding: 6,
+    gap: 6,
+  },
+  weekOutfitImage: { width: '100%', height: 96, borderRadius: 8 },
+  weekOutfitPlaceholder: { alignItems: 'center', justifyContent: 'center' },
+  weekOutfitName: { fontSize: 11, fontWeight: '600', textAlign: 'center' },
   // Day view
   dayViewContent: { paddingHorizontal: 20, paddingBottom: 32 },
   dayViewHeader: {

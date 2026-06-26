@@ -278,6 +278,7 @@
     "pickOutfit": "Pick an Outfit",
     "noOutfits": "No saved outfits yet.",
     "emptyDay": "No outfits scheduled. Start planning!",
+    "emptyDayShort": "No outfits",
     "emptyPacking": "No items in your suitcase yet.",
     "emptyPackingHint": "Schedule outfits on the trip dates to fill your packing list.",
     "changeOutfit": "Change Outfit",
@@ -310,7 +311,8 @@
     "dayWed": "W",
     "dayThu": "T",
     "dayFri": "F",
-    "daySat": "S"
+    "daySat": "S",
+    "autoAssign": "Auto-assign"
   },
   "styles": {
     "title": "Styles",
