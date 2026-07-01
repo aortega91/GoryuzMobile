@@ -237,6 +237,9 @@ function Home() {
   const insets = useSafeAreaInsets();
 
   const [activeModule, setActiveModule] = useState<ActiveModule>('styles');
+  // Which view Community opens into. The TopBar message icon (always visible)
+  // opens it straight to `messages`; the drawer opens the default `connections`.
+  const [communityView, setCommunityView] = useState<'connections' | 'messages'>('connections');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const drawerRef = useRef<DrawerMenuHandle>(null);
   const [activeTab, setActiveTab] = useState<HomeTab>('feed');
@@ -354,6 +357,9 @@ function Home() {
 
   const handleNavigate = useCallback((module: ActiveModule) => {
     setIsDrawerOpen(false);
+    // The drawer always opens Community on its Connections view; the TopBar
+    // message icon is the only entry point to the Messages view.
+    if (module === 'community') { setCommunityView('connections'); }
     setActiveModule(module);
   }, []);
 
@@ -567,7 +573,7 @@ function Home() {
           location={location}
           onLocationPress={detectLocation}
           onAvatarPress={() => setActiveModule('profile')}
-          onMessagePress={() => setActiveModule('community')}
+          onMessagePress={() => { setCommunityView('messages'); setActiveModule('community'); }}
           unreadMessages={unreadMessages}
           onNotificationPress={() => setActiveModule('notifications')}
           unreadNotifications={unreadNotifications}
@@ -594,7 +600,9 @@ function Home() {
           )}
           {activeModule === 'discover' && <Discover />}
           {activeModule === 'second_life' && <SecondLife />}
-          {activeModule === 'community' && <Community />}
+          {activeModule === 'community' && (
+            <Community key={communityView} initialView={communityView} />
+          )}
           {activeModule === 'subscription' && <Subscription />}
           {activeModule === 'support' && <Support />}
           {activeModule === 'notifications' && (

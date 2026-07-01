@@ -44,8 +44,18 @@ import ChatThread from '../components/ChatThread';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type MainTab = 'connections' | 'messages';
+// The two top-level views of the module. There is no longer an in-screen tab
+// bar to switch between them: `connections` is reached from the drawer, and
+// `messages` from the always-visible TopBar message icon. `view` still toggles
+// internally so the "message a follower" shortcut can jump straight to a thread.
+type CommunityView = 'connections' | 'messages';
 type ConnectionsTab = 'search' | 'following' | 'requests';
+
+interface CommunityProps {
+  // Which view to open on mount. The parent remounts this screen (via `key`)
+  // when the entry point changes, so this is read fresh on each navigation.
+  initialView?: CommunityView;
+}
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
@@ -189,7 +199,7 @@ function ConvRow({ conv, c, onPress }: ConvRowProps) {
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
-function Community() {
+function Community({ initialView = 'connections' }: CommunityProps) {
   const theme = useCommunityTheme();
   const c = theme.community;
   const { t } = useTranslation();
@@ -201,7 +211,7 @@ function Community() {
   const currentUserId = useSelector((state: RootState) => state.profile.data?.id) ?? '';
 
   // ─ Navigation state ──────────────────────────────────────────────────────
-  const [mainTab, setMainTab] = useState<MainTab>('connections');
+  const [view, setView] = useState<CommunityView>(initialView);
   const [connTab, setConnTab] = useState<ConnectionsTab>('following');
   const [activeChat, setActiveChat] = useState<Conversation | null>(null);
 
@@ -255,7 +265,7 @@ function Community() {
       toast.error(t('community.sendFailed'));
       return;
     }
-    setMainTab('messages');
+    setView('messages');
     const existing = (conversations ?? []).find(cv => cv.otherUserId === target.id);
     if (existing) {
       setActiveChat(existing);
@@ -548,7 +558,16 @@ function Community() {
 
   const headerTitle = activeChat
     ? activeChat.otherUserName
-    : t(`community.tab${mainTab === 'connections' ? 'Connections' : 'Messages'}`);
+    : t(`community.tab${view === 'connections' ? 'Connections' : 'Messages'}`);
+
+  // Back steps out one level: an open thread → the conversation list, and the
+  // messages list → the connections view (its only in-screen exit now that the
+  // top tab bar is gone; the drawer/TopBar icon are the other entry points).
+  const showBack = !!activeChat || view === 'messages';
+  const handleBack = () => {
+    if (activeChat) { setActiveChat(null); return; }
+    setView('connections');
+  };
 
   // ─ Layout ────────────────────────────────────────────────────────────────
 
@@ -556,8 +575,8 @@ function Community() {
     <View style={[styles.root, { backgroundColor: c.background }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: c.headerBackground, borderBottomColor: c.headerBorder }]}>
-        {activeChat ? (
-          <Touchable style={styles.backBtn} onPress={() => setActiveChat(null)} borderRadius={20} hitSlop={8}>
+        {showBack ? (
+          <Touchable style={styles.backBtn} onPress={handleBack} borderRadius={20} hitSlop={8}>
             <ChevronLeftIcon size={22} color={c.headerTitle} strokeWidth={2} />
           </Touchable>
         ) : null}
@@ -566,26 +585,8 @@ function Community() {
         </Text>
       </View>
 
-      {/* Main tabs — hidden when in chat thread */}
-      {!activeChat && (
-        <View style={[styles.mainTabBar, { backgroundColor: c.tabBackground, borderBottomColor: c.tabBorder }]}>
-          {(['connections', 'messages'] as MainTab[]).map(tab => {
-            const isActive = mainTab === tab;
-            const label = t(`community.tab${tab === 'connections' ? 'Connections' : 'Messages'}`);
-            return (
-              <Touchable key={tab} style={styles.mainTabItem} onPress={() => setMainTab(tab)}>
-                <Text style={[styles.mainTabLabel, { color: isActive ? c.tabActiveText : c.tabText }, isActive && styles.mainTabLabelActive]}>
-                  {label}
-                </Text>
-                {isActive && <View style={[styles.mainTabIndicator, { backgroundColor: c.tabActiveIndicator }]} />}
-              </Touchable>
-            );
-          })}
-        </View>
-      )}
-
       {/* Connections sub-tabs */}
-      {mainTab === 'connections' && !activeChat && (
+      {view === 'connections' && !activeChat && (
         <View style={[styles.segmentBar, { backgroundColor: c.segmentBackground }]}>
           {([
             { id: 'search' as ConnectionsTab, label: t('community.tabSearch') },
@@ -612,10 +613,10 @@ function Community() {
 
       {/* Content */}
       <View style={styles.content}>
-        {mainTab === 'connections' && !activeChat && connTab === 'search' && renderSearchTab()}
-        {mainTab === 'connections' && !activeChat && connTab === 'following' && renderFollowingTab()}
-        {mainTab === 'connections' && !activeChat && connTab === 'requests' && renderRequestsTab()}
-        {mainTab === 'messages' && renderMessagesTab()}
+        {view === 'connections' && !activeChat && connTab === 'search' && renderSearchTab()}
+        {view === 'connections' && !activeChat && connTab === 'following' && renderFollowingTab()}
+        {view === 'connections' && !activeChat && connTab === 'requests' && renderRequestsTab()}
+        {view === 'messages' && renderMessagesTab()}
       </View>
     </View>
   );
@@ -636,26 +637,6 @@ const styles = StyleSheet.create({
   },
   backBtn: { marginRight: 2 },
   headerTitle: { fontSize: 20, fontWeight: '800', letterSpacing: 0.2, flex: 1 },
-  // Main tabs
-  mainTabBar: {
-    flexDirection: 'row',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  mainTabItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  mainTabLabel: { fontSize: 14, fontWeight: '500' },
-  mainTabLabelActive: { fontWeight: '700' },
-  mainTabIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    left: 20,
-    right: 20,
-    height: 2,
-    borderRadius: 1,
-  },
   // Segment control
   segmentBar: {
     flexDirection: 'row',
