@@ -9,7 +9,9 @@ import { useTranslation } from 'react-i18next';
 import AuthedImage from '@components/AuthedImage';
 import Touchable from '@components/Touchable';
 import useCollectionTheme from '@hooks/useCollectionTheme';
-import { PencilIcon, GiftIcon, TrashIcon } from '@assets/icons';
+import {
+  PencilIcon, GiftIcon, TrashIcon, RefreshCwIcon,
+} from '@assets/icons';
 import { ClothingItem } from '../types';
 
 interface ItemCardProps {
@@ -17,9 +19,12 @@ interface ItemCardProps {
   onRename: () => void;
   onSecondLife: () => void;
   onDelete: () => void;
+  onRegenerate: () => void;
 }
 
-function ItemCard({ item, onRename, onSecondLife, onDelete }: ItemCardProps) {
+function ItemCard({
+  item, onRename, onSecondLife, onDelete, onRegenerate,
+}: ItemCardProps) {
   const theme = useCollectionTheme();
   const tokens = theme.collection;
   const { t } = useTranslation();
@@ -61,6 +66,18 @@ function ItemCard({ item, onRename, onSecondLife, onDelete }: ItemCardProps) {
           accessibilityLabel={t('collection.renameTitle')}
         >
           <PencilIcon size={17} color="#6366F1" />
+        </Touchable>
+
+        <View style={[styles.actionDivider, { backgroundColor: tokens.cardBorder }]} />
+
+        <Touchable
+          onPress={onRegenerate}
+          style={styles.actionBtn}
+          borderRadius={8}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          accessibilityLabel={t('collection.regenerateAction')}
+        >
+          <RefreshCwIcon size={17} color="#F59E0B" />
         </Touchable>
 
         <View style={[styles.actionDivider, { backgroundColor: tokens.cardBorder }]} />

@@ -16,7 +16,7 @@ import {
   DressIcon,
   JacketIcon,
   FootprintsIcon,
-  GlassesIcon,
+  WatchIcon,
 } from '@assets/icons';
 import { ClothingCategory, CLOTHING_CATEGORIES, ClothingItem } from '../types';
 
@@ -47,7 +47,7 @@ const CATEGORY_ICON_MAP: Record<FilterCategory, IconComponent> = {
   'One-Pieces': DressIcon,
   Outerwear: JacketIcon,
   Footwear: FootprintsIcon,
-  Accessories: GlassesIcon,
+  Accessories: WatchIcon,
 };
 
 function CategoryTabs({ selected, onSelect, items }: CategoryTabsProps) {
@@ -88,18 +88,10 @@ function CategoryTabs({ selected, onSelect, items }: CategoryTabsProps) {
               onPress={() => onSelect(category)}
               borderRadius={4}
               style={styles.tab}
+              accessibilityLabel={t(CATEGORY_KEY_MAP[category])}
             >
               <View style={styles.tabInner}>
                 <Icon size={18} color={iconColor} strokeWidth={isActive ? 2.4 : 2} />
-                <Text
-                  style={[
-                    styles.tabText,
-                    { color: iconColor },
-                    isActive && styles.tabTextActive,
-                  ]}
-                >
-                  {t(CATEGORY_KEY_MAP[category])}
-                </Text>
                 <View
                   style={[
                     styles.badge,
@@ -155,13 +147,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingBottom: 10,
-  },
-  tabText: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  tabTextActive: {
-    fontWeight: '700',
   },
   badge: {
     minWidth: 20,

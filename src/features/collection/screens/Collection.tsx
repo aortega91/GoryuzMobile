@@ -25,6 +25,7 @@ import {
   addItems,
   renameItem,
   deleteItem,
+  persistItemImage,
   removeItemLocally,
 } from '../collectionSlice';
 import { ClothingCategory, ClothingItem, ScannedItem } from '../types';
@@ -34,6 +35,7 @@ import AddItemSheet from '../components/AddItemSheet';
 import RenameItemModal from '../components/RenameItemModal';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import SecondLifeSheet from '../components/SecondLifeSheet';
+import RegenerateItemModal from '../components/RegenerateItemModal';
 
 type FilterCategory = ClothingCategory | 'All';
 
@@ -55,6 +57,7 @@ function Collection() {
   const [renaming, setRenaming] = useState<ClothingItem | null>(null);
   const [deleting, setDeleting] = useState<ClothingItem | null>(null);
   const [secondLife, setSecondLife] = useState<ClothingItem | null>(null);
+  const [regenerating, setRegenerating] = useState<ClothingItem | null>(null);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -112,6 +115,14 @@ function Collection() {
     [dispatch, t],
   );
 
+  const handleKeepRegeneratedImage = useCallback(
+    (item: ClothingItem, imageData: string) => {
+      dispatch(persistItemImage({ id: item.id, imageData }));
+      toast.success(t('collection.toastRegenerated'));
+    },
+    [dispatch, t],
+  );
+
   const handleMoveToSecondLife = useCallback(
     async (item: ClothingItem, mode: import('../types').SecondLifeMode) => {
       const statusMap: Record<import('../types').SecondLifeMode, 'sale' | 'gift' | 'trade'> = {
@@ -147,6 +158,7 @@ function Collection() {
           onRename={() => setRenaming(item)}
           onSecondLife={() => setSecondLife(item)}
           onDelete={() => setDeleting(item)}
+          onRegenerate={() => setRegenerating(item)}
         />
       </View>
     ),
@@ -310,6 +322,14 @@ function Collection() {
           item={deleting}
           onClose={() => setDeleting(null)}
           onConfirm={() => handleDelete(deleting)}
+        />
+      )}
+      {regenerating && (
+        <RegenerateItemModal
+          item={regenerating}
+          gemCount={gemCount}
+          onClose={() => setRegenerating(null)}
+          onKeep={imageData => handleKeepRegeneratedImage(regenerating, imageData)}
         />
       )}
       {secondLife && (

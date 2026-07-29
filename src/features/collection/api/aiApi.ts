@@ -33,6 +33,13 @@ export async function extractItem(
   return data.startsWith('data:') ? data : `data:image/png;base64,${data}`;
 }
 
+export async function regenerateItem(itemId: string): Promise<string> {
+  const response = await apiPost<ExtractResponse>('/gemini/regenerate-item', { itemId });
+  // Backend returns raw base64 without a data URL prefix; add it so RN Image can render it
+  const data = response.imageData;
+  return data.startsWith('data:') ? data : `data:image/png;base64,${data}`;
+}
+
 export async function scanImage(
   base64Image: string,
   mimeType: string,

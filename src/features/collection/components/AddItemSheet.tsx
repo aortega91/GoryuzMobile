@@ -14,7 +14,10 @@ import Touchable from '@components/Touchable';
 import useCollectionTheme from '@hooks/useCollectionTheme';
 import useCameraPermission from '@hooks/useCameraPermission';
 import { logError } from '@utilities/crashlytics';
-import { CameraIcon, ImageIcon, GemIcon, CheckIcon } from '@assets/icons';
+import toast from '@utilities/toast';
+import {
+  CameraIcon, ImageIcon, GemIcon, CheckIcon, SparklesIcon,
+} from '@assets/icons';
 import { identifyItems, extractItem } from '../api/aiApi';
 import { ClothingCategory, ScannedItem } from '../types';
 
@@ -63,6 +66,8 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
   const [scanProgress, setScanProgress] = useState({ current: 0, total: 0 });
   const [saveProgress, setSaveProgress] = useState({ current: 0, total: 0 });
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [sourceImage, setSourceImage] = useState<{ base64: string; mimeType: string } | null>(null);
+  const [regeneratingIndex, setRegeneratingIndex] = useState<number | null>(null);
 
   // ─── Scan: identify then extract all items (extract is free) ─────────────────
 
@@ -70,6 +75,7 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
     async (base64Image: string, mimeType: string) => {
       setStage('scanning');
       setScanProgress({ current: 0, total: 0 });
+      setSourceImage({ base64: base64Image, mimeType });
 
       try {
         const rawItems = await identifyItems(base64Image, mimeType);
@@ -152,6 +158,29 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
       return next;
     });
   };
+
+  // ─── Regenerate a single item's image (free — same call used during scan) ────
+
+  const handleRegenerateItem = useCallback(
+    async (index: number) => {
+      if (!sourceImage) return;
+      const target = identifiedItems[index];
+      setRegeneratingIndex(index);
+      try {
+        const imageData = await extractItem(sourceImage.base64, sourceImage.mimeType, target.name);
+        setIdentifiedItems(prev => prev.map((it, i) => (i === index ? { ...it, imageData } : it)));
+      } catch (err: unknown) {
+        logError(
+          err instanceof Error ? err : new Error(String(err)),
+          `regenerateItem:${target.name}`,
+        );
+        toast.error(t('collection.regenerateError'));
+      } finally {
+        setRegeneratingIndex(null);
+      }
+    },
+    [sourceImage, identifiedItems, t],
+  );
 
   // ─── Confirm: images already extracted — just save selected ──────────────────
 
@@ -297,9 +326,25 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
         {t('collection.scanningSuccess')}
       </Text>
 
+      <View
+        style={[
+          styles.notice,
+          {
+            backgroundColor: tokens.noticeBackground,
+            borderColor: tokens.noticeBorder,
+          },
+        ]}
+      >
+        <SparklesIcon size={14} color={tokens.noticeText} />
+        <Text style={[styles.noticeText, { color: tokens.noticeText }]}>
+          {t('collection.regenerateFreeInfo')}
+        </Text>
+      </View>
+
       <View style={styles.itemsList}>
         {identifiedItems.map((item, index) => {
           const isSelected = selected.has(index);
+          const isRegenerating = regeneratingIndex === index;
           const dotColor = CATEGORY_COLORS[item.category] ?? '#9CA3AF';
           const itemRowActiveStyle = {
             backgroundColor: isSelected ? tokens.secondLifeOptionBackground : tokens.cardBackground,
@@ -333,6 +378,22 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
                   {item.category}
                 </Text>
               </View>
+              <Touchable
+                onPress={() => handleRegenerateItem(index)}
+                disabled={isRegenerating}
+                style={[styles.itemRegenerateBtn, isRegenerating && styles.btnDisabled]}
+                borderRadius={14}
+                hitSlop={{
+                  top: 6, bottom: 6, left: 6, right: 6,
+                }}
+                accessibilityLabel={t('collection.regenerateAction')}
+              >
+                {isRegenerating ? (
+                  <ActivityIndicator size="small" color={tokens.itemSelectedAccent} />
+                ) : (
+                  <SparklesIcon size={16} color={tokens.itemSelectedAccent} />
+                )}
+              </Touchable>
               {isSelected && (
                 <View style={[styles.checkCircle, checkCircleStyle]}>
                   <CheckIcon size={12} color="#FFFFFF" strokeWidth={3} />
@@ -543,6 +604,12 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  itemRegenerateBtn: {
+    width: 28,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },

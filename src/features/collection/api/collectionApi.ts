@@ -30,6 +30,17 @@ export async function updateCollectionItem(id: string, name: string): Promise<vo
   await apiPut(`/closet/${id}`, { name });
 }
 
+interface UpdateItemImageResponse {
+  success: true;
+  name: string;
+  imageUrl: string;
+}
+
+export async function updateItemImage(id: string, imageData: string): Promise<string> {
+  const response = await apiPut<UpdateItemImageResponse>(`/closet/${id}`, { imageData });
+  return response.imageUrl;
+}
+
 export async function removeCollectionItem(id: string): Promise<void> {
   await apiDelete(`/closet/${id}`);
 }

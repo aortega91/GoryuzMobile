@@ -6,6 +6,7 @@ import {
   fetchCollection,
   addCollectionItems,
   updateCollectionItem,
+  updateItemImage,
   removeCollectionItem,
 } from './api/collectionApi';
 import { ClothingItem, ScannedItem } from './types';
@@ -55,6 +56,14 @@ export const renameItem = createAsyncThunk(
   async ({ id, name }: { id: string; name: string }) => {
     await updateCollectionItem(id, name);
     return { id, name };
+  },
+);
+
+export const persistItemImage = createAsyncThunk(
+  'collection/persistItemImage',
+  async ({ id, imageData }: { id: string; imageData: string }) => {
+    const imageUrl = await updateItemImage(id, imageData);
+    return { id, imageUrl };
   },
 );
 
@@ -124,6 +133,21 @@ const collectionSlice = createSlice({
         logError(
           new Error(action.error.message ?? 'Failed to rename item'),
           'renameItem',
+        );
+      });
+
+    // persistItemImage
+    builder
+      .addCase(persistItemImage.fulfilled, (state, action) => {
+        const item = state.items.find(i => i.id === action.payload.id);
+        if (item) {
+          item.imageData = action.payload.imageUrl;
+        }
+      })
+      .addCase(persistItemImage.rejected, (_state, action) => {
+        logError(
+          new Error(action.error.message ?? 'Failed to persist regenerated item image'),
+          'persistItemImage',
         );
       });
 

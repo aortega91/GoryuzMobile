@@ -68,3 +68,4 @@ export { default as JacketIcon } from './JacketIcon';
 export { default as Wand2Icon } from './Wand2Icon';
 export { default as NailIcon } from './NailIcon';
 export { default as TagIcon } from './TagIcon';
+export { default as WatchIcon } from './WatchIcon';
