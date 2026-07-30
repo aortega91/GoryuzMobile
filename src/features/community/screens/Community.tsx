@@ -239,11 +239,25 @@ function Community({
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
   // ─ Messages data ─────────────────────────────────────────────────────────
+  // Guard against firing with an empty id — currentUserId is populated from the
+  // profile fetch, which can still be in flight when this screen mounts (e.g.
+  // opened straight from a cold-start push-notification tap). An empty id would
+  // otherwise hit /chat/conversations?userId= and 400.
   const fetchConvsBound = useCallback(
-    () => fetchConversations(currentUserId),
+    () => (currentUserId ? fetchConversations(currentUserId) : Promise.resolve([])),
     [currentUserId],
   );
   const { data: conversations, loading: convsLoading, refetch: refetchConvs } = useRequest(fetchConvsBound);
+
+  // useRequest only re-fires on refetch(), not when the bound fetcher changes —
+  // so if currentUserId was still empty at mount, retry once it becomes available.
+  const hadEmptyUserId = useRef(!currentUserId);
+  useEffect(() => {
+    if (hadEmptyUserId.current && currentUserId) {
+      hadEmptyUserId.current = false;
+      refetchConvs();
+    }
+  }, [currentUserId, refetchConvs]);
 
   // ─ Search debounce ───────────────────────────────────────────────────────
   useEffect(() => {
