@@ -45,6 +45,7 @@ import Support from '@features/support/screens/Support';
 import Community from '@features/community/screens/Community';
 import { fetchConversations } from '@features/community/api/communityApi';
 import { addNotification } from '@features/notifications/notificationsSlice';
+import { clearPendingDeepLink } from '@features/notifications/deepLinkSlice';
 import { loadEvents } from '@features/schedule/scheduleSlice';
 import { logError } from '@utilities/crashlytics';
 import { loadProfile } from '../profileSlice';
@@ -240,6 +241,7 @@ function Home() {
   // Which view Community opens into. The TopBar message icon (always visible)
   // opens it straight to `messages`; the drawer opens the default `connections`.
   const [communityView, setCommunityView] = useState<'connections' | 'messages'>('connections');
+  const [dmFriend, setDmFriend] = useState<{ id: string; name?: string } | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const drawerRef = useRef<DrawerMenuHandle>(null);
   const [activeTab, setActiveTab] = useState<HomeTab>('feed');
@@ -345,6 +347,19 @@ function Home() {
     prevUnreadMessagesRef.current = unreadMessages;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unreadMessages]);
+
+  // Consume a push-notification tap (real FCM push, not the in-app bell above).
+  const pendingDeepLink = useSelector((state: RootState) => state.deepLink.pendingDeepLink);
+  useEffect(() => {
+    if (!pendingDeepLink) return;
+    if (pendingDeepLink.kind === 'chat_message' && pendingDeepLink.friendId) {
+      setDmFriend({ id: pendingDeepLink.friendId, name: pendingDeepLink.friendName });
+      setCommunityView('messages');
+      setActiveModule('community');
+    }
+    // 'gems' needs no extra navigation — Home is already the gem-visible landing screen.
+    dispatch(clearPendingDeepLink());
+  }, [pendingDeepLink, dispatch]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -601,7 +616,12 @@ function Home() {
           {activeModule === 'discover' && <Discover />}
           {activeModule === 'second_life' && <SecondLife />}
           {activeModule === 'community' && (
-            <Community key={communityView} initialView={communityView} />
+            <Community
+              key={communityView}
+              initialView={communityView}
+              deepLinkFriendId={dmFriend?.id}
+              deepLinkFriendName={dmFriend?.name}
+            />
           )}
           {activeModule === 'subscription' && <Subscription />}
           {activeModule === 'support' && <Support />}

@@ -1,6 +1,9 @@
 package com.goryuzmobile
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.os.Build
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactHost
@@ -23,5 +26,21 @@ class MainApplication : Application(), ReactApplication {
   override fun onCreate() {
     super.onCreate()
     loadReactNative(this)
+    createPushNotificationChannel()
+  }
+
+  // The goryuz-notifications worker always sends android.notification.channel_id
+  // "goryuz_default"; if that channel doesn't exist on-device, Android silently
+  // drops the notification instead of falling back to a default channel.
+  private fun createPushNotificationChannel() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      val channel = NotificationChannel(
+        "goryuz_default",
+        "Goryuz",
+        NotificationManager.IMPORTANCE_DEFAULT,
+      )
+      val manager = getSystemService(NotificationManager::class.java)
+      manager.createNotificationChannel(channel)
+    }
   }
 }

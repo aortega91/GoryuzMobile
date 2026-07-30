@@ -27,6 +27,7 @@ import Touchable from '@components/Touchable';
 import PermissionModal from '@components/PermissionModal';
 import { RootState, AppDispatch } from '@utilities/store';
 import { logError } from '@utilities/crashlytics';
+import { teardownPush } from '@utilities/push';
 import { clearSession } from '@features/auth/sessionSlice';
 import { updateProfileLocally, loadProfile } from '@features/home/profileSlice';
 import { setThemePreference, AppThemePreference } from '@utilities/appThemeSlice';
@@ -660,6 +661,7 @@ function Profile({ onViewPlans }: ProfileProps) {
     setActiveConfirm(null);
     try {
       await deleteAccount();
+      await teardownPush();
       await auth().signOut();
       dispatch(clearSession());
     } catch (err) {

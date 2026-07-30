@@ -11,6 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import auth from '@react-native-firebase/auth';
 import { useTranslation } from 'react-i18next';
+import { teardownPush } from '@utilities/push';
 
 import Touchable from '@components/Touchable';
 import useHomeTheme from '@hooks/useHomeTheme';
@@ -216,6 +217,7 @@ const DrawerMenu = forwardRef<DrawerMenuHandle, DrawerMenuProps>(
             onPress={async () => {
               animateClose();
               onClose();
+              await teardownPush();
               await auth().signOut();
               onLogout?.();
             }}

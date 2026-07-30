@@ -9,7 +9,10 @@ import auth from '@react-native-firebase/auth';
 
 import { store, persistor } from '@utilities/store';
 import { setSession, clearSession } from '@features/auth/sessionSlice';
+import { initPush } from '@utilities/push';
+import { logError } from '@utilities/crashlytics';
 import RootNavigator from '@navigation/RootNavigator';
+import { navigationRef } from '@navigation/navigationRef';
 import Loading from '@features/auth/screens/Loading';
 import Toast from '@components/Toast';
 
@@ -34,6 +37,7 @@ function App() {
             photoURL: user.photoURL,
           }),
         );
+        initPush().catch(err => logError(err, 'push:init'));
       } else {
         store.dispatch(clearSession());
       }
@@ -51,7 +55,7 @@ function App() {
       <PersistGate loading={<Loading />} persistor={persistor}>
         <SafeAreaProvider>
           <StatusBar translucent backgroundColor="transparent" />
-          <NavigationContainer>
+          <NavigationContainer ref={navigationRef}>
             <RootNavigator />
           </NavigationContainer>
           {/* Mounted at the root (not inside a screen) so toasts survive

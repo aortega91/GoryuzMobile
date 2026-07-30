@@ -55,6 +55,10 @@ interface CommunityProps {
   // Which view to open on mount. The parent remounts this screen (via `key`)
   // when the entry point changes, so this is read fresh on each navigation.
   initialView?: CommunityView;
+  // Set when opened from a "chat_message" push-notification tap — the
+  // conversation to jump straight into. friendId is the other zena user's id.
+  deepLinkFriendId?: string;
+  deepLinkFriendName?: string;
 }
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
@@ -199,7 +203,11 @@ function ConvRow({ conv, c, onPress }: ConvRowProps) {
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
-function Community({ initialView = 'connections' }: CommunityProps) {
+function Community({
+  initialView = 'connections',
+  deepLinkFriendId,
+  deepLinkFriendName,
+}: CommunityProps) {
   const theme = useCommunityTheme();
   const c = theme.community;
   const { t } = useTranslation();
@@ -289,6 +297,21 @@ function Community({ initialView = 'connections' }: CommunityProps) {
       // The API client already logs to Crashlytics; nothing actionable in the UI here.
     }
   };
+
+  // Opened from a "chat_message" push-notification tap — jump straight into that
+  // conversation. Guarded so it only fires once per distinct friendId.
+  const handledDeepLinkFriendId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!deepLinkFriendId || !currentUserId) return;
+    if (handledDeepLinkFriendId.current === deepLinkFriendId) return;
+    handledDeepLinkFriendId.current = deepLinkFriendId;
+    openChatWith({
+      id: deepLinkFriendId,
+      name: deepLinkFriendName ?? '',
+      avatarUrl: '',
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deepLinkFriendId, deepLinkFriendName, currentUserId]);
 
   const handleFollow = async (targetUser: CommunityUser) => {
     if (!targetUser.handle) return;

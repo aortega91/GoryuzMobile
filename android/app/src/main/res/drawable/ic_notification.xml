@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status-bar notification icon: Android renders this as a plain white silhouette
+     (any color is ignored/tinted), so it must be shape-only — no fill, white stroke.
+     Path data mirrors src/assets/GoryuzLogo.tsx so the notification matches the brand mark. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+  <path
+      android:pathData="M50 5C25.147 5 5 25.147 5 50C5 74.853 25.147 95 50 95C74.853 95 95 74.853 95 50"
+      android:strokeColor="#FFFFFF"
+      android:strokeWidth="8"
+      android:strokeLineCap="round"
+      android:fillColor="#00000000" />
+  <path
+      android:pathData="M90 35V50H50V68H75C71.5 80 60 85 50 85C30.67 85 15 69.33 15 50C15 30.67 30.67 15 50 15C63 15 72 21 78 28"
+      android:strokeColor="#FFFFFF"
+      android:strokeWidth="8"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round"
+      android:fillColor="#00000000" />
+</vector>
