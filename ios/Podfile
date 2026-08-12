@@ -46,22 +46,40 @@ target 'GoryuzMobile' do
       end
     end
 
-    # RNFBCrashlyticsModule.h imports <React/RCTBridgeModule.h> via a non-modular
-    # header search path. When RNFBApp (compiled first as a static framework) textually
-    # includes that same header, Clang claims RCTBridgeModule as belonging to
-    # RNFBApp.RNFBAppModule. Subsequent compilation of RNFBCrashlytics then fails.
-    # Fix: import through the RNFBApp framework module directly, which already exposes
-    # RCTBridgeModule via its umbrella, so the symbol is accessed through the proper module.
-    crashlytics_header = "#{Pod::Config.instance.installation_root}/../node_modules/@react-native-firebase/crashlytics/ios/RNFBCrashlytics/RNFBCrashlyticsModule.h"
-    if File.exist?(crashlytics_header)
-      content = File.read(crashlytics_header)
-      patched = content.gsub(
-        "#import <React/RCTBridgeModule.h>",
-        "#import <RNFBApp/RNFBAppModule.h>"
-      )
+    # @react-native-firebase files import certain React headers (RCTBridgeModule.h,
+    # RCTConvert.h) via a non-modular header search path. When RNFBApp (compiled first
+    # as a static framework) textually includes the same header, Clang claims the symbol
+    # as belonging to the RNFBApp module. Subsequent compilation of any other RNFB module
+    # importing the React header directly then fails with "must be imported from module
+    # RNFBApp.X before it is required".
+    # Fix: import through the RNFBApp framework module directly for each affected header,
+    # which already exposes the symbol via its umbrella, so it's accessed through the
+    # proper module. Each substitution skips the RNFBApp files that own the symbol and
+    # must keep their direct React import.
+    rnfb_root = "#{Pod::Config.instance.installation_root}/../node_modules/@react-native-firebase"
+    substitutions = [
+      {
+        from: '#import <React/RCTBridgeModule.h>',
+        to: '#import <RNFBApp/RNFBAppModule.h>',
+        skip: ['RNFBAppModule.h'],
+      },
+      {
+        from: '#import <React/RCTConvert.h>',
+        to: '#import <RNFBApp/RCTConvert+FIRApp.h>',
+        skip: ['RCTConvert+FIRApp.h', 'RCTConvert+FIRApp.m', 'RCTConvert+FIROptions.h', 'RCTConvert+FIROptions.m'],
+      },
+    ]
+    Dir.glob("#{rnfb_root}/*/ios/**/*.{h,m}").each do |file|
+      content = File.read(file)
+      patched = content
+      substitutions.each do |sub|
+        next if sub[:skip].include?(File.basename(file))
+
+        patched = patched.gsub(sub[:from], sub[:to])
+      end
       if patched != content
-        File.write(crashlytics_header, patched)
-        Pod::UI.puts "Patched RNFBCrashlyticsModule.h: replaced <React/RCTBridgeModule.h> with <RNFBApp/RNFBAppModule.h>".green
+        File.write(file, patched)
+        Pod::UI.puts "Patched #{File.basename(file)}".green
       end
     end
 

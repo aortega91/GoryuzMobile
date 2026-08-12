@@ -2155,6 +2155,8 @@ PODS:
     - ReactNativeDependencies
   - ReactNativeDependencies (0.84.1)
   - RecaptchaInterop (101.0.0)
+  - RNAppleAuthentication (2.5.1):
+    - React-Core
   - RNFBApp (24.1.1):
     - Firebase/CoreOnly (= 12.10.0)
     - hermes-engine
@@ -2524,6 +2526,7 @@ DEPENDENCIES:
   - ReactCodegen (from `build/generated/ios/ReactCodegen`)
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
   - ReactNativeDependencies (from `../node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec`)
+  - "RNAppleAuthentication (from `../node_modules/@invertase/react-native-apple-authentication`)"
   - "RNFBApp (from `../node_modules/@react-native-firebase/app`)"
   - "RNFBAuth (from `../node_modules/@react-native-firebase/auth`)"
   - "RNFBCrashlytics (from `../node_modules/@react-native-firebase/crashlytics`)"
@@ -2728,6 +2731,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon"
   ReactNativeDependencies:
     :podspec: "../node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec"
+  RNAppleAuthentication:
+    :path: "../node_modules/@invertase/react-native-apple-authentication"
   RNFBApp:
     :path: "../node_modules/@react-native-firebase/app"
   RNFBAuth:
@@ -2859,6 +2864,7 @@ SPEC CHECKSUMS:
   ReactCommon: 07572bf9e687c8a52fbe4a3641e9e3a1a477c78e
   ReactNativeDependencies: 997cd4cd69ee3dfac43384dfe33b7e3520022194
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
+  RNAppleAuthentication: a89c9804592b38ed4ab11f0aee68d05ba12ad432
   RNFBApp: c488bcff50c115443d90b0c7e8c4c1e4a1dbf5a4
   RNFBAuth: 6d8526737406263fd8be86b0369f35f62720dab9
   RNFBCrashlytics: 6205f98f37ed824299d8071a56d4d8e899d5b52d
@@ -2872,6 +2878,6 @@ SPEC CHECKSUMS:
   RNSVG: 68baaafbd26ef58405193d56290537362fa8e6e4
   Yoga: 846fbe6f595136be802ad81d05688ff748839764
 
-PODFILE CHECKSUM: 2b2f757dba78d26b6160fb01ed4804ec7af95164
+PODFILE CHECKSUM: b1895b1e7cb7e8d477168d401911c73258d1dbf2
 
 COCOAPODS: 1.15.2

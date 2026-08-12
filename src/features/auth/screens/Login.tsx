@@ -14,6 +14,9 @@ import {
   GoogleSignin,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
+import appleAuth, {
+  AppleButton,
+} from '@invertase/react-native-apple-authentication';
 
 import Touchable from '@components/Touchable';
 import useTheme from '@hooks/useTheme';
@@ -38,7 +41,10 @@ GoogleSignin.configure({
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getErrorKey(error: any): string {
-  if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+  if (
+    error.code === statusCodes.SIGN_IN_CANCELLED ||
+    error.code === appleAuth.Error.CANCELED
+  ) {
     return 'auth.loginErrorCancelled';
   }
   if (
@@ -91,6 +97,41 @@ function Login() {
       }
       const googleCredential = auth.GoogleAuthProvider.credential(idToken);
       const { user } = await auth().signInWithCredential(googleCredential);
+      dispatch(
+        setSession({
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+        }),
+      );
+    } catch (error: any) {
+      setErrorKey(getErrorKey(error));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    setErrorKey(null);
+    setIsLoading(true);
+    try {
+      const appleAuthRequestResponse = await appleAuth.performRequest({
+        requestedOperation: appleAuth.Operation.LOGIN,
+        requestedScopes: [appleAuth.Scope.EMAIL, appleAuth.Scope.FULL_NAME],
+      });
+      const { identityToken, nonce, fullName } = appleAuthRequestResponse;
+      if (!identityToken) {
+        throw new Error('No identity token returned from Apple Sign-In');
+      }
+      const appleCredential = auth.AppleAuthProvider.credential(identityToken, nonce);
+      const { user } = await auth().signInWithCredential(appleCredential);
+      if (!user.displayName && (fullName?.givenName || fullName?.familyName)) {
+        const displayName = [fullName.givenName, fullName.familyName]
+          .filter(Boolean)
+          .join(' ');
+        await user.updateProfile({ displayName });
+      }
       dispatch(
         setSession({
           uid: user.uid,
@@ -177,6 +218,22 @@ function Login() {
               </>
             )}
           </Touchable>
+
+          {/* Apple sign-in button (iOS only, per App Store requirements) */}
+          {Platform.OS === 'ios' && appleAuth.isSupported ? (
+            <View
+              pointerEvents={isLoading ? 'none' : 'auto'}
+              style={isLoading && styles.appleButtonDisabled}
+            >
+              <AppleButton
+                buttonStyle={theme.dark ? AppleButton.Style.WHITE : AppleButton.Style.BLACK}
+                buttonType={AppleButton.Type.SIGN_IN}
+                style={styles.appleButton}
+                cornerRadius={16}
+                onPress={handleAppleSignIn}
+              />
+            </View>
+          ) : null}
 
           {/* Feature pillar grid */}
           <View style={styles.pillarsRow}>
@@ -323,6 +380,14 @@ const styles = StyleSheet.create({
   googleButtonLabel: {
     fontSize: 16,
     fontWeight: '700',
+  },
+  // Apple button
+  appleButton: {
+    height: 54,
+    marginBottom: 24,
+  },
+  appleButtonDisabled: {
+    opacity: 0.7,
   },
   // Pillars grid
   pillarsRow: {
