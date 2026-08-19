@@ -67,3 +67,20 @@ export function generateAvatarImage(params: {
 }): Promise<{ avatarImage: string; avatarUrl: string }> {
   return apiPost<{ avatarImage: string; avatarUrl: string }>('/gemini/avatar', params);
 }
+
+export function validateBodyPhoto(params: {
+  imageBase64: string;
+  mimeType: string;
+}): Promise<{ isValid: boolean; reason: string }> {
+  return apiPost<{ isValid: boolean; reason: string }>('/gemini/validate-body', params);
+}
+
+export function analyzeColorimetry(params: {
+  imageBase64: string;
+  mimeType: string;
+}): Promise<{ colorSeason: string; description: string; palette: string[] }> {
+  return apiPost<{ colorSeason: string; description: string; palette: string[] }>(
+    '/gemini/colorimetry',
+    params,
+  );
+}

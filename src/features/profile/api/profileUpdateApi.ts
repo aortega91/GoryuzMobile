@@ -15,6 +15,12 @@ export interface UpdateProfilePayload {
   stylePromptImage?: string;
   avatarDescription?: string;
   avatarImage?: string;
+  bodyImage?: string;
+  avatarPrompt?: string;
+  colorSeason?: string;
+  colorimetryResult?: string;
+  colorPalette?: string[];
+  availableTags?: string[];
   useAdvancedModel?: boolean;
 }
 

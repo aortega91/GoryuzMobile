@@ -69,3 +69,6 @@ export { default as Wand2Icon } from './Wand2Icon';
 export { default as NailIcon } from './NailIcon';
 export { default as TagIcon } from './TagIcon';
 export { default as WatchIcon } from './WatchIcon';
+export { default as BotIcon } from './BotIcon';
+export { default as PersonStandingIcon } from './PersonStandingIcon';
+export { default as PaletteIcon } from './PaletteIcon';

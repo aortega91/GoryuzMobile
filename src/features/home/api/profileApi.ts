@@ -50,6 +50,13 @@ export interface UserProfile {
   gender: string | null;
   avatarDescription: string | null;
   avatarImage: string | null;
+  bodyImage: string | null;
+  avatarPrompt: string | null;
+  colorSeason: string | null;
+  colorimetryResult: string | null;
+  colorPalette: string[] | null;
+  savedDrapeColors: { id: string; hex: string; name: string; result: string }[] | null;
+  availableTags: string[] | null;
   impactStats: ImpactStats;
   marketplaceFavorites: string[];
   termsAccepted: boolean;

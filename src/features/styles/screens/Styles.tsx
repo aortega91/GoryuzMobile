@@ -37,6 +37,7 @@ import {
   UserIcon,
   ImageIcon,
   AlertCircleIcon,
+  AlertTriangleIcon,
   GemIcon,
   EyeIcon,
   TagIcon,
@@ -45,6 +46,12 @@ import {
   LayoutGridIcon,
   Wand2Icon,
   NailIcon,
+  BotIcon,
+  PersonStandingIcon,
+  PaletteIcon,
+  PlusCircleIcon,
+  CloseIcon,
+  RefreshCwIcon,
 } from '@assets/icons';
 import { updateProfile } from '@features/profile/api/profileUpdateApi';
 import { updateProfileLocally, loadProfile } from '@features/home/profileSlice';
@@ -52,7 +59,12 @@ import { logError } from '@utilities/crashlytics';
 import { AppDispatch, RootState } from '@utilities/store';
 import { addCalendarEvent } from '@features/schedule/api/calendarApi';
 import { loadCollection } from '@features/collection/collectionSlice';
-import { analyzeStyle, generateAvatarImage } from '../api/stylesGenerateApi';
+import {
+  analyzeStyle,
+  generateAvatarImage,
+  validateBodyPhoto,
+  analyzeColorimetry,
+} from '../api/stylesGenerateApi';
 import HaircutCreator from '../components/HaircutCreator';
 import MakeupCreator from '../components/MakeupCreator';
 import NailCreator from '../components/NailCreator';
@@ -69,11 +81,10 @@ import { Outfit, OutfitCategory, OUTFIT_CATEGORIES } from '../types';
 import OutfitDetailSheet from '../components/OutfitDetailSheet';
 import TagSheet from '../components/TagSheet';
 import ScheduleOutfitSheet from '../components/ScheduleOutfitSheet';
-import OutfitCreator from '../components/OutfitCreator';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Tab = 'looks' | 'essence' | 'runway';
+type Tab = 'looks' | 'prompt' | 'body' | 'colorimetry' | 'tags';
 type Sheet = 'detail' | 'tags' | 'schedule' | null;
 type CategoryFilter = OutfitCategory | 'all';
 
@@ -303,8 +314,8 @@ function Styles() {
   // ─── Derived ─────────────────────────────────────────────────────────────────
 
   const allTags = useMemo(
-    () => Array.from(new Set(outfits.flatMap(o => o.tags))).sort(),
-    [outfits],
+    () => profile?.availableTags ?? [],
+    [profile?.availableTags],
   );
 
   const hasItemsInCategory = useCallback(
@@ -391,13 +402,6 @@ function Styles() {
       message: pieces ? `${outfit.name} — ${pieces}` : outfit.name,
     });
   }, []);
-
-  const handleCreatorSave = async (name: string, itemIds: string[]) => {
-    setCreatorSaving(true);
-    await dispatch(addOutfit({ name, itemIds }));
-    setCreatorSaving(false);
-    setActiveTab('looks');
-  };
 
   const handleManualSave = async (name: string, itemIds: string[]) => {
     setCreatorSaving(true);
@@ -552,25 +556,21 @@ function Styles() {
     </View>
   );
 
-  const renderRunwayTab = () => (
-    <OutfitCreator
-      closetItems={closetItems}
-      closetLoading={closetStatus === 'loading'}
-      saving={creatorSaving}
-      onSave={handleCreatorSave}
-    />
-  );
-
-  // ─── Essence tab state ────────────────────────────────────────────────────────
+  // ─── Essence sections state (prompt / body / colorimetry / tags) ──────────────
 
   const [stylePrompt, setStylePrompt] = useState(profile?.stylePrompt ?? '');
   const [stylePromptImage, setStylePromptImage] = useState(profile?.stylePromptImage ?? '');
-  const [avatarDescription, setAvatarDescription] = useState(profile?.avatarDescription ?? '');
+  const [avatarPrompt, setAvatarPrompt] = useState(profile?.avatarPrompt ?? '');
   const [avatarRefImage, setAvatarRefImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [isValidatingBodyPhoto, setIsValidatingBodyPhoto] = useState(false);
+  const [bodyPhotoError, setBodyPhotoError] = useState<string | null>(null);
+  const [isTestingColorimetry, setIsTestingColorimetry] = useState(false);
+  const [colorimetryError, setColorimetryError] = useState<string | null>(null);
+  const [newTagInput, setNewTagInput] = useState('');
   const [showVipUpgrade, setShowVipUpgrade] = useState(false);
   const isFirstRender = useRef(true);
 
@@ -581,7 +581,7 @@ function Styles() {
     if (profile && isFirstRender.current) {
       setStylePrompt(profile.stylePrompt ?? '');
       setStylePromptImage(profile.stylePromptImage ?? '');
-      setAvatarDescription(profile.avatarDescription ?? '');
+      setAvatarPrompt(profile.avatarPrompt ?? '');
     }
   }, [profile]);
 
@@ -596,7 +596,7 @@ function Styles() {
         const updated = await updateProfile({
           stylePrompt,
           stylePromptImage: stylePromptImage || undefined,
-          avatarDescription,
+          avatarPrompt,
         });
         dispatch(updateProfileLocally(updated));
       } catch (err) {
@@ -605,7 +605,7 @@ function Styles() {
     }, 1500);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stylePrompt, stylePromptImage, avatarDescription]);
+  }, [stylePrompt, stylePromptImage, avatarPrompt]);
 
   const handlePickStyleImage = async () => {
     const result = await openGallery();
@@ -625,6 +625,78 @@ function Styles() {
         setAvatarRefImage(`data:${asset.type};base64,${asset.base64}`);
       }
     }
+  };
+
+  const handlePickBodyImage = async () => {
+    const result = await openGallery();
+    if (result.status !== 'success') return;
+    const asset = result.response.assets?.[0];
+    if (!asset?.base64 || !asset?.type) return;
+
+    setIsValidatingBodyPhoto(true);
+    setBodyPhotoError(null);
+    try {
+      const validation = await validateBodyPhoto({ imageBase64: asset.base64, mimeType: asset.type });
+      if (!validation.isValid) {
+        setBodyPhotoError(validation.reason || t('styles.bodyPhotoInvalid'));
+        return;
+      }
+      const dataUri = `data:${asset.type};base64,${asset.base64}`;
+      const updated = await updateProfile({ bodyImage: dataUri });
+      dispatch(updateProfileLocally(updated));
+    } catch (err) {
+      logError(err instanceof Error ? err : new Error(String(err)), 'essence/bodyPhoto');
+      setBodyPhotoError(t('styles.bodyPhotoError'));
+    } finally {
+      setIsValidatingBodyPhoto(false);
+    }
+  };
+
+  const handleRemoveBodyImage = async () => {
+    const updated = await updateProfile({ bodyImage: '' });
+    dispatch(updateProfileLocally(updated));
+  };
+
+  const handleColorimetryTest = async () => {
+    const preferred = profile?.bodyImage || profile?.avatarImage;
+    if (!preferred) return;
+    setIsTestingColorimetry(true);
+    setColorimetryError(null);
+    try {
+      const mimeType = preferred.match(/data:(.*);base64,/)?.[1] ?? 'image/jpeg';
+      const base64 = preferred.includes('base64,') ? preferred.split('base64,')[1] : preferred;
+      const result = await analyzeColorimetry({ imageBase64: base64, mimeType });
+      const updated = await updateProfile({
+        colorSeason: result.colorSeason,
+        colorimetryResult: result.description,
+        colorPalette: result.palette,
+      });
+      dispatch(updateProfileLocally(updated));
+      dispatch(loadProfile());
+    } catch (err) {
+      logError(err instanceof Error ? err : new Error(String(err)), 'essence/colorimetry');
+      setColorimetryError(t('styles.colorimetryError'));
+    } finally {
+      setIsTestingColorimetry(false);
+    }
+  };
+
+  const handleAddAvailableTag = async () => {
+    const tag = newTagInput.trim();
+    if (!tag || (profile?.availableTags ?? []).includes(tag)) {
+      setNewTagInput('');
+      return;
+    }
+    setNewTagInput('');
+    const updated = await updateProfile({ availableTags: [...(profile?.availableTags ?? []), tag] });
+    dispatch(updateProfileLocally(updated));
+  };
+
+  const handleDeleteAvailableTag = async (tag: string) => {
+    const updated = await updateProfile({
+      availableTags: (profile?.availableTags ?? []).filter(existing => existing !== tag),
+    });
+    dispatch(updateProfileLocally(updated));
   };
 
   const handleAnalyze = async () => {
@@ -654,12 +726,12 @@ function Styles() {
       const mimeType = avatarRefImage?.match(/data:(.*);base64,/)?.[1] ?? undefined;
       const base64Ref = avatarRefImage ? avatarRefImage.split(',')[1] : undefined;
       const result = await generateAvatarImage({
-        description: avatarDescription,
+        description: avatarPrompt,
         referenceImageBase64: base64Ref,
         mimeType,
       });
       const newAvatarUrl = result.avatarUrl || result.avatarImage;
-      dispatch(updateProfileLocally({ avatarImage: newAvatarUrl, avatarDescription }));
+      dispatch(updateProfileLocally({ avatarImage: newAvatarUrl, avatarDescription: avatarPrompt }));
       dispatch(loadProfile());
     } catch (err) {
       logError(err instanceof Error ? err : new Error(String(err)), 'essence/generateAvatar');
@@ -768,11 +840,7 @@ function Styles() {
     );
   };
 
-  const renderEssenceTab = () => {
-    const isVip = profile?.plan === 'vip';
-    const avatarPreview = profile?.avatarImage ?? null;
-
-    return (
+  const renderPromptTab = () => (
       <ScrollView
         style={styles.tabContent}
         contentContainerStyle={[essenceStyles.scrollContent, { paddingBottom: bottomBarTotalHeight + 32 }]}
@@ -909,12 +977,89 @@ function Styles() {
             </View>
           )}
         </View>
+      </ScrollView>
+  );
 
-        {/* ── 3. Avatar (VIP) ──────────────────────────────────────── */}
+  const renderBodyTab = () => {
+    const isVip = profile?.plan === 'vip';
+    const avatarPreview = profile?.avatarImage ?? null;
+    const bodyPreview = profile?.bodyImage || profile?.avatarImage || null;
+
+    return (
+      <ScrollView
+        style={styles.tabContent}
+        contentContainerStyle={[essenceStyles.scrollContent, { paddingBottom: bottomBarTotalHeight + 32 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Real body photo ──────────────────────────────────────── */}
         <View style={[essenceStyles.section, { backgroundColor: s.essenceSectionBackground, borderColor: s.essenceSectionBorder }]}>
           <View style={essenceStyles.sectionHeader}>
             <View style={[essenceStyles.sectionIconBg, { backgroundColor: '#ECFDF5' }]}>
-              <UserIcon size={20} color={s.essenceIconEmerald} />
+              <PersonStandingIcon size={20} color={s.essenceIconEmerald} />
+            </View>
+            <View style={essenceStyles.sectionHeaderText}>
+              <Text style={[essenceStyles.sectionTitle, { color: s.modalTitle }]}>
+                {t('styles.bodyPhotoTitle')}
+              </Text>
+              <Text style={[essenceStyles.sectionDesc, { color: s.modalSubtitle }]}>
+                {t('styles.bodyPhotoDesc')}
+              </Text>
+            </View>
+          </View>
+
+          <View style={essenceStyles.avatarLayout}>
+            <Touchable
+              onPress={handlePickBodyImage}
+              disabled={isValidatingBodyPhoto}
+              borderRadius={16}
+              style={[essenceStyles.avatarPreview, { borderColor: s.essenceInputBorder, backgroundColor: s.essenceInputBackground }]}
+            >
+              {bodyPreview ? (
+                <AuthedImage data={bodyPreview} style={essenceStyles.avatarImg} resizeMode="contain" />
+              ) : (
+                <View style={essenceStyles.avatarEmpty}>
+                  {isValidatingBodyPhoto ? (
+                    <ActivityIndicator color={s.essenceIconEmerald} />
+                  ) : (
+                    <UserIcon size={40} color={s.emptyIcon} strokeWidth={1.5} />
+                  )}
+                  <Text style={[essenceStyles.avatarEmptyText, { color: s.emptySubtitle }]}>
+                    {isValidatingBodyPhoto ? t('styles.bodyPhotoValidating') : t('styles.bodyPhotoUpload')}
+                  </Text>
+                </View>
+              )}
+            </Touchable>
+
+            <View style={essenceStyles.avatarInputs}>
+              <Text style={[essenceStyles.sectionDesc, { color: s.modalSubtitle }]}>
+                {t('styles.bodyPhotoHint')}
+              </Text>
+              {profile?.bodyImage ? (
+                <Touchable
+                  onPress={handleRemoveBodyImage}
+                  borderRadius={12}
+                  style={[essenceStyles.uploadBtn, { borderColor: s.buttonDangerBorder, backgroundColor: s.buttonDanger, marginTop: 10 }]}
+                >
+                  <TrashIcon size={16} color={s.actionDangerText} />
+                  <Text style={[essenceStyles.uploadBtnText, { color: s.actionDangerText }]}>
+                    {t('styles.bodyPhotoRemove')}
+                  </Text>
+                </Touchable>
+              ) : null}
+              {bodyPhotoError && (
+                <Text style={[essenceStyles.errorText, { color: s.actionDangerText }]}>
+                  {bodyPhotoError}
+                </Text>
+              )}
+            </View>
+          </View>
+        </View>
+
+        {/* ── Avatar generation (VIP) ──────────────────────────────── */}
+        <View style={[essenceStyles.section, { backgroundColor: s.essenceSectionBackground, borderColor: s.essenceSectionBorder }]}>
+          <View style={essenceStyles.sectionHeader}>
+            <View style={[essenceStyles.sectionIconBg, { backgroundColor: s.essenceInputBackground }]}>
+              <UserIcon size={20} color={s.essenceIconIndigo} />
             </View>
             <View style={essenceStyles.sectionHeaderText}>
               <Text style={[essenceStyles.sectionTitle, { color: s.modalTitle }]}>
@@ -952,8 +1097,8 @@ function Styles() {
                 {t('styles.essenceAvatarDescLabel').toUpperCase()}
               </Text>
               <TextInput
-                value={avatarDescription}
-                onChangeText={setAvatarDescription}
+                value={avatarPrompt}
+                onChangeText={setAvatarPrompt}
                 multiline
                 numberOfLines={4}
                 placeholder={t('styles.essenceAvatarDescPlaceholder')}
@@ -1056,10 +1201,180 @@ function Styles() {
     );
   };
 
+  const renderColorimetryTab = () => {
+    const preferred = profile?.bodyImage || profile?.avatarImage || null;
+    const hasResult = Boolean(profile?.colorSeason && profile?.colorimetryResult);
+
+    return (
+      <ScrollView
+        style={styles.tabContent}
+        contentContainerStyle={[essenceStyles.scrollContent, { paddingBottom: bottomBarTotalHeight + 32 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[essenceStyles.section, { backgroundColor: s.essenceSectionBackground, borderColor: s.essenceSectionBorder }]}>
+          <View style={essenceStyles.sectionHeader}>
+            <View style={[essenceStyles.sectionIconBg, { backgroundColor: s.essenceInputBackground }]}>
+              <PaletteIcon size={20} color="#B45309" />
+            </View>
+            <View style={essenceStyles.sectionHeaderText}>
+              <Text style={[essenceStyles.sectionTitle, { color: s.modalTitle }]}>
+                {t('styles.colorimetryTitle')}
+              </Text>
+              <Text style={[essenceStyles.sectionDesc, { color: s.modalSubtitle }]}>
+                {t('styles.colorimetryDesc')}
+              </Text>
+            </View>
+          </View>
+
+          {!preferred ? (
+            <View style={[essenceStyles.emptyAnalysis, { backgroundColor: s.essenceCardAlertBg, borderColor: s.essenceCardAlertBorder }]}>
+              <AlertTriangleIcon size={28} color={s.essenceCardAlertTitle} />
+              <Text style={[essenceStyles.emptyAnalysisText, { color: s.essenceCardAlertTitle }]}>
+                {t('styles.colorimetryLocked')}
+              </Text>
+            </View>
+          ) : hasResult ? (
+            <View style={[essenceStyles.heroCard, { backgroundColor: s.essenceCardEmeraldBg, borderColor: s.essenceCardEmeraldBorder }]}>
+              <Text style={[essenceStyles.heroTitle, { color: s.essenceCardEmeraldTitle }]}>
+                {profile?.colorSeason}
+              </Text>
+              {profile?.colorPalette && profile.colorPalette.length > 0 && (
+                <View style={essenceStyles.paletteRow}>
+                  {profile.colorPalette.map(hex => (
+                    <View key={hex} style={[essenceStyles.paletteSwatch, { backgroundColor: hex }]} />
+                  ))}
+                </View>
+              )}
+              <Text style={[essenceStyles.heroSubtitle, { color: s.essenceCardBody }]}>
+                {profile?.colorimetryResult}
+              </Text>
+              <Touchable
+                onPress={handleColorimetryTest}
+                disabled={isTestingColorimetry}
+                borderRadius={24}
+                style={[essenceStyles.analyzeBtn, { backgroundColor: '#10B981' }, isTestingColorimetry && essenceStyles.analyzeBtnDisabled]}
+              >
+                {isTestingColorimetry ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <RefreshCwIcon size={16} color="#fff" />
+                )}
+                <Text style={essenceStyles.analyzeBtnText}>
+                  {isTestingColorimetry ? t('styles.colorimetryTesting') : t('styles.colorimetryRetest')}
+                </Text>
+              </Touchable>
+            </View>
+          ) : (
+            <View style={[essenceStyles.emptyAnalysis, { backgroundColor: s.essenceAnalysisBackground, borderColor: s.essenceAnalysisBorder }]}>
+              <PaletteIcon size={32} color={s.emptyIcon} strokeWidth={1.5} />
+              <Text style={[essenceStyles.emptyAnalysisTitle, { color: s.emptyText }]}>
+                {t('styles.colorimetryEmpty')}
+              </Text>
+              <Touchable
+                onPress={handleColorimetryTest}
+                disabled={isTestingColorimetry}
+                borderRadius={24}
+                style={[essenceStyles.analyzeBtn, { backgroundColor: '#10B981' }, isTestingColorimetry && essenceStyles.analyzeBtnDisabled]}
+              >
+                {isTestingColorimetry ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <SparklesIcon size={16} color="#fff" />
+                )}
+                <Text style={essenceStyles.analyzeBtnText}>
+                  {isTestingColorimetry ? t('styles.colorimetryTesting') : t('styles.colorimetryTest')}
+                </Text>
+              </Touchable>
+            </View>
+          )}
+
+          {colorimetryError && (
+            <Text style={[essenceStyles.errorText, { color: s.actionDangerText }]}>
+              {colorimetryError}
+            </Text>
+          )}
+        </View>
+      </ScrollView>
+    );
+  };
+
+  const renderTagsTab = () => {
+    const availableTags = profile?.availableTags ?? [];
+
+    return (
+      <ScrollView
+        style={styles.tabContent}
+        contentContainerStyle={[essenceStyles.scrollContent, { paddingBottom: bottomBarTotalHeight + 32 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[essenceStyles.section, { backgroundColor: s.essenceSectionBackground, borderColor: s.essenceSectionBorder }]}>
+          <View style={essenceStyles.sectionHeader}>
+            <View style={[essenceStyles.sectionIconBg, { backgroundColor: s.essenceInputBackground }]}>
+              <TagIcon size={20} color={s.essenceIconIndigo} />
+            </View>
+            <View style={essenceStyles.sectionHeaderText}>
+              <Text style={[essenceStyles.sectionTitle, { color: s.modalTitle }]}>
+                {t('styles.tagsManageTitle')}
+              </Text>
+              <Text style={[essenceStyles.sectionDesc, { color: s.modalSubtitle }]}>
+                {t('styles.tagsManageDesc')}
+              </Text>
+            </View>
+          </View>
+
+          <View style={essenceStyles.tagInputRow}>
+            <TextInput
+              value={newTagInput}
+              onChangeText={setNewTagInput}
+              placeholder={t('styles.tagsPlaceholder')}
+              placeholderTextColor={s.essenceInputPlaceholder}
+              returnKeyType="done"
+              onSubmitEditing={handleAddAvailableTag}
+              style={[
+                essenceStyles.tagInput,
+                { backgroundColor: s.essenceInputBackground, borderColor: s.essenceInputBorder, color: s.essenceInputText },
+              ]}
+            />
+            <Touchable
+              onPress={handleAddAvailableTag}
+              disabled={!newTagInput.trim()}
+              borderRadius={12}
+              style={[essenceStyles.tagAddBtn, { backgroundColor: s.buttonPrimary, opacity: newTagInput.trim() ? 1 : 0.5 }]}
+            >
+              <PlusCircleIcon size={18} color={s.buttonPrimaryText} />
+            </Touchable>
+          </View>
+
+          {availableTags.length === 0 ? (
+            <View style={[essenceStyles.emptyAnalysis, { backgroundColor: s.essenceAnalysisBackground, borderColor: s.essenceAnalysisBorder }]}>
+              <TagIcon size={28} color={s.emptyIcon} strokeWidth={1.5} />
+              <Text style={[essenceStyles.emptyAnalysisText, { color: s.emptySubtitle }]}>
+                {t('styles.tagsManageEmpty')}
+              </Text>
+            </View>
+          ) : (
+            <View style={essenceStyles.tagsWrapLarge}>
+              {availableTags.map(tag => (
+                <View key={tag} style={[essenceStyles.tagChipLarge, { backgroundColor: s.tagBackground }]}>
+                  <Text style={[essenceStyles.tagChipLargeText, { color: s.tagText }]}>{tag}</Text>
+                  <Touchable onPress={() => handleDeleteAvailableTag(tag)} hitSlop={8} borderRadius={10}>
+                    <CloseIcon size={13} color={s.tagText} />
+                  </Touchable>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    );
+  };
+
   const TABS: { key: Tab; label: string; Icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }> }[] = [
     { key: 'looks', label: t('styles.tabLooks'), Icon: ColumnsIcon },
-    { key: 'essence', label: t('styles.tabEssence'), Icon: SparklesIcon },
-    { key: 'runway', label: t('styles.tabRunway'), Icon: CrownIcon },
+    { key: 'prompt', label: t('styles.tabPrompt'), Icon: BotIcon },
+    { key: 'body', label: t('styles.tabBody'), Icon: PersonStandingIcon },
+    { key: 'colorimetry', label: t('styles.tabColorimetry'), Icon: PaletteIcon },
+    { key: 'tags', label: t('styles.tabTags'), Icon: TagIcon },
   ];
 
   return (
@@ -1075,8 +1390,10 @@ function Styles() {
 
       {/* Content */}
       {activeTab === 'looks' && renderLooksTab()}
-      {activeTab === 'runway' && renderRunwayTab()}
-      {activeTab === 'essence' && renderEssenceTab()}
+      {activeTab === 'prompt' && renderPromptTab()}
+      {activeTab === 'body' && renderBodyTab()}
+      {activeTab === 'colorimetry' && renderColorimetryTab()}
+      {activeTab === 'tags' && renderTagsTab()}
 
       {/* FAB */}
       <Touchable
@@ -1993,6 +2310,60 @@ const essenceStyles = StyleSheet.create({
   errorText: {
     fontSize: 12,
     marginTop: 4,
+  },
+
+  // Colorimetry palette
+  paletteRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'center',
+  },
+  paletteSwatch: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.08)',
+  },
+
+  // Tags management
+  tagInputRow: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
+  tagInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+  },
+  tagAddBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tagsWrapLarge: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  tagChipLarge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  tagChipLargeText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
 
