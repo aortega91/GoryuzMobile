@@ -315,6 +315,9 @@ function Home() {
         id: `outfit-today-${today}`,
         text: t('notifications.outfitToday', { name: todayEvent.outfit.name }),
         timestamp: new Date().toISOString(),
+        // Local notices carry a web-shaped url like the server ones, so the
+        // bell routes them through the same resolver.
+        url: '/?view=schedule',
       }));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -329,16 +332,24 @@ function Home() {
     dispatch(loadNotifications());
   }, [dispatch]);
 
-  // Consume a push-notification tap (real FCM push, not a tap on the in-app bell).
+  // Open the screen a tapped notification asked for. Both entry points — the
+  // system notification (utilities/push.ts) and the in-app bell — resolve to
+  // the same target through features/notifications/deepLink.ts and park it
+  // here, because neither can navigate on its own.
   const pendingDeepLink = useSelector((state: RootState) => state.deepLink.pendingDeepLink);
   useEffect(() => {
     if (!pendingDeepLink) return;
-    if (pendingDeepLink.kind === 'chat_message' && pendingDeepLink.friendId) {
-      setDmFriend({ id: pendingDeepLink.friendId, name: pendingDeepLink.friendName });
+    const { module, friendId, friendName } = pendingDeepLink;
+
+    if (module === 'community' && friendId) {
+      setDmFriend({ id: friendId, name: friendName });
       setCommunityView('messages');
-      setActiveModule('community');
+    } else if (module === 'community') {
+      // A community link with no conversation to open: the list is the landing.
+      setCommunityView('connections');
     }
-    // 'gems' needs no extra navigation — Home is already the gem-visible landing screen.
+
+    setActiveModule(module);
     dispatch(clearPendingDeepLink());
   }, [pendingDeepLink, dispatch]);
 

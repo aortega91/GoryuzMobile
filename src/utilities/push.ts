@@ -5,11 +5,8 @@ import notifee, { AndroidImportance, EventType } from '@notifee/react-native';
 import { store } from '@utilities/store';
 import { logError } from '@utilities/crashlytics';
 import { requestNotificationPermission } from '@hooks/useNotificationPermission';
-import {
-  setPendingDeepLink,
-  parseFriendId,
-  DeepLinkKind,
-} from '@features/notifications/deepLinkSlice';
+import { setPendingDeepLink } from '@features/notifications/deepLinkSlice';
+import { resolveDeepLink } from '@features/notifications/deepLink';
 import { loadNotifications } from '@features/notifications/notificationsSlice';
 import { navigationRef } from '@navigation/navigationRef';
 import i18n from '@language/index';
@@ -34,21 +31,17 @@ function handlePushTap(remoteMessage: PushTapSource): void {
   // is the first chance to pull its history row into the bell.
   store.dispatch(loadNotifications());
 
-  const kind = remoteMessage.data?.kind as DeepLinkKind | undefined;
-  if (kind === 'chat_message') {
-    store.dispatch(
-      setPendingDeepLink({
-        kind: 'chat_message',
-        friendId: parseFriendId(remoteMessage.data?.url as string | undefined)
-          ?? (remoteMessage.data?.senderId as string | undefined),
-        friendName: remoteMessage.notification?.title,
-      }),
-    );
-  } else if (kind === 'gems') {
-    store.dispatch(setPendingDeepLink({ kind: 'gems' }));
-  } else {
-    return;
-  }
+  // Same resolution the in-app bell uses, so a notification opens the same
+  // screen whichever of the two the user tapped.
+  const target = resolveDeepLink({
+    url: remoteMessage.data?.url as string | undefined,
+    kind: remoteMessage.data?.kind as string | undefined,
+    senderId: remoteMessage.data?.senderId as string | undefined,
+    title: remoteMessage.notification?.title,
+  });
+  if (!target) return;
+
+  store.dispatch(setPendingDeepLink(target));
 
   if (navigationRef.isReady()) {
     navigationRef.navigate('Home');

@@ -13,7 +13,8 @@ import Touchable from '@components/Touchable';
 import useNotificationsTheme from '@hooks/useNotificationsTheme';
 import { BellIcon, CloseIcon } from '@assets/icons';
 import { AppDispatch, RootState } from '@utilities/store';
-import { setPendingDeepLink, parseFriendId } from '../deepLinkSlice';
+import { resolveDeepLink } from '../deepLink';
+import { setPendingDeepLink } from '../deepLinkSlice';
 import {
   loadNotifications,
   markNotificationRead,
@@ -107,16 +108,21 @@ function Notifications({ onClose }: Props) {
     }
   }, [dispatch]);
 
-  // Tapping a chat notification opens that conversation — same destination the
-  // system notification would have opened. Home consumes the pending deep link.
+  // Tapping a notification opens the screen it points at — the same one the
+  // system notification would have opened, resolved through the same mapper.
+  // Home consumes the pending deep link. A notice that maps nowhere is just
+  // marked read where it sits.
   const handlePress = useCallback((item: AppNotification) => {
     dispatch(markNotificationRead(item.id));
-    if (item.kind !== 'chat_message') return;
-    dispatch(setPendingDeepLink({
-      kind: 'chat_message',
-      friendId: parseFriendId(item.url),
-      friendName: item.title,
-    }));
+
+    const target = resolveDeepLink({
+      url: item.url,
+      kind: item.kind,
+      title: item.title,
+    });
+    if (!target) return;
+
+    dispatch(setPendingDeepLink(target));
     onClose();
   }, [dispatch, onClose]);
 
