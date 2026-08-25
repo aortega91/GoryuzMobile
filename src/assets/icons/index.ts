@@ -72,4 +72,4 @@ export { default as WatchIcon } from './WatchIcon';
 export { default as BotIcon } from './BotIcon';
 export { default as PersonStandingIcon } from './PersonStandingIcon';
 export { default as PaletteIcon } from './PaletteIcon';
-export { default as FramePersonIcon } from './FramePersonIcon';
+export { default as AccessibilityIcon } from './AccessibilityIcon';

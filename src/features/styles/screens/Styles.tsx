@@ -47,7 +47,7 @@ import {
   NailIcon,
   PersonStandingIcon,
   MessageIcon,
-  FramePersonIcon,
+  AccessibilityIcon,
   PaletteIcon,
   PlusCircleIcon,
   CloseIcon,
@@ -1371,12 +1371,12 @@ function Styles() {
 
   const TABS: { key: Tab; label: string; Icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }> }[] = [
     // Each icon names what the tab actually holds: a wardrobe of saved looks,
-    // a style description told in the user's own words, a framed photo of
-    // themselves. The original set described the wrong things — two layout
-    // columns, a chatbot, and a stick figure that read as "profile".
+    // a style description told in the user's own words, a whole body. The
+    // original set described the wrong things — two layout columns, a chatbot,
+    // and a stick figure that read as "profile".
     { key: 'looks', label: t('styles.tabLooks'), Icon: ShirtIcon },
     { key: 'prompt', label: t('styles.tabPrompt'), Icon: MessageIcon },
-    { key: 'body', label: t('styles.tabBody'), Icon: FramePersonIcon },
+    { key: 'body', label: t('styles.tabBody'), Icon: AccessibilityIcon },
     { key: 'colorimetry', label: t('styles.tabColorimetry'), Icon: PaletteIcon },
     { key: 'tags', label: t('styles.tabTags'), Icon: TagIcon },
   ];
