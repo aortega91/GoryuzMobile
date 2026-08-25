@@ -1,26 +1,26 @@
 import React from 'react';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
+/**
+ * No `strokeWidth`, unlike the Lucide icons here: Material Symbols describe
+ * their outlines as a filled path, so there is no stroke to weight.
+ */
 interface IconProps {
   size?: number;
   color?: string;
-  strokeWidth?: number;
 }
 
-function TagIcon({ size = 24, color = '#000000', strokeWidth = 2 }: IconProps) {
+/**
+ * Google Material Symbols `sell` (outlined, 24dp), path data verbatim from
+ * google/material-design-icons — a tag with its eyelet, for the tags tab.
+ *
+ * Keeps Material's own `0 -960 960 960` viewBox rather than being rescaled to
+ * the 24×24 box the Lucide icons use: the path is left exactly as published.
+ */
+function TagIcon({ size = 24, color = '#000000' }: IconProps) {
   return (
-    <Svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <Path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" />
-      <Circle cx={7.5} cy={7.5} r={0.5} fill={color} />
+    <Svg width={size} height={size} viewBox="0 -960 960 960" fill={color}>
+      <Path d="M856-390 570-104q-12 12-27 18t-30 6q-15 0-30-6t-27-18L103-457q-11-11-17-25.5T80-513v-287q0-33 23.5-56.5T160-880h287q16 0 31 6.5t26 17.5l352 353q12 12 17.5 27t5.5 30q0 15-5.5 29.5T856-390ZM513-160l286-286-353-354H160v286l353 354ZM260-640q25 0 42.5-17.5T320-700q0-25-17.5-42.5T260-760q-25 0-42.5 17.5T200-700q0 25 17.5 42.5T260-640Zm220 160Z" />
     </Svg>
   );
 }

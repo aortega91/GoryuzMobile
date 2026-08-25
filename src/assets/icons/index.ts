@@ -74,3 +74,4 @@ export { default as PersonStandingIcon } from './PersonStandingIcon';
 export { default as PaletteIcon } from './PaletteIcon';
 export { default as FramePersonIcon } from './FramePersonIcon';
 export { default as CommentIcon } from './CommentIcon';
+export { default as ApparelIcon } from './ApparelIcon';

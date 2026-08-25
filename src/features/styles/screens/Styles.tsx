@@ -46,6 +46,7 @@ import {
   Wand2Icon,
   NailIcon,
   PersonStandingIcon,
+  ApparelIcon,
   CommentIcon,
   FramePersonIcon,
   PaletteIcon,
@@ -1266,7 +1267,7 @@ function Styles() {
             </View>
           ) : (
             <View style={[essenceStyles.emptyAnalysis, { backgroundColor: s.essenceAnalysisBackground, borderColor: s.essenceAnalysisBorder }]}>
-              <PaletteIcon size={32} color={s.emptyIcon} strokeWidth={1.5} />
+              <PaletteIcon size={32} color={s.emptyIcon} />
               <Text style={[essenceStyles.emptyAnalysisTitle, { color: s.emptyText }]}>
                 {t('styles.colorimetryEmpty')}
               </Text>
@@ -1347,7 +1348,7 @@ function Styles() {
 
           {availableTags.length === 0 ? (
             <View style={[essenceStyles.emptyAnalysis, { backgroundColor: s.essenceAnalysisBackground, borderColor: s.essenceAnalysisBorder }]}>
-              <TagIcon size={28} color={s.emptyIcon} strokeWidth={1.5} />
+              <TagIcon size={28} color={s.emptyIcon} />
               <Text style={[essenceStyles.emptyAnalysisText, { color: s.emptySubtitle }]}>
                 {t('styles.tagsManageEmpty')}
               </Text>
@@ -1370,10 +1371,11 @@ function Styles() {
   };
 
   const TABS: { key: Tab; label: string; Icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }> }[] = [
-    // Each icon names what the tab actually holds: a wardrobe of saved looks,
-    // written words about your style, someone framed for a photo. The original set described the wrong things — two layout columns,
-    // a chatbot, and a stick figure that read as "profile".
-    { key: 'looks', label: t('styles.tabLooks'), Icon: ShirtIcon },
+    // All five are Google Material Symbols, outlined. Each names what its tab
+    // actually holds: a garment, written words about your style, someone framed
+    // for a photo, a palette, a tag. The original set described the wrong
+    // things — two layout columns, a chatbot, and a stick figure.
+    { key: 'looks', label: t('styles.tabLooks'), Icon: ApparelIcon },
     { key: 'prompt', label: t('styles.tabPrompt'), Icon: CommentIcon },
     { key: 'body', label: t('styles.tabBody'), Icon: FramePersonIcon },
     { key: 'colorimetry', label: t('styles.tabColorimetry'), Icon: PaletteIcon },
