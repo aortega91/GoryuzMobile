@@ -5,7 +5,12 @@ import notifee, { AndroidImportance, EventType } from '@notifee/react-native';
 import { store } from '@utilities/store';
 import { logError } from '@utilities/crashlytics';
 import { requestNotificationPermission } from '@hooks/useNotificationPermission';
-import { setPendingDeepLink, DeepLinkKind } from '@features/notifications/deepLinkSlice';
+import {
+  setPendingDeepLink,
+  parseFriendId,
+  DeepLinkKind,
+} from '@features/notifications/deepLinkSlice';
+import { loadNotifications } from '@features/notifications/notificationsSlice';
 import { navigationRef } from '@navigation/navigationRef';
 import i18n from '@language/index';
 import { registerPushToken, unregisterPushToken } from './pushApi';
@@ -24,17 +29,11 @@ interface PushTapSource {
   notification?: { title?: string };
 }
 
-function parseFriendId(url?: string): string | undefined {
-  if (!url) return undefined;
-  try {
-    const query = url.split('?')[1] ?? '';
-    return new URLSearchParams(query).get('friendId') ?? undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 function handlePushTap(remoteMessage: PushTapSource): void {
+  // A push tapped from background/killed was never seen by onMessage, so this
+  // is the first chance to pull its history row into the bell.
+  store.dispatch(loadNotifications());
+
   const kind = remoteMessage.data?.kind as DeepLinkKind | undefined;
   if (kind === 'chat_message') {
     store.dispatch(
@@ -109,6 +108,9 @@ export async function initPush(): Promise<void> {
 
   unsubscribeOnMessage?.();
   unsubscribeOnMessage = messaging().onMessage(async remoteMessage => {
+    // The worker already wrote this push to the history table, so pull it in:
+    // that is what makes the bell badge tick up while the app is open.
+    store.dispatch(loadNotifications());
     try {
       await displayForegroundNotification(remoteMessage);
     } catch (err: unknown) {

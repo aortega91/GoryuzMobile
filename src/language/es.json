@@ -570,9 +570,7 @@
     "minutesAgo": "Hace {{count}}m",
     "hoursAgo": "Hace {{count}}h",
     "daysAgo": "Hace {{count}} días",
-    "outfitToday": "Tienes un outfit planeado para hoy: {{name}}",
-    "gemsUsed": "Usaste {{count}} gemas",
-    "newMessage": "Tienes un nuevo mensaje"
+    "outfitToday": "Tienes un outfit planeado para hoy: {{name}}"
   },
   "community": {
     "tabConnections": "Conexiones",

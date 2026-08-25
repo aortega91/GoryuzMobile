@@ -298,5 +298,10 @@ export const apiPut = <T>(path: string, body: unknown) =>
     body: JSON.stringify(body),
   });
 
-export const apiDelete = <T>(path: string) =>
-  apiRequest<T>(path, { method: 'DELETE' });
+// Some endpoints (e.g. DELETE /notifications) take a JSON body to say *what*
+// to delete, so the body is optional rather than absent.
+export const apiDelete = <T>(path: string, body?: unknown) =>
+  apiRequest<T>(path, {
+    method: 'DELETE',
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });

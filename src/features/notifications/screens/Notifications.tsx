@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   FlatList,
+  RefreshControl,
   StyleSheet,
   Text,
   View,
@@ -12,10 +13,12 @@ import Touchable from '@components/Touchable';
 import useNotificationsTheme from '@hooks/useNotificationsTheme';
 import { BellIcon, CloseIcon } from '@assets/icons';
 import { AppDispatch, RootState } from '@utilities/store';
+import { setPendingDeepLink, parseFriendId } from '../deepLinkSlice';
 import {
-  markAsRead,
-  markAllAsRead,
-  deleteNotification,
+  loadNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  removeNotification,
   AppNotification,
 } from '../notificationsSlice';
 
@@ -57,6 +60,9 @@ function NotificationItem({ item, onRead, onDelete, colors }: ItemProps) {
     >
       <View style={[styles.dot, { backgroundColor: item.read ? 'transparent' : colors.unreadDot }]} />
       <View style={styles.itemBody}>
+        {!!item.title && (
+          <Text style={[styles.itemTitle, { color: colors.text }]}>{item.title}</Text>
+        )}
         <Text style={[styles.itemText, { color: colors.text }]}>{item.text}</Text>
         <Text style={[styles.itemTime, { color: colors.timestamp }]}>
           {relativeTime(item.timestamp, t)}
@@ -81,8 +87,38 @@ function Notifications({ onClose }: Props) {
   const c = theme.notifications;
   const dispatch = useDispatch<AppDispatch>();
   const items = useSelector((state: RootState) => state.notifications.items);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const unreadCount = items.filter(n => !n.read).length;
+
+  // The history is server-side and capped at 20, so opening the bell is the
+  // right moment to re-read it: it picks up pushes that arrived while the app
+  // was closed, and reads/deletes done from the web.
+  useEffect(() => {
+    dispatch(loadNotifications());
+  }, [dispatch]);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await dispatch(loadNotifications());
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [dispatch]);
+
+  // Tapping a chat notification opens that conversation — same destination the
+  // system notification would have opened. Home consumes the pending deep link.
+  const handlePress = useCallback((item: AppNotification) => {
+    dispatch(markNotificationRead(item.id));
+    if (item.kind !== 'chat_message') return;
+    dispatch(setPendingDeepLink({
+      kind: 'chat_message',
+      friendId: parseFriendId(item.url),
+      friendName: item.title,
+    }));
+    onClose();
+  }, [dispatch, onClose]);
 
   return (
     <View style={[styles.root, { backgroundColor: c.background }]}>
@@ -95,7 +131,7 @@ function Notifications({ onClose }: Props) {
           {t('notifications.title')}
         </Text>
         {unreadCount > 0 ? (
-          <Touchable onPress={() => dispatch(markAllAsRead())} hitSlop={8} borderRadius={8} style={styles.markAllBtn}>
+          <Touchable onPress={() => dispatch(markAllNotificationsRead())} hitSlop={8} borderRadius={8} style={styles.markAllBtn}>
             <Text style={[styles.markAllText, { color: c.markAllText }]}>
               {t('notifications.markAllRead')}
             </Text>
@@ -111,12 +147,20 @@ function Notifications({ onClose }: Props) {
         keyExtractor={n => n.id}
         contentContainerStyle={[styles.list, items.length === 0 && styles.listEmpty]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={c.emptyIcon}
+            colors={[c.unreadDot]}
+          />
+        }
         renderItem={({ item }) => (
           <NotificationItem
             item={item}
             colors={c}
-            onRead={() => dispatch(markAsRead(item.id))}
-            onDelete={() => dispatch(deleteNotification(item.id))}
+            onRead={() => handlePress(item)}
+            onDelete={() => dispatch(removeNotification(item.id))}
           />
         )}
         ListEmptyComponent={
@@ -171,6 +215,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   itemBody: { flex: 1, gap: 4 },
+  itemTitle: { fontSize: 14, lineHeight: 20, fontWeight: '700' },
   itemText: { fontSize: 14, lineHeight: 20, fontWeight: '500' },
   itemTime: { fontSize: 12 },
   deleteBtn: { padding: 2, marginTop: 2 },

@@ -44,7 +44,10 @@ import Subscription from '@features/subscription/screens/Subscription';
 import Support from '@features/support/screens/Support';
 import Community from '@features/community/screens/Community';
 import { fetchConversations } from '@features/community/api/communityApi';
-import { addNotification } from '@features/notifications/notificationsSlice';
+import {
+  addNotification,
+  loadNotifications,
+} from '@features/notifications/notificationsSlice';
 import { clearPendingDeepLink } from '@features/notifications/deepLinkSlice';
 import { loadEvents } from '@features/schedule/scheduleSlice';
 import { logError } from '@utilities/crashlytics';
@@ -317,38 +320,16 @@ function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scheduleStatus]);
 
-  // Notify whenever gems are spent (the balance drops). The first observed
-  // value just seeds the baseline so loading the profile doesn't fire one.
-  const prevGemCountRef = useRef<number | null>(null);
+  // Pulls the server-side notification history (see
+  // features/notifications/api/notificationsApi.ts). Gem spends and new
+  // messages are deliberately NOT raised locally any more: the notifications
+  // worker already writes both rows at push time, so also inferring them here
+  // from the gem balance and the unread count would double every entry.
   useEffect(() => {
-    const prev = prevGemCountRef.current;
-    if (prev != null && profile != null && gemCount < prev) {
-      dispatch(addNotification({
-        id: `gem-use-${new Date().toISOString()}`,
-        text: t('notifications.gemsUsed', { count: prev - gemCount }),
-        timestamp: new Date().toISOString(),
-      }));
-    }
-    prevGemCountRef.current = gemCount;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gemCount]);
+    dispatch(loadNotifications());
+  }, [dispatch]);
 
-  // Notify whenever the unread-message count climbs (a new message arrived).
-  const prevUnreadMessagesRef = useRef<number | null>(null);
-  useEffect(() => {
-    const prev = prevUnreadMessagesRef.current;
-    if (prev != null && unreadMessages > prev) {
-      dispatch(addNotification({
-        id: `msg-${new Date().toISOString()}`,
-        text: t('notifications.newMessage'),
-        timestamp: new Date().toISOString(),
-      }));
-    }
-    prevUnreadMessagesRef.current = unreadMessages;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unreadMessages]);
-
-  // Consume a push-notification tap (real FCM push, not the in-app bell above).
+  // Consume a push-notification tap (real FCM push, not a tap on the in-app bell).
   const pendingDeepLink = useSelector((state: RootState) => state.deepLink.pendingDeepLink);
   useEffect(() => {
     if (!pendingDeepLink) return;
