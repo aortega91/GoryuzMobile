@@ -24,7 +24,6 @@ import useCameraPermission from '@hooks/useCameraPermission';
 import {
   SparklesIcon,
   StarIcon,
-  ColumnsIcon,
   CrownIcon,
   FilterIcon,
   CheckIcon,
@@ -46,8 +45,10 @@ import {
   LayoutGridIcon,
   Wand2Icon,
   NailIcon,
-  BotIcon,
   PersonStandingIcon,
+  DressIcon,
+  PencilIcon,
+  CameraIcon,
   PaletteIcon,
   PlusCircleIcon,
   CloseIcon,
@@ -1370,9 +1371,16 @@ function Styles() {
   };
 
   const TABS: { key: Tab; label: string; Icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }> }[] = [
-    { key: 'looks', label: t('styles.tabLooks'), Icon: ColumnsIcon },
-    { key: 'prompt', label: t('styles.tabPrompt'), Icon: BotIcon },
-    { key: 'body', label: t('styles.tabBody'), Icon: PersonStandingIcon },
+    // Each icon names what the tab actually holds: saved looks, a style
+    // description the user writes, a photo of themselves. The previous set
+    // described the wrong things — two layout columns, a chatbot, and a stick
+    // figure that read as "profile". Note `looks` is deliberately NOT
+    // LayoutGridIcon despite that being zena's choice for the same tab: it is
+    // already the "all categories" pill inside this very tab, and the same
+    // glyph twice on one screen is its own kind of misdirection.
+    { key: 'looks', label: t('styles.tabLooks'), Icon: DressIcon },
+    { key: 'prompt', label: t('styles.tabPrompt'), Icon: PencilIcon },
+    { key: 'body', label: t('styles.tabBody'), Icon: CameraIcon },
     { key: 'colorimetry', label: t('styles.tabColorimetry'), Icon: PaletteIcon },
     { key: 'tags', label: t('styles.tabTags'), Icon: TagIcon },
   ];
