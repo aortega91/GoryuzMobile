@@ -1,4 +1,5 @@
 import { apiGet, apiPost, apiPut, apiDelete } from '@api/client';
+import { toIsoTimestamp } from '@utilities/date';
 import { CommunityUser, FriendRequest, Conversation, ChatMessage } from '../types';
 
 function normalizeFriendshipStatus(
@@ -59,24 +60,6 @@ export function cancelRequest(id: string): Promise<{ success: boolean }> {
 
 export function unfollowUser(id: string): Promise<{ success: boolean }> {
   return apiDelete(`/friends/${id}`);
-}
-
-/**
- * Normalises a server timestamp (ISO string, or unix seconds/millis) to an ISO string.
- * The chat backend stores `created_at` as unix seconds; the Durable Object echoes them
- * as raw seconds while the REST layer serialises Drizzle timestamps as ISO strings.
- */
-export function toIsoTimestamp(value: string | number | null | undefined): string {
-  if (value == null) return new Date().toISOString();
-  if (typeof value === 'number') {
-    const ms = value < 1e12 ? value * 1000 : value;
-    return new Date(ms).toISOString();
-  }
-  const asNumber = Number(value);
-  if (!Number.isNaN(asNumber) && /^\d+$/.test(value)) {
-    return toIsoTimestamp(asNumber);
-  }
-  return value;
 }
 
 export async function fetchConversations(userId: string): Promise<Conversation[]> {

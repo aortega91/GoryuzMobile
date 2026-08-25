@@ -32,8 +32,15 @@ export interface ServerNotification {
   /** Web deep link, e.g. `/?view=messages&friendId=…`. Null for plain notices. */
   url: string | null;
   read: boolean;
-  /** Epoch in **seconds**, as stored by D1 — not milliseconds. */
-  createdAt: number;
+  /**
+   * Creation time, and it is NOT the epoch-seconds number zena's own client
+   * type claims: `user_notifications.created_at` is declared `mode:
+   * "timestamp"` in the Drizzle schema, so a selected row comes back as a Date
+   * and serialises to an ISO string over the wire. Typed as both because a raw
+   * number is still what the column holds. Parse via the slice's
+   * `toIsoTimestamp`, never by multiplying.
+   */
+  createdAt: number | string;
 }
 
 /** Every mutating endpoint targets either one notification or all of them. */

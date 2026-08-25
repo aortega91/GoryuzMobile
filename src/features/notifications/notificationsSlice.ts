@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import { clearSession } from '@features/auth/sessionSlice';
+import { toIsoTimestamp } from '@utilities/date';
 import {
   deleteNotifications,
   fetchNotifications,
@@ -27,7 +28,7 @@ export interface AppNotification {
   /** Headline — server history only; local notices carry just `text`. */
   title?: string;
   text: string;
-  /** ISO-8601. Server rows arrive as epoch seconds and are converted on load. */
+  /** ISO-8601, normalised on load — see `toIsoTimestamp`. */
   timestamp: string;
   read: boolean;
   source: NotificationSource;
@@ -65,8 +66,7 @@ function fromServer(n: ServerNotification): AppNotification {
     id: n.id,
     title: n.title,
     text: n.body,
-    // D1 stores epoch seconds; Date expects milliseconds.
-    timestamp: new Date(n.createdAt * 1000).toISOString(),
+    timestamp: toIsoTimestamp(n.createdAt),
     read: n.read,
     source: 'server',
     url: n.url ?? undefined,

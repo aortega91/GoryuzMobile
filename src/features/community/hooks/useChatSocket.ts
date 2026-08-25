@@ -17,9 +17,9 @@ import { AppState } from 'react-native';
 import Config from 'react-native-config';
 
 import { logError } from '@utilities/crashlytics';
+import { toIsoTimestamp } from '@utilities/date';
 import { ORIGIN } from '@api/client';
 import { ChatMessage } from '../types';
-import { toIsoTimestamp } from '../api/communityApi';
 
 // The chat WebSocket is NOT served from the app domain — it lives on a separate
 // Cloudflare worker, exactly as the zena web client connects to it. We mirror its host
