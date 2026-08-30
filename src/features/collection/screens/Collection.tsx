@@ -20,6 +20,7 @@ import { loadProfile } from '@features/home/profileSlice';
 import { addToSecondLife } from '@features/secondLife/api/secondLifeApi';
 import { logError } from '@utilities/crashlytics';
 import toast from '@utilities/toast';
+import FeatureWelcomeModal from '@components/FeatureWelcomeModal';
 import {
   loadCollection,
   addItems,
@@ -192,6 +193,14 @@ function Collection() {
 
   return (
     <View style={[styles.root, { backgroundColor: tokens.background }]}>
+      <FeatureWelcomeModal
+        tour="closet-tour"
+        titleKey="menu.collection"
+        stepKeys={[
+          'onboarding.collectionStep1',
+        ]}
+      />
+
       {/* Header */}
       <View
         style={[

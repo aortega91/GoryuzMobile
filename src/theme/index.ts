@@ -27,6 +27,17 @@ export interface CommonTheme {
   toastErrorText: string;
   toastInfoBackground: string;
   toastInfoText: string;
+  /** Feature welcome dialogs (FeatureWelcomeModal) */
+  onboardingCardBackground: string;
+  onboardingCardBorder: string;
+  onboardingTitle: string;
+  onboardingAccent: string;
+  onboardingAccentSoft: string;
+  onboardingAccentText: string;
+  onboardingStepBackground: string;
+  onboardingStepText: string;
+  onboardingCheck: string;
+  onboardingCheckSoft: string;
 }
 
 // ─── Full theme shape ─────────────────────────────────────────────────────────
@@ -60,6 +71,16 @@ export const lightTheme: Theme = {
     toastErrorText: '#991B1B',
     toastInfoBackground: commonColors.navyDark,
     toastInfoText: commonColors.offWhite,
+    onboardingCardBackground: commonColors.white,
+    onboardingCardBorder: commonColors.grayLight,
+    onboardingTitle: commonColors.navyDark,
+    onboardingAccent: commonColors.indigo,
+    onboardingAccentSoft: commonColors.indigoSoft,
+    onboardingAccentText: commonColors.white,
+    onboardingStepBackground: commonColors.offWhite,
+    onboardingStepText: commonColors.grayDark,
+    onboardingCheck: commonColors.successGreen,
+    onboardingCheckSoft: '#DCFCE7',
   },
 };
 
@@ -87,5 +108,15 @@ export const darkTheme: Theme = {
     toastErrorText: '#FCA5A5',
     toastInfoBackground: '#E8E6E1',
     toastInfoText: commonColors.navyDark,
+    onboardingCardBackground: commonColors.darkCard,
+    onboardingCardBorder: commonColors.darkBorder,
+    onboardingTitle: commonColors.offWhite,
+    onboardingAccent: '#6366F1',        // lifted indigo for contrast on dark
+    onboardingAccentSoft: 'rgba(99,102,241,0.18)',
+    onboardingAccentText: commonColors.white,
+    onboardingStepBackground: '#252525',
+    onboardingStepText: commonColors.grayLight,
+    onboardingCheck: '#4DBF87',
+    onboardingCheckSoft: 'rgba(77,191,135,0.18)',
   },
 };

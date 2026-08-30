@@ -19,6 +19,7 @@ import AuthedImage from '@components/AuthedImage';
 import Touchable from '@components/Touchable';
 import BottomSheet from '@components/BottomSheet';
 import UpgradeModal from '@components/UpgradeModal';
+import FeatureWelcomeModal from '@components/FeatureWelcomeModal';
 import useStylesTheme from '@hooks/useStylesTheme';
 import useCameraPermission from '@hooks/useCameraPermission';
 import {
@@ -1382,6 +1383,15 @@ function Styles() {
 
   return (
     <View style={[styles.root, { backgroundColor: s.background }]}>
+      <FeatureWelcomeModal
+        tour="stylist-tour"
+        titleKey="menu.styles"
+        stepKeys={[
+          'onboarding.stylesStep1',
+          'onboarding.stylesStep2',
+          'onboarding.stylesStep3',
+        ]}
+      />
 
       {/* Header */}
       <View style={styles.header}>

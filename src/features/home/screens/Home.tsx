@@ -21,6 +21,7 @@ import i18n from '@language/index';
 import Touchable from '@components/Touchable';
 import BottomSheet from '@components/BottomSheet';
 import PermissionModal from '@components/PermissionModal';
+import FeatureWelcomeModal from '@components/FeatureWelcomeModal';
 import useHomeTheme from '@hooks/useHomeTheme';
 import useLocation from '@hooks/useLocation';
 import useCameraPermission from '@hooks/useCameraPermission';
@@ -596,6 +597,18 @@ function Home() {
               {activeTab === 'feed' && renderInspirationTab()}
               {activeTab === 'my_posts' && renderMyVisionTab()}
               {activeTab === 'saved' && renderSavedTab()}
+              {/* Explains the saved-post actions, so it waits for that tab. */}
+              {activeTab === 'saved' && MOCK_SAVED_POSTS.length > 0 && (
+                <FeatureWelcomeModal
+                  tour="home-saved"
+                  titleKey="onboarding.savedTitle"
+                  stepKeys={[
+                    'onboarding.savedStep1',
+                    'onboarding.savedStep2',
+                    'onboarding.savedStep3',
+                  ]}
+                />
+              )}
             </>
           )}
 

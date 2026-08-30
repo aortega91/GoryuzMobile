@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next';
 import Touchable from '@components/Touchable';
 import AuthedImage from '@components/AuthedImage';
 import UpgradeModal from '@components/UpgradeModal';
+import FeatureWelcomeModal from '@components/FeatureWelcomeModal';
 import useDiscoverTheme from '@hooks/useDiscoverTheme';
 import useCameraPermission from '@hooks/useCameraPermission';
 import {
@@ -952,6 +953,16 @@ function Discover() {
 
   return (
     <View style={[styles.root, { backgroundColor: d.background }]}>
+      <FeatureWelcomeModal
+        tour="discover-tour"
+        titleKey="menu.discover"
+        stepKeys={[
+          'onboarding.discoverStep1',
+          'onboarding.discoverStep2',
+          'onboarding.discoverStep3',
+        ]}
+      />
+
       {/* Header */}
       <View style={styles.header}>
         <Text style={[styles.title, { color: d.headerTitle }]}>{t('discover.title')}</Text>

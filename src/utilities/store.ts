@@ -22,6 +22,7 @@ import stylesReducer from '@features/styles/stylesSlice';
 import discoverReducer from '@features/discover/discoverSlice';
 import notificationsReducer from '@features/notifications/notificationsSlice';
 import deepLinkReducer from '@features/notifications/deepLinkSlice';
+import onboardingReducer from './onboardingSlice';
 import appThemeReducer from './appThemeSlice';
 import locationReducer from './locationSlice';
 
@@ -77,6 +78,7 @@ const rootPersistConfig = {
   // session has its own persist config; profile/collection/schedule/styles/discover are always refetched on launch
   // notifications persists (not blacklisted) so users keep their notification history
   // deepLink is transient (consumed once by Home on the same launch that received it)
+  // onboarding persists (not blacklisted) so each feature's welcome dialog only shows once
   blacklist: ['session', 'profile', 'collection', 'schedule', 'styles', 'discover', 'deepLink'],
   transforms: [locationTransform],
 };
@@ -92,6 +94,7 @@ const rootReducer = combineReducers({
   discover: discoverReducer,
   notifications: notificationsReducer,
   deepLink: deepLinkReducer,
+  onboarding: onboardingReducer,
   appTheme: appThemeReducer,
   location: locationReducer,
 });

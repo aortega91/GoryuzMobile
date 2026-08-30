@@ -27,6 +27,7 @@ import {
 import { AppDispatch, RootState } from '@utilities/store';
 import { logError } from '@utilities/crashlytics';
 
+import FeatureWelcomeModal from '@components/FeatureWelcomeModal';
 import {
   loadEvents,
   loadTrips,
@@ -597,6 +598,14 @@ function Schedule() {
 
   return (
     <View style={[styles.root, { backgroundColor: s.background }]}>
+      <FeatureWelcomeModal
+        tour="agenda-tour"
+        titleKey="menu.schedule"
+        stepKeys={[
+          'onboarding.scheduleStep1',
+          'onboarding.scheduleStep2',
+        ]}
+      />
 
       {/* Header */}
       <View style={styles.header}>

@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import Touchable from '@components/Touchable';
 import AuthedImage from '@components/AuthedImage';
 import BottomSheet from '@components/BottomSheet';
+import FeatureWelcomeModal from '@components/FeatureWelcomeModal';
 import useSecondLifeTheme from '@hooks/useSecondLifeTheme';
 import { AppDispatch, RootState } from '@utilities/store';
 import { loadProfile } from '@features/home/profileSlice';
@@ -602,6 +603,16 @@ function SecondLife() {
 
   return (
     <View style={[styles.root, { backgroundColor: sl.background }]}>
+      <FeatureWelcomeModal
+        tour="sl-tour"
+        titleKey="menu.secondLife"
+        stepKeys={[
+          'onboarding.secondLifeStep1',
+          'onboarding.secondLifeStep2',
+          'onboarding.secondLifeStep3',
+        ]}
+      />
+
       {/* Header */}
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: sl.headerTitle }]}>{t('secondLife.title')}</Text>
