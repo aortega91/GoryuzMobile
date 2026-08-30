@@ -20,7 +20,7 @@ import { markTourCompleted, TourId } from '@utilities/onboardingSlice';
 // Forces every welcome dialog to appear on each visit so the copy and layout can
 // be reviewed on device. Set back to `false` to restore the show-once behaviour
 // (dismissals are still recorded either way, so nothing else needs undoing).
-const ALWAYS_SHOW_TOURS = false;
+const ALWAYS_SHOW_TOURS = true;
 
 interface FeatureWelcomeModalProps {
   /** Identifies the tour so it is only ever shown once. */
