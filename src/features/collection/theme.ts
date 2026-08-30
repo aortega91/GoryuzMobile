@@ -98,10 +98,10 @@ export const collectionLightTheme: CollectionTheme = {
     tabBackground: commonColors.white,
     tabBorder: commonColors.grayLight,
     tabText: commonColors.grayDark,
-    tabActiveBackground: commonColors.navyDark,
-    tabActiveBorder: commonColors.navyDark,
+    tabActiveBackground: commonColors.indigo,
+    tabActiveBorder: commonColors.indigo,
     tabActiveText: commonColors.navyDark,
-    tabIndicator: commonColors.navyDark,
+    tabIndicator: commonColors.indigo,
     tabBadgeBackground: '#F3F4F6',
     tabBadgeText: commonColors.grayDark,
     tabBadgeActiveBackground: '#E8EAF0',
@@ -116,7 +116,7 @@ export const collectionLightTheme: CollectionTheme = {
     emptyTitle: commonColors.navyDark,
     emptySubtitle: commonColors.gray,
 
-    fabBackground: commonColors.navyDark,
+    fabBackground: commonColors.indigo,
     fabIcon: commonColors.white,
 
     modalBackground: commonColors.white,
@@ -130,7 +130,7 @@ export const collectionLightTheme: CollectionTheme = {
     inputText: commonColors.navyDark,
     inputLabel: commonColors.grayDark,
 
-    buttonPrimary: commonColors.navyDark,
+    buttonPrimary: commonColors.indigo,
     buttonPrimaryText: commonColors.white,
     buttonSecondary: commonColors.white,
     buttonSecondaryText: commonColors.grayDark,
@@ -157,7 +157,7 @@ export const collectionLightTheme: CollectionTheme = {
     secondLifeActiveBorder: '#059669',
     secondLifeActiveIcon: '#059669',
 
-    itemSelectedAccent: '#6366F1',
+    itemSelectedAccent: commonColors.indigoLight,
   },
 };
 
@@ -169,7 +169,7 @@ export const collectionDarkTheme: CollectionTheme = {
     headerBorder: commonColors.darkBorder,
     headerTitle: commonColors.white,
 
-    searchBackground: '#2C2C2C',
+    searchBackground: commonColors.darkCard,
     searchBorder: 'transparent',
     searchText: commonColors.white,
     searchPlaceholder: 'rgba(255,255,255,0.40)',
@@ -182,7 +182,7 @@ export const collectionDarkTheme: CollectionTheme = {
     tabActiveBorder: commonColors.white,
     tabActiveText: commonColors.white,
     tabIndicator: commonColors.white,
-    tabBadgeBackground: '#2C2C2C',
+    tabBadgeBackground: commonColors.darkCard,
     tabBadgeText: 'rgba(255,255,255,0.40)',
     tabBadgeActiveBackground: 'rgba(255,255,255,0.15)',
     tabBadgeActiveText: commonColors.white,
@@ -205,16 +205,16 @@ export const collectionDarkTheme: CollectionTheme = {
     modalSubtitle: 'rgba(255,255,255,0.60)',
     modalBorder: commonColors.darkBorder,
 
-    inputBackground: '#2C2C2C',
-    inputBorder: '#3C3C3C',
+    inputBackground: commonColors.darkCard,
+    inputBorder: commonColors.darkBorder,
     inputText: commonColors.white,
     inputLabel: 'rgba(255,255,255,0.60)',
 
     buttonPrimary: commonColors.white,
     buttonPrimaryText: commonColors.navyDark,
-    buttonSecondary: '#2C2C2C',
+    buttonSecondary: commonColors.darkCard,
     buttonSecondaryText: 'rgba(255,255,255,0.80)',
-    buttonSecondaryBorder: '#3C3C3C',
+    buttonSecondaryBorder: commonColors.darkBorder,
     buttonDanger: '#EF4444',
     buttonDangerText: commonColors.white,
 
@@ -229,8 +229,8 @@ export const collectionDarkTheme: CollectionTheme = {
     secondLifeSell: '#34D399',
     secondLifeGift: '#A78BFA',
     secondLifeExchange: '#FCD34D',
-    secondLifeOptionBackground: '#2C2C2C',
-    secondLifeOptionBorder: '#3C3C3C',
+    secondLifeOptionBackground: commonColors.darkCard,
+    secondLifeOptionBorder: commonColors.darkBorder,
     secondLifeOptionText: commonColors.white,
     secondLifeOptionSubtext: 'rgba(255,255,255,0.50)',
     secondLifeActiveBackground: 'rgba(16,185,129,0.15)',

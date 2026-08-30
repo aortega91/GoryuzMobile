@@ -4,8 +4,8 @@ import commonColors from './commonColors';
 
 export interface CommonTheme {
   /** Brand accent */
-  gold: string;
-  goldLight: string;
+  copper: string;
+  copperLight: string;
   /** Neutrals */
   white: string;
   offWhite: string;
@@ -52,8 +52,8 @@ export interface Theme {
 export const lightTheme: Theme = {
   dark: false,
   common: {
-    gold: commonColors.gold,
-    goldLight: commonColors.goldLight,
+    copper: commonColors.copper,
+    copperLight: commonColors.copperLight,
     white: commonColors.white,
     offWhite: commonColors.offWhite,
     grayLight: commonColors.grayLight,
@@ -89,16 +89,16 @@ export const lightTheme: Theme = {
 export const darkTheme: Theme = {
   dark: true,
   common: {
-    gold: commonColors.goldLight,      // slightly brighter gold on dark bg
-    goldLight: commonColors.goldLight,
+    copper: commonColors.copperLight,    // lifted copper for contrast on dark
+    copperLight: commonColors.copperLight,
     white: commonColors.offWhite,      // soften pure white
     offWhite: commonColors.grayLight,
     grayLight: commonColors.darkBorder,
     gray: commonColors.grayDark,
     grayDark: commonColors.gray,
     black: commonColors.black,
-    errorRed: '#E05A5E',               // brighter red for dark bg readability
-    successGreen: '#4DBF87',
+    errorRed: '#D15353',               // brighter terracotta for dark bg readability
+    successGreen: '#65C084',
     warningAmber: commonColors.warningAmber,
     overlayDark: 'rgba(0,0,0,0.70)',
     overlayLight: 'rgba(255,255,255,0.08)',
@@ -106,17 +106,17 @@ export const darkTheme: Theme = {
     toastSuccessText: '#86EFAC',
     toastErrorBackground: '#7F1D1D',
     toastErrorText: '#FCA5A5',
-    toastInfoBackground: '#E8E6E1',
+    toastInfoBackground: commonColors.grayLight,
     toastInfoText: commonColors.navyDark,
     onboardingCardBackground: commonColors.darkCard,
     onboardingCardBorder: commonColors.darkBorder,
     onboardingTitle: commonColors.offWhite,
-    onboardingAccent: '#6366F1',        // lifted indigo for contrast on dark
+    onboardingAccent: commonColors.indigoLight,        // lifted indigo for contrast on dark
     onboardingAccentSoft: 'rgba(99,102,241,0.18)',
     onboardingAccentText: commonColors.white,
-    onboardingStepBackground: '#252525',
+    onboardingStepBackground: commonColors.darkBorder,
     onboardingStepText: commonColors.grayLight,
-    onboardingCheck: '#4DBF87',
-    onboardingCheckSoft: 'rgba(77,191,135,0.18)',
+    onboardingCheck: '#65C084',
+    onboardingCheckSoft: 'rgba(101,192,132,0.18)',
   },
 };

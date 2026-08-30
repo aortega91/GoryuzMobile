@@ -6,7 +6,7 @@ interface GoryuzLogoProps {
   color?: string;
 }
 
-function GoryuzLogo({ size = 80, color = '#1B2A4A' }: GoryuzLogoProps) {
+function GoryuzLogo({ size = 80, color = '#222258' }: GoryuzLogoProps) {
   return (
     <Svg
       width={size}

@@ -112,7 +112,7 @@ const discoverLight: DiscoverTheme['discover'] = {
 
   bottomBarBackground: commonColors.white,
   bottomBarBorder: commonColors.grayLight,
-  bottomBarActive: commonColors.navyDark,
+  bottomBarActive: commonColors.indigo,
   bottomBarInactive: commonColors.gray,
 
   cardBackground: commonColors.white,
@@ -123,8 +123,8 @@ const discoverLight: DiscoverTheme['discover'] = {
   filterPillBackground: commonColors.white,
   filterPillBorder: commonColors.grayLight,
   filterPillText: commonColors.grayDark,
-  filterPillActiveBackground: commonColors.navyDark,
-  filterPillActiveBorder: commonColors.navyDark,
+  filterPillActiveBackground: commonColors.indigo,
+  filterPillActiveBorder: commonColors.indigo,
   filterPillActiveText: commonColors.white,
 
   emptyIcon: commonColors.grayLight,
@@ -137,8 +137,8 @@ const discoverLight: DiscoverTheme['discover'] = {
   chipBackground: commonColors.white,
   chipBorder: commonColors.grayLight,
   chipText: commonColors.grayDark,
-  chipActiveBackground: '#4F46E5',
-  chipActiveBorder: '#4F46E5',
+  chipActiveBackground: commonColors.indigo,
+  chipActiveBorder: commonColors.indigo,
   chipActiveText: commonColors.white,
 
   sourceLinkBackground: commonColors.white,
@@ -146,7 +146,7 @@ const discoverLight: DiscoverTheme['discover'] = {
   sourceLinkTitle: commonColors.navyDark,
   sourceLinkIcon: commonColors.grayDark,
 
-  fabBackground: '#6366F1',
+  fabBackground: commonColors.indigoLight,
   fabIcon: commonColors.white,
 
   successBackground: '#DCFCE7',
@@ -156,7 +156,7 @@ const discoverLight: DiscoverTheme['discover'] = {
   gemBadgeBorder: '#DDD6FE',
   gemBadgeText: '#6D28D9',
 
-  buttonPrimary: commonColors.navyDark,
+  buttonPrimary: commonColors.indigo,
   buttonPrimaryText: commonColors.white,
   buttonSecondary: commonColors.offWhite,
   buttonSecondaryText: commonColors.navyDark,
@@ -181,15 +181,15 @@ const discoverLight: DiscoverTheme['discover'] = {
 
   closetItemBackground: commonColors.white,
   closetItemBorder: commonColors.grayLight,
-  closetItemSelectedBorder: commonColors.navyDark,
-  closetItemSelectedBadge: commonColors.navyDark,
+  closetItemSelectedBorder: commonColors.indigo,
+  closetItemSelectedBadge: commonColors.indigo,
   closetItemSelectedCheck: commonColors.white,
   closetCategoryText: commonColors.navyDark,
 
   resultImageBackground: commonColors.offWhite,
   resultImageBorder: commonColors.grayLight,
 
-  linkText: '#4F46E5',
+  linkText: commonColors.indigo,
 };
 
 const discoverDark: DiscoverTheme['discover'] = {
@@ -224,8 +224,8 @@ const discoverDark: DiscoverTheme['discover'] = {
   chipBackground: commonColors.darkCard,
   chipBorder: commonColors.darkBorder,
   chipText: commonColors.gray,
-  chipActiveBackground: '#4F46E5',
-  chipActiveBorder: '#4F46E5',
+  chipActiveBackground: commonColors.indigo,
+  chipActiveBorder: commonColors.indigo,
   chipActiveText: commonColors.white,
 
   sourceLinkBackground: commonColors.darkCard,
@@ -233,7 +233,7 @@ const discoverDark: DiscoverTheme['discover'] = {
   sourceLinkTitle: commonColors.offWhite,
   sourceLinkIcon: commonColors.gray,
 
-  fabBackground: '#4F46E5',
+  fabBackground: commonColors.indigo,
   fabIcon: commonColors.white,
 
   successBackground: '#14532D',
@@ -243,9 +243,9 @@ const discoverDark: DiscoverTheme['discover'] = {
   gemBadgeBorder: 'rgba(109,40,217,0.3)',
   gemBadgeText: '#A78BFA',
 
-  buttonPrimary: '#2E4A80',
+  buttonPrimary: commonColors.indigoLight,
   buttonPrimaryText: commonColors.white,
-  buttonSecondary: '#252525',
+  buttonSecondary: commonColors.darkCard,
   buttonSecondaryText: commonColors.offWhite,
   buttonSecondaryBorder: commonColors.darkBorder,
   buttonDangerText: '#E05A5E',
@@ -255,12 +255,12 @@ const discoverDark: DiscoverTheme['discover'] = {
   modalTitle: commonColors.offWhite,
   modalSubtitle: commonColors.gray,
   modalBorder: commonColors.darkBorder,
-  modalInputBackground: '#252525',
+  modalInputBackground: commonColors.darkCard,
   modalInputBorder: commonColors.darkBorder,
   modalInputText: commonColors.offWhite,
   modalInputPlaceholder: commonColors.grayDark,
 
-  segmentBackground: '#252525',
+  segmentBackground: commonColors.darkCard,
   segmentBorder: commonColors.darkBorder,
   segmentActiveBackground: commonColors.darkCard,
   segmentActiveText: commonColors.offWhite,
@@ -268,12 +268,12 @@ const discoverDark: DiscoverTheme['discover'] = {
 
   closetItemBackground: commonColors.darkCard,
   closetItemBorder: commonColors.darkBorder,
-  closetItemSelectedBorder: '#2E4A80',
-  closetItemSelectedBadge: '#2E4A80',
+  closetItemSelectedBorder: commonColors.indigo,
+  closetItemSelectedBadge: commonColors.indigo,
   closetItemSelectedCheck: commonColors.white,
   closetCategoryText: commonColors.offWhite,
 
-  resultImageBackground: '#252525',
+  resultImageBackground: commonColors.darkCard,
   resultImageBorder: commonColors.darkBorder,
 
   linkText: '#818CF8',

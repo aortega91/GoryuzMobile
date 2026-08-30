@@ -1043,7 +1043,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#9E9E9E',
+    backgroundColor: '#9CA3AF',
     marginTop: 4,
   },
   historyBody: {

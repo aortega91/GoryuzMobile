@@ -124,7 +124,7 @@ const cardStyles = StyleSheet.create({
   imageWrap: {
     aspectRatio: 1,
     width: '100%',
-    backgroundColor: '#F5F4F1',
+    backgroundColor: '#F9FAFB',
     overflow: 'hidden',
   },
   image: {

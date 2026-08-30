@@ -28,7 +28,7 @@ export const notificationsLightTheme: NotificationsTheme = {
     headerTitle: commonColors.navyDark,
     markAllText: commonColors.indigo,
     itemBackground: commonColors.white,
-    itemUnreadBackground: '#EEF2FF',
+    itemUnreadBackground: commonColors.indigoSoft,
     itemBorder: commonColors.grayLight,
     unreadDot: commonColors.indigo,
     text: '#1F2937',
@@ -43,7 +43,7 @@ export const notificationsLightTheme: NotificationsTheme = {
 export const notificationsDarkTheme: NotificationsTheme = {
   ...darkTheme,
   notifications: {
-    background: commonColors.navyDark,
+    background: commonColors.darkSurface,
     headerBorder: commonColors.darkBorder,
     headerTitle: commonColors.white,
     markAllText: '#818CF8',

@@ -32,7 +32,7 @@ function UpgradeModal({ visible, requiredPlan, onUpgrade, onClose }: Props) {
   const c = theme.common;
 
   const isVip = requiredPlan === 'vip';
-  const accentColor = isVip ? '#C4933F' : '#4F46E5';
+  const accentColor = isVip ? '#B87333' : '#4F46E5';
   const headerBgTop = isVip ? '#1a1205' : '#1e1b4b';
   const headerBgBot = isVip ? '#2d1f0a' : '#312e81';
 
@@ -53,7 +53,7 @@ function UpgradeModal({ visible, requiredPlan, onUpgrade, onClose }: Props) {
           onPress={() => {}}
           borderRadius={24}
           activeOpacity={1}
-          style={[styles.card, { backgroundColor: theme.dark ? '#1E1E1E' : '#FFFFFF' }]}
+          style={[styles.card, { backgroundColor: theme.dark ? '#1F2937' : '#FFFFFF' }]}
         >
           {/* Visual header */}
           <View style={[styles.header, { backgroundColor: headerBgTop }]}>

@@ -89,7 +89,7 @@ export const profileLightTheme: ProfileTheme = {
     inputBackground: commonColors.white,
     inputBorder: '#D1D5DB',
     inputText: commonColors.navyDark,
-    inputBorderFocused: commonColors.navyLight,
+    inputBorderFocused: commonColors.indigo,
 
     fieldLabel: commonColors.grayDark,
     fieldReadonlyBackground: '#F3F4F6',
@@ -102,8 +102,8 @@ export const profileLightTheme: ProfileTheme = {
     planBadgeFreeBackground: '#F3F4F6',
     planBadgeFreeText: commonColors.grayDark,
     planBadgePremiumBackground: commonColors.navyDark,
-    planBadgePremiumText: commonColors.gold,
-    planBadgePremiumBorder: commonColors.gold,
+    planBadgePremiumText: commonColors.copper,
+    planBadgePremiumBorder: commonColors.copper,
 
     dangerCardBackground: '#FEF2F2',
     dangerCardBorder: '#FECACA',
@@ -116,8 +116,8 @@ export const profileLightTheme: ProfileTheme = {
     modalBackground: commonColors.white,
     modalBackdrop: 'rgba(0,0,0,0.55)',
 
-    primary: commonColors.navyDark,
-    primarySoft: '#EEF2FF',
+    primary: commonColors.indigo,
+    primarySoft: commonColors.indigoSoft,
     primaryText: commonColors.white,
 
     buttonSecondaryBackground: commonColors.white,
@@ -154,24 +154,24 @@ export const profileDarkTheme: ProfileTheme = {
     textPrimary: commonColors.white,
     textSecondary: 'rgba(255,255,255,0.60)',
 
-    inputBackground: '#2C2C2C',
-    inputBorder: '#3C3C3C',
+    inputBackground: commonColors.darkCard,
+    inputBorder: commonColors.darkBorder,
     inputText: commonColors.white,
-    inputBorderFocused: commonColors.navyLight,
+    inputBorderFocused: commonColors.indigoLight,
 
     fieldLabel: 'rgba(255,255,255,0.55)',
-    fieldReadonlyBackground: '#252525',
+    fieldReadonlyBackground: commonColors.darkCard,
     fieldReadonlyText: 'rgba(255,255,255,0.35)',
 
     pickerActiveBackground: 'rgba(79,70,229,0.20)',
 
     avatarBorder: commonColors.darkBorder,
 
-    planBadgeFreeBackground: '#2C2C2C',
+    planBadgeFreeBackground: commonColors.darkCard,
     planBadgeFreeText: 'rgba(255,255,255,0.60)',
     planBadgePremiumBackground: commonColors.navyDark,
-    planBadgePremiumText: commonColors.gold,
-    planBadgePremiumBorder: commonColors.gold,
+    planBadgePremiumText: commonColors.copper,
+    planBadgePremiumBorder: commonColors.copper,
 
     dangerCardBackground: 'rgba(220,38,38,0.12)',
     dangerCardBorder: 'rgba(220,38,38,0.30)',
@@ -188,8 +188,8 @@ export const profileDarkTheme: ProfileTheme = {
     primarySoft: 'rgba(79,70,229,0.20)',
     primaryText: commonColors.navyDark,
 
-    buttonSecondaryBackground: '#2C2C2C',
-    buttonSecondaryBorder: '#3C3C3C',
+    buttonSecondaryBackground: commonColors.darkCard,
+    buttonSecondaryBorder: commonColors.darkBorder,
     buttonSecondaryText: 'rgba(255,255,255,0.80)',
 
     gemBadgeBackground: '#2D1B69',

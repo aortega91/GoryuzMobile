@@ -25,10 +25,10 @@ export const subscriptionLightTheme: SubscriptionTheme = {
 export const subscriptionDarkTheme: SubscriptionTheme = {
   ...darkTheme,
   subscription: {
-    background: commonColors.navyDark,
-    loaderColor: commonColors.goldLight,
+    background: commonColors.darkSurface,
+    loaderColor: commonColors.copperLight,
     errorText: 'rgba(255,255,255,0.60)',
-    retryButtonBg: commonColors.gold,
+    retryButtonBg: commonColors.copper,
     retryButtonText: commonColors.navyDark,
   },
 };
