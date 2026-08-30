@@ -536,9 +536,7 @@ function Styles() {
         <FlatList
           data={filteredOutfits}
           keyExtractor={item => item.id}
-          numColumns={2}
-          columnWrapperStyle={styles.gridRow}
-          contentContainerStyle={[styles.gridContent, { paddingBottom: bottomBarTotalHeight + 16 }]}
+          contentContainerStyle={[styles.listContent, { paddingBottom: bottomBarTotalHeight + 16 }]}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
             <OutfitCard
@@ -1735,13 +1733,12 @@ const styles = StyleSheet.create({
   },
   filterPillText: { fontSize: 14, fontWeight: '600' },
 
-  // Outfit grid
-  gridContent: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 32 },
-  gridRow: { gap: 12, marginBottom: 12 },
+  // Outfit list
+  listContent: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 32, gap: 16 },
 
   // Card
   card: {
-    flex: 1,
+    width: '100%',
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
@@ -1798,7 +1795,7 @@ const styles = StyleSheet.create({
     color: '#6366F1',
   },
   cardInfo: {
-    padding: 10,
+    padding: 14,
   },
   cardRow: {
     flexDirection: 'row',
@@ -1810,13 +1807,13 @@ const styles = StyleSheet.create({
     minWidth: 0,
     gap: 3,
   },
-  cardName: { fontSize: 13, fontWeight: '700' },
+  cardName: { fontSize: 15, fontWeight: '700' },
   cardRatingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
   },
-  cardRatingText: { fontSize: 11, fontWeight: '700' },
+  cardRatingText: { fontSize: 12, fontWeight: '700' },
   sourceBadge: {
     paddingHorizontal: 5,
     paddingVertical: 3,
