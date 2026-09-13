@@ -238,7 +238,7 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
             },
           ]}
         >
-          <CameraIcon size={36} color="#6366F1" />
+          <CameraIcon size={36} color={tokens.cameraPickIcon} />
           <Text style={[styles.pickLabel, { color: tokens.modalTitle }]}>
             {t('collection.addFromCamera')}
           </Text>

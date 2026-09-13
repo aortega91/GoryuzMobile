@@ -1,5 +1,6 @@
 import commonColors from '@theme/commonColors';
-import { Theme, lightTheme, darkTheme } from '@theme/index';
+import { Theme, getCommonTheme } from '@theme/index';
+import { BrandPalette, withAlpha } from '@theme/palettes';
 
 export interface StylesTheme extends Theme {
   styles: {
@@ -34,6 +35,10 @@ export interface StylesTheme extends Theme {
     tagText: string;
     tagActiveBackground: string;
     tagActiveText: string;
+
+    // Small tag chip overlaid on outfit-card thumbnails (pale accent badge)
+    cardTagChipBackground: string;
+    cardTagChipText: string;
 
     emptyIcon: string;
     emptyText: string;
@@ -85,6 +90,17 @@ export interface StylesTheme extends Theme {
     addBtnBorder: string;
     addBtnIcon: string;
 
+    // "Create with AI" method card (create-outfit choice sheet)
+    createAiBackground: string;
+    createAiBorder: string;
+    createAiIcon: string;
+    createAiTitle: string;
+    createAiDesc: string;
+
+    // Step-1 create-choice grid — "Outfits" icon (the only one of the 4 that's
+    // theme-tied in the reference; hair/makeup/nails stay fixed orange/pink/teal)
+    createOutfitsIcon: string;
+
     fabBackground: string;
     fabIcon: string;
 
@@ -134,274 +150,315 @@ export interface StylesTheme extends Theme {
   };
 }
 
-const stylesLight: StylesTheme['styles'] = {
-  background: commonColors.offWhite,
-  headerTitle: commonColors.navyDark,
-  headerSubtitle: commonColors.grayDark,
+// ─── Light-structural variant — used by natural/moderno/elegancia ─────────────
 
-  tabBackground: commonColors.white,
-  tabActive: commonColors.indigo,
-  tabActiveText: commonColors.white,
-  tabInactiveText: commonColors.gray,
-  tabBorder: commonColors.grayLight,
+function buildStylesLight(palette: BrandPalette): StylesTheme {
+  const accent600 = palette.accent[600];
+  const accent400 = palette.accent[400];
 
-  bottomBarBackground: commonColors.white,
-  bottomBarBorder: commonColors.grayLight,
-  bottomBarActive: commonColors.indigo,
-  bottomBarInactive: commonColors.gray,
+  return {
+    ...getCommonTheme(palette),
+    styles: {
+      background: commonColors.offWhite,
+      headerTitle: palette.primary,
+      headerSubtitle: commonColors.grayDark,
 
-  outfitCardBackground: commonColors.white,
-  outfitCardBorder: commonColors.grayLight,
-  outfitCardName: commonColors.navyDark,
-  outfitCardMosaicBackground: commonColors.offWhite,
-  outfitCardSourceBadge: commonColors.grayLight,
-  outfitCardSourceText: commonColors.grayDark,
-  outfitCardAIBadge: commonColors.indigo,
-  outfitCardAIText: commonColors.white,
+      tabBackground: commonColors.white,
+      tabActive: accent600,
+      tabActiveText: commonColors.white,
+      tabInactiveText: commonColors.gray,
+      tabBorder: commonColors.grayLight,
 
-  starFilled: commonColors.copper,
-  starEmpty: commonColors.grayLight,
+      bottomBarBackground: commonColors.white,
+      bottomBarBorder: commonColors.grayLight,
+      bottomBarActive: accent600,
+      bottomBarInactive: commonColors.gray,
 
-  tagBackground: commonColors.grayLight,
-  tagText: commonColors.grayDark,
-  tagActiveBackground: commonColors.indigo,
-  tagActiveText: commonColors.white,
+      outfitCardBackground: commonColors.white,
+      outfitCardBorder: commonColors.grayLight,
+      outfitCardName: palette.primary,
+      outfitCardMosaicBackground: commonColors.offWhite,
+      outfitCardSourceBadge: commonColors.grayLight,
+      outfitCardSourceText: commonColors.grayDark,
+      outfitCardAIBadge: accent600,
+      outfitCardAIText: commonColors.white,
 
-  emptyIcon: commonColors.grayLight,
-  emptyText: commonColors.navyDark,
-  emptySubtitle: commonColors.gray,
+      starFilled: accent600,
+      starEmpty: commonColors.grayLight,
 
-  closetCategoryText: commonColors.navyDark,
-  closetItemBackground: commonColors.white,
-  closetItemBorder: commonColors.grayLight,
-  closetItemSelectedBorder: commonColors.indigo,
-  closetItemSelectedBadge: commonColors.indigo,
-  closetItemSelectedCheck: commonColors.white,
+      tagBackground: commonColors.grayLight,
+      tagText: commonColors.grayDark,
+      tagActiveBackground: accent600,
+      tagActiveText: commonColors.white,
 
-  creatorPreviewBackground: commonColors.white,
-  creatorPreviewBorder: commonColors.grayLight,
-  creatorPreviewEmpty: commonColors.offWhite,
-  creatorPreviewEmptyText: commonColors.gray,
-  creatorInputBackground: commonColors.offWhite,
-  creatorInputBorder: commonColors.grayLight,
-  creatorInputText: commonColors.navyDark,
-  creatorInputLabel: commonColors.grayDark,
-  creatorInputPlaceholder: commonColors.gray,
+      cardTagChipBackground: palette.accent[50],
+      cardTagChipText: palette.accent[700],
 
-  buttonPrimary: commonColors.indigo,
-  buttonPrimaryText: commonColors.white,
-  buttonSecondary: commonColors.offWhite,
-  buttonSecondaryText: commonColors.navyDark,
-  buttonSecondaryBorder: commonColors.grayLight,
-  buttonDanger: '#FEF2F2',
-  buttonDangerText: commonColors.errorRed,
-  buttonDangerBorder: '#FECACA',
+      emptyIcon: commonColors.grayLight,
+      emptyText: palette.primary,
+      emptySubtitle: commonColors.gray,
 
-  modalBackground: commonColors.white,
-  modalBackdrop: commonColors.overlayDark,
-  modalTitle: commonColors.navyDark,
-  modalSubtitle: commonColors.grayDark,
-  modalBorder: commonColors.grayLight,
-  modalLabel: commonColors.grayDark,
-  modalInputBackground: commonColors.offWhite,
-  modalInputBorder: commonColors.grayLight,
-  modalInputText: commonColors.navyDark,
-  modalInputPlaceholder: commonColors.gray,
+      closetCategoryText: palette.primary,
+      closetItemBackground: commonColors.white,
+      closetItemBorder: commonColors.grayLight,
+      closetItemSelectedBorder: accent600,
+      closetItemSelectedBadge: accent600,
+      closetItemSelectedCheck: commonColors.white,
 
-  actionIcon: commonColors.navyDark,
-  actionText: commonColors.navyDark,
-  actionDivider: commonColors.grayLight,
-  actionDangerText: commonColors.errorRed,
+      creatorPreviewBackground: commonColors.white,
+      creatorPreviewBorder: commonColors.grayLight,
+      creatorPreviewEmpty: commonColors.offWhite,
+      creatorPreviewEmptyText: commonColors.gray,
+      creatorInputBackground: commonColors.offWhite,
+      creatorInputBorder: commonColors.grayLight,
+      creatorInputText: palette.primary,
+      creatorInputLabel: commonColors.grayDark,
+      creatorInputPlaceholder: commonColors.gray,
 
-  addBtnBackground: '#EDE9FE',
-  addBtnBorder: '#C4B5FD',
-  addBtnIcon: commonColors.indigoLight,
+      buttonPrimary: accent600,
+      buttonPrimaryText: commonColors.white,
+      buttonSecondary: commonColors.offWhite,
+      buttonSecondaryText: palette.primary,
+      buttonSecondaryBorder: commonColors.grayLight,
+      buttonDanger: '#FEF2F2',
+      buttonDangerText: commonColors.errorRed,
+      buttonDangerBorder: '#FECACA',
 
-  fabBackground: commonColors.indigoLight,
-  fabIcon: commonColors.white,
+      modalBackground: commonColors.white,
+      modalBackdrop: commonColors.overlayDark,
+      modalTitle: palette.primary,
+      modalSubtitle: commonColors.grayDark,
+      modalBorder: commonColors.grayLight,
+      modalLabel: commonColors.grayDark,
+      modalInputBackground: commonColors.offWhite,
+      modalInputBorder: commonColors.grayLight,
+      modalInputText: palette.primary,
+      modalInputPlaceholder: commonColors.gray,
 
-  filterPillBackground: commonColors.white,
-  filterPillBorder: commonColors.grayLight,
-  filterPillText: commonColors.grayDark,
-  filterPillActiveBackground: commonColors.indigo,
-  filterPillActiveBorder: commonColors.indigo,
-  filterPillActiveText: commonColors.white,
+      actionIcon: palette.primary,
+      actionText: palette.primary,
+      actionDivider: commonColors.grayLight,
+      actionDangerText: commonColors.errorRed,
 
-  essenceSectionBackground: commonColors.white,
-  essenceSectionBorder: commonColors.grayLight,
-  essenceInputBackground: '#F9FAFB',
-  essenceInputBorder: commonColors.grayLight,
-  essenceInputText: commonColors.navyDark,
-  essenceInputPlaceholder: commonColors.gray,
-  essenceIconIndigo: commonColors.indigo,
-  essenceIconPurple: '#7C3AED',
-  essenceIconEmerald: '#059669',
-  essenceAnalysisBackground: '#F9FAFB',
-  essenceAnalysisBorder: commonColors.grayLight,
-  essenceAnalysisText: commonColors.grayDark,
-  essenceHeroBg: '#FFFBEB',
-  essenceHeroBorder: '#FDE68A',
-  essenceHeroTitle: commonColors.navyDark,
-  essenceHeroSubtitle: commonColors.grayDark,
-  essenceCardSkyBg: '#F0F9FF',
-  essenceCardSkyBorder: '#BAE6FD',
-  essenceCardSkyTitle: '#0C4A6E',
-  essenceCardPurpleBg: '#FAF5FF',
-  essenceCardPurpleBorder: '#DDD6FE',
-  essenceCardPurpleTitle: '#4C1D95',
-  essenceCardEmeraldBg: '#ECFDF5',
-  essenceCardEmeraldBorder: '#A7F3D0',
-  essenceCardEmeraldTitle: '#064E3B',
-  essenceCardAlertBg: '#FFF7ED',
-  essenceCardAlertBorder: '#FED7AA',
-  essenceCardAlertTitle: '#7C2D12',
-  essenceCardBody: '#374151',
-  essenceToggleActive: commonColors.indigo,
-  essenceToggleInactive: '#D1D5DB',
-  essenceGemsBadgeBackground: '#F5F3FF',
-  essenceGemsBadgeBorder: '#DDD6FE',
-  essenceGemsBadgeText: '#6D28D9',
-  essenceVipOverlay: 'rgba(250,245,255,0.85)',
-};
+      // Fixed violet accent (not theme-tied), matching the reference's ad hoc
+      // "add" button styling elsewhere in the app.
+      addBtnBackground: '#EDE9FE',
+      addBtnBorder: '#C4B5FD',
+      addBtnIcon: accent400,
 
-const stylesDark: StylesTheme['styles'] = {
-  background: commonColors.darkSurface,
-  headerTitle: commonColors.offWhite,
-  headerSubtitle: commonColors.gray,
+      // "Create with AI" card — the reference ties this to the active theme's
+      // accent (bg-accent-50, border-accent-200, text-accent-600/900/700).
+      createAiBackground: palette.accent[100],
+      createAiBorder: palette.accent[200],
+      createAiIcon: accent600,
+      createAiTitle: palette.accent[900],
+      createAiDesc: palette.accent[700],
 
-  tabBackground: commonColors.darkCard,
-  tabActive: commonColors.indigo,
-  tabActiveText: commonColors.white,
-  tabInactiveText: commonColors.gray,
-  tabBorder: commonColors.darkBorder,
+      createOutfitsIcon: palette.accent[500],
 
-  bottomBarBackground: commonColors.darkCard,
-  bottomBarBorder: commonColors.darkBorder,
-  bottomBarActive: commonColors.white,
-  bottomBarInactive: 'rgba(255,255,255,0.40)',
+      fabBackground: accent600,
+      fabIcon: commonColors.white,
 
-  outfitCardBackground: commonColors.darkCard,
-  outfitCardBorder: commonColors.darkBorder,
-  outfitCardName: commonColors.offWhite,
-  outfitCardMosaicBackground: commonColors.darkCard,
-  outfitCardSourceBadge: commonColors.darkCard,
-  outfitCardSourceText: commonColors.gray,
-  outfitCardAIBadge: commonColors.indigo,
-  outfitCardAIText: commonColors.white,
+      filterPillBackground: commonColors.white,
+      filterPillBorder: commonColors.grayLight,
+      filterPillText: commonColors.grayDark,
+      filterPillActiveBackground: accent600,
+      filterPillActiveBorder: accent600,
+      filterPillActiveText: commonColors.white,
 
-  starFilled: commonColors.copper,
-  starEmpty: commonColors.darkBorder,
+      essenceSectionBackground: commonColors.white,
+      essenceSectionBorder: commonColors.grayLight,
+      essenceInputBackground: '#F9FAFB',
+      essenceInputBorder: commonColors.grayLight,
+      essenceInputText: palette.primary,
+      essenceInputPlaceholder: commonColors.gray,
+      essenceIconIndigo: accent600,
+      essenceIconPurple: '#7C3AED',
+      essenceIconEmerald: '#059669',
+      essenceAnalysisBackground: '#F9FAFB',
+      essenceAnalysisBorder: commonColors.grayLight,
+      essenceAnalysisText: commonColors.grayDark,
+      essenceHeroBg: '#FFFBEB',
+      essenceHeroBorder: '#FDE68A',
+      essenceHeroTitle: palette.primary,
+      essenceHeroSubtitle: commonColors.grayDark,
+      essenceCardSkyBg: '#F0F9FF',
+      essenceCardSkyBorder: '#BAE6FD',
+      essenceCardSkyTitle: '#0C4A6E',
+      essenceCardPurpleBg: '#FAF5FF',
+      essenceCardPurpleBorder: '#DDD6FE',
+      essenceCardPurpleTitle: '#4C1D95',
+      essenceCardEmeraldBg: '#ECFDF5',
+      essenceCardEmeraldBorder: '#A7F3D0',
+      essenceCardEmeraldTitle: '#064E3B',
+      essenceCardAlertBg: '#FFF7ED',
+      essenceCardAlertBorder: '#FED7AA',
+      essenceCardAlertTitle: '#7C2D12',
+      essenceCardBody: '#374151',
+      essenceToggleActive: accent600,
+      essenceToggleInactive: '#D1D5DB',
+      essenceGemsBadgeBackground: '#F5F3FF',
+      essenceGemsBadgeBorder: '#DDD6FE',
+      essenceGemsBadgeText: '#6D28D9',
+      essenceVipOverlay: 'rgba(250,245,255,0.85)',
+    },
+  };
+}
 
-  tagBackground: commonColors.darkCard,
-  tagText: commonColors.gray,
-  tagActiveBackground: commonColors.indigo,
-  tagActiveText: commonColors.white,
+// ─── Dark-structural variant — used only by `boutique` ────────────────────────
 
-  emptyIcon: commonColors.darkBorder,
-  emptyText: commonColors.offWhite,
-  emptySubtitle: commonColors.gray,
+function buildStylesDark(palette: BrandPalette): StylesTheme {
+  const { accentDefault } = palette;
+  const accent400 = palette.accent[400];
 
-  closetCategoryText: commonColors.offWhite,
-  closetItemBackground: commonColors.darkCard,
-  closetItemBorder: commonColors.darkBorder,
-  closetItemSelectedBorder: commonColors.indigo,
-  closetItemSelectedBadge: commonColors.indigo,
-  closetItemSelectedCheck: commonColors.white,
+  return {
+    ...getCommonTheme(palette),
+    styles: {
+      background: commonColors.darkSurface,
+      headerTitle: commonColors.offWhite,
+      headerSubtitle: commonColors.gray,
 
-  creatorPreviewBackground: commonColors.darkCard,
-  creatorPreviewBorder: commonColors.darkBorder,
-  creatorPreviewEmpty: commonColors.darkCard,
-  creatorPreviewEmptyText: commonColors.gray,
-  creatorInputBackground: commonColors.darkCard,
-  creatorInputBorder: commonColors.darkBorder,
-  creatorInputText: commonColors.offWhite,
-  creatorInputLabel: commonColors.gray,
-  creatorInputPlaceholder: commonColors.grayDark,
+      tabBackground: commonColors.darkCard,
+      tabActive: accentDefault,
+      tabActiveText: commonColors.white,
+      tabInactiveText: commonColors.gray,
+      tabBorder: commonColors.darkBorder,
 
-  buttonPrimary: commonColors.indigoLight,
-  buttonPrimaryText: commonColors.white,
-  buttonSecondary: commonColors.darkCard,
-  buttonSecondaryText: commonColors.offWhite,
-  buttonSecondaryBorder: commonColors.darkBorder,
-  buttonDanger: '#2D1515',
-  buttonDangerText: '#E05A5E',
-  buttonDangerBorder: '#5C1A1A',
+      bottomBarBackground: commonColors.darkCard,
+      bottomBarBorder: commonColors.darkBorder,
+      bottomBarActive: accentDefault,
+      bottomBarInactive: 'rgba(255,255,255,0.40)',
 
-  modalBackground: commonColors.darkCard,
-  modalBackdrop: 'rgba(0,0,0,0.80)',
-  modalTitle: commonColors.offWhite,
-  modalSubtitle: commonColors.gray,
-  modalBorder: commonColors.darkBorder,
-  modalLabel: commonColors.gray,
-  modalInputBackground: commonColors.darkCard,
-  modalInputBorder: commonColors.darkBorder,
-  modalInputText: commonColors.offWhite,
-  modalInputPlaceholder: commonColors.grayDark,
+      outfitCardBackground: commonColors.darkCard,
+      outfitCardBorder: commonColors.darkBorder,
+      outfitCardName: commonColors.offWhite,
+      outfitCardMosaicBackground: commonColors.darkCard,
+      outfitCardSourceBadge: commonColors.darkCard,
+      outfitCardSourceText: commonColors.gray,
+      outfitCardAIBadge: accentDefault,
+      outfitCardAIText: commonColors.white,
 
-  actionIcon: commonColors.offWhite,
-  actionText: commonColors.offWhite,
-  actionDivider: commonColors.darkBorder,
-  actionDangerText: '#E05A5E',
+      starFilled: accentDefault,
+      starEmpty: commonColors.darkBorder,
 
-  addBtnBackground: 'rgba(99,102,241,0.15)',
-  addBtnBorder: 'rgba(99,102,241,0.35)',
-  addBtnIcon: '#818CF8',
+      tagBackground: commonColors.darkCard,
+      tagText: commonColors.gray,
+      tagActiveBackground: accentDefault,
+      tagActiveText: commonColors.white,
 
-  fabBackground: commonColors.indigo,
-  fabIcon: commonColors.white,
+      cardTagChipBackground: withAlpha(accentDefault, 0.4),
+      cardTagChipText: palette.accent[300],
 
-  filterPillBackground: commonColors.darkCard,
-  filterPillBorder: commonColors.darkBorder,
-  filterPillText: commonColors.gray,
-  filterPillActiveBackground: commonColors.white,
-  filterPillActiveBorder: commonColors.white,
-  filterPillActiveText: commonColors.navyDark,
+      emptyIcon: commonColors.darkBorder,
+      emptyText: commonColors.offWhite,
+      emptySubtitle: commonColors.gray,
 
-  essenceSectionBackground: commonColors.darkCard,
-  essenceSectionBorder: commonColors.darkBorder,
-  essenceInputBackground: commonColors.darkSurface,
-  essenceInputBorder: commonColors.darkBorder,
-  essenceInputText: commonColors.offWhite,
-  essenceInputPlaceholder: commonColors.grayDark,
-  essenceIconIndigo: '#818CF8',
-  essenceIconPurple: '#A78BFA',
-  essenceIconEmerald: '#34D399',
-  essenceAnalysisBackground: commonColors.darkSurface,
-  essenceAnalysisBorder: commonColors.darkBorder,
-  essenceAnalysisText: commonColors.gray,
-  essenceHeroBg: 'rgba(120,53,15,0.25)',
-  essenceHeroBorder: 'rgba(180,83,9,0.3)',
-  essenceHeroTitle: commonColors.offWhite,
-  essenceHeroSubtitle: commonColors.gray,
-  essenceCardSkyBg: 'rgba(12,74,110,0.25)',
-  essenceCardSkyBorder: 'rgba(14,116,144,0.3)',
-  essenceCardSkyTitle: '#BAE6FD',
-  essenceCardPurpleBg: 'rgba(76,29,149,0.2)',
-  essenceCardPurpleBorder: 'rgba(109,40,217,0.3)',
-  essenceCardPurpleTitle: '#DDD6FE',
-  essenceCardEmeraldBg: 'rgba(6,78,59,0.2)',
-  essenceCardEmeraldBorder: 'rgba(16,185,129,0.3)',
-  essenceCardEmeraldTitle: '#A7F3D0',
-  essenceCardAlertBg: 'rgba(124,45,18,0.2)',
-  essenceCardAlertBorder: 'rgba(234,88,12,0.3)',
-  essenceCardAlertTitle: '#FED7AA',
-  essenceCardBody: '#D1D5DB',
-  essenceToggleActive: '#818CF8',
-  essenceToggleInactive: '#374151',
-  essenceGemsBadgeBackground: 'rgba(76,29,149,0.2)',
-  essenceGemsBadgeBorder: 'rgba(109,40,217,0.3)',
-  essenceGemsBadgeText: '#A78BFA',
-  essenceVipOverlay: 'rgba(30,18,60,0.85)',
-};
+      closetCategoryText: commonColors.offWhite,
+      closetItemBackground: commonColors.darkCard,
+      closetItemBorder: commonColors.darkBorder,
+      closetItemSelectedBorder: accentDefault,
+      closetItemSelectedBadge: accentDefault,
+      closetItemSelectedCheck: commonColors.white,
 
-export interface StylesThemeInstance extends StylesTheme {}
+      creatorPreviewBackground: commonColors.darkCard,
+      creatorPreviewBorder: commonColors.darkBorder,
+      creatorPreviewEmpty: commonColors.darkCard,
+      creatorPreviewEmptyText: commonColors.gray,
+      creatorInputBackground: commonColors.darkCard,
+      creatorInputBorder: commonColors.darkBorder,
+      creatorInputText: commonColors.offWhite,
+      creatorInputLabel: commonColors.gray,
+      creatorInputPlaceholder: commonColors.grayDark,
 
-export const stylesLightTheme: StylesThemeInstance = {
-  ...lightTheme,
-  styles: stylesLight,
-};
+      buttonPrimary: accent400,
+      buttonPrimaryText: commonColors.white,
+      buttonSecondary: commonColors.darkCard,
+      buttonSecondaryText: commonColors.offWhite,
+      buttonSecondaryBorder: commonColors.darkBorder,
+      buttonDanger: '#2D1515',
+      buttonDangerText: '#E05A5E',
+      buttonDangerBorder: '#5C1A1A',
 
-export const stylesDarkTheme: StylesThemeInstance = {
-  ...darkTheme,
-  styles: stylesDark,
-};
+      modalBackground: commonColors.darkCard,
+      modalBackdrop: 'rgba(0,0,0,0.80)',
+      modalTitle: commonColors.offWhite,
+      modalSubtitle: commonColors.gray,
+      modalBorder: commonColors.darkBorder,
+      modalLabel: commonColors.gray,
+      modalInputBackground: commonColors.darkCard,
+      modalInputBorder: commonColors.darkBorder,
+      modalInputText: commonColors.offWhite,
+      modalInputPlaceholder: commonColors.grayDark,
+
+      actionIcon: commonColors.offWhite,
+      actionText: commonColors.offWhite,
+      actionDivider: commonColors.darkBorder,
+      actionDangerText: '#E05A5E',
+
+      // These were literally `rgba(99,102,241,...)` / `#818CF8` in the
+      // reference — indigoLight's own rgb values re-expressed as translucent
+      // overlays for dark surfaces, so they follow the same accent[400] swap.
+      addBtnBackground: withAlpha(accent400, 0.15),
+      addBtnBorder: withAlpha(accent400, 0.35),
+      addBtnIcon: accent400,
+
+      createAiBackground: withAlpha(accentDefault, 0.3),
+      createAiBorder: withAlpha(accentDefault, 0.5),
+      createAiIcon: accent400,
+      createAiTitle: palette.accent[200],
+      createAiDesc: palette.accent[300],
+
+      createOutfitsIcon: palette.accent[500],
+
+      fabBackground: accentDefault,
+      fabIcon: commonColors.white,
+
+      filterPillBackground: commonColors.darkCard,
+      filterPillBorder: commonColors.darkBorder,
+      filterPillText: commonColors.gray,
+      filterPillActiveBackground: accentDefault,
+      filterPillActiveBorder: accentDefault,
+      filterPillActiveText: commonColors.white,
+
+      essenceSectionBackground: commonColors.darkCard,
+      essenceSectionBorder: commonColors.darkBorder,
+      essenceInputBackground: commonColors.darkSurface,
+      essenceInputBorder: commonColors.darkBorder,
+      essenceInputText: commonColors.offWhite,
+      essenceInputPlaceholder: commonColors.grayDark,
+      essenceIconIndigo: accent400,
+      essenceIconPurple: '#A78BFA',
+      essenceIconEmerald: '#34D399',
+      essenceAnalysisBackground: commonColors.darkSurface,
+      essenceAnalysisBorder: commonColors.darkBorder,
+      essenceAnalysisText: commonColors.gray,
+      essenceHeroBg: 'rgba(120,53,15,0.25)',
+      essenceHeroBorder: 'rgba(180,83,9,0.3)',
+      essenceHeroTitle: commonColors.offWhite,
+      essenceHeroSubtitle: commonColors.gray,
+      essenceCardSkyBg: 'rgba(12,74,110,0.25)',
+      essenceCardSkyBorder: 'rgba(14,116,144,0.3)',
+      essenceCardSkyTitle: '#BAE6FD',
+      essenceCardPurpleBg: 'rgba(76,29,149,0.2)',
+      essenceCardPurpleBorder: 'rgba(109,40,217,0.3)',
+      essenceCardPurpleTitle: '#DDD6FE',
+      essenceCardEmeraldBg: 'rgba(6,78,59,0.2)',
+      essenceCardEmeraldBorder: 'rgba(16,185,129,0.3)',
+      essenceCardEmeraldTitle: '#A7F3D0',
+      essenceCardAlertBg: 'rgba(124,45,18,0.2)',
+      essenceCardAlertBorder: 'rgba(234,88,12,0.3)',
+      essenceCardAlertTitle: '#FED7AA',
+      essenceCardBody: '#D1D5DB',
+      essenceToggleActive: accent400,
+      essenceToggleInactive: '#374151',
+      essenceGemsBadgeBackground: 'rgba(76,29,149,0.2)',
+      essenceGemsBadgeBorder: 'rgba(109,40,217,0.3)',
+      essenceGemsBadgeText: '#A78BFA',
+      essenceVipOverlay: 'rgba(30,18,60,0.85)',
+    },
+  };
+}
+
+export function getStylesTheme(palette: BrandPalette): StylesTheme {
+  return palette.dark ? buildStylesDark(palette) : buildStylesLight(palette);
+}

@@ -110,17 +110,17 @@ function AIOutfitCreator({ visible, closetItems, closetLoading, saving, onClose,
           >
             <ArrowLeftIcon size={22} color={s.headerTitle} />
           </Touchable>
-          <SparklesIcon size={20} color="#4F46E5" />
+          <SparklesIcon size={20} color={s.buttonPrimary} />
           <Text style={[styles.headerTitle, { color: s.headerTitle }]}>{t('styles.aiCreatorTitle')}</Text>
         </View>
 
         {/* Loading screen */}
         {step === 'loading' && (
           <View style={styles.loadingContainer}>
-            <SparklesIcon size={56} color="#4F46E5" />
+            <SparklesIcon size={56} color={s.buttonPrimary} />
             <Text style={[styles.loadingTitle, { color: s.headerTitle }]}>{t('styles.aiCreatorGenerating')}</Text>
             <Text style={[styles.loadingHint, { color: s.headerSubtitle }]}>{t('styles.aiCreatorGeneratingHint')}</Text>
-            <ActivityIndicator color="#4F46E5" size="large" style={styles.loadingSpinner} />
+            <ActivityIndicator color={s.buttonPrimary} size="large" style={styles.loadingSpinner} />
           </View>
         )}
 
@@ -183,7 +183,11 @@ function AIOutfitCreator({ visible, closetItems, closetLoading, saving, onClose,
                   onPress={handleGenerate}
                   disabled={!prompt.trim()}
                   borderRadius={16}
-                  style={[styles.generateBtn, !prompt.trim() && styles.disabled]}
+                  style={[
+                    styles.generateBtn,
+                    { backgroundColor: s.buttonPrimary },
+                    !prompt.trim() && styles.disabled,
+                  ]}
                 >
                   <SparklesIcon size={20} color="#fff" />
                   <Text style={styles.generateBtnText}>{t('styles.aiCreatorGenerate')}</Text>
@@ -273,7 +277,7 @@ function AIOutfitCreator({ visible, closetItems, closetLoading, saving, onClose,
                 borderRadius={14}
                 style={[
                   styles.saveBtn,
-                  { backgroundColor: '#4F46E5' },
+                  { backgroundColor: s.buttonPrimary },
                   (saving || !outfitName.trim() || suggestedIds.length === 0) && styles.disabled,
                 ]}
               >
@@ -351,7 +355,6 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 18,
     borderRadius: 16,
-    backgroundColor: '#4F46E5',
   },
   generateBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 

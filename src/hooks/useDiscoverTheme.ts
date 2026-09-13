@@ -1,13 +1,12 @@
 import {
-  discoverLightTheme,
-  discoverDarkTheme,
   DiscoverThemeInstance,
+  getDiscoverTheme,
 } from '@features/discover/theme';
-import useAppColorScheme from './useAppColorScheme';
+import useActiveThemePalette from './useActiveThemePalette';
 
 function useDiscoverTheme(): DiscoverThemeInstance {
-  const colorScheme = useAppColorScheme();
-  return colorScheme === 'dark' ? discoverDarkTheme : discoverLightTheme;
+  const palette = useActiveThemePalette();
+  return getDiscoverTheme(palette);
 }
 
 export default useDiscoverTheme;

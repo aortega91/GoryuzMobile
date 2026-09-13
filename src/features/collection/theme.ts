@@ -1,5 +1,6 @@
 import commonColors from '@theme/commonColors';
-import { Theme, lightTheme, darkTheme } from '@theme/index';
+import { Theme, getCommonTheme } from '@theme/index';
+import { BrandPalette, withAlpha } from '@theme/palettes';
 
 export interface CollectionTheme extends Theme {
   collection: {
@@ -74,6 +75,10 @@ export interface CollectionTheme extends Theme {
     secondLifeOptionText: string;
     secondLifeOptionSubtext: string;
     secondLifeActiveBackground: string;
+
+    // "Add from camera" icon in the add-item sheet — theme-tied in the
+    // reference, unlike its "from gallery" sibling which stays fixed purple.
+    cameraPickIcon: string;
     secondLifeActiveBorder: string;
     secondLifeActiveIcon: string;
 
@@ -81,162 +86,178 @@ export interface CollectionTheme extends Theme {
   };
 }
 
-export const collectionLightTheme: CollectionTheme = {
-  ...lightTheme,
-  collection: {
-    background: commonColors.offWhite,
-    headerBackground: commonColors.white,
-    headerBorder: commonColors.grayLight,
-    headerTitle: commonColors.navyDark,
+function buildCollectionLight(palette: BrandPalette): CollectionTheme {
+  const accent600 = palette.accent[600];
+  const accent400 = palette.accent[400];
 
-    searchBackground: '#F3F4F6',
-    searchBorder: 'transparent',
-    searchText: commonColors.navyDark,
-    searchPlaceholder: commonColors.gray,
-    searchIcon: commonColors.gray,
+  return {
+    ...getCommonTheme(palette),
+    collection: {
+      background: commonColors.offWhite,
+      headerBackground: commonColors.white,
+      headerBorder: commonColors.grayLight,
+      headerTitle: palette.primary,
 
-    tabBackground: commonColors.white,
-    tabBorder: commonColors.grayLight,
-    tabText: commonColors.grayDark,
-    tabActiveBackground: commonColors.indigo,
-    tabActiveBorder: commonColors.indigo,
-    tabActiveText: commonColors.navyDark,
-    tabIndicator: commonColors.indigo,
-    tabBadgeBackground: '#F3F4F6',
-    tabBadgeText: commonColors.grayDark,
-    tabBadgeActiveBackground: '#E8EAF0',
-    tabBadgeActiveText: commonColors.navyDark,
+      searchBackground: '#F3F4F6',
+      searchBorder: 'transparent',
+      searchText: palette.primary,
+      searchPlaceholder: commonColors.gray,
+      searchIcon: commonColors.gray,
 
-    cardBackground: commonColors.white,
-    cardBorder: commonColors.grayLight,
-    cardName: commonColors.navyDark,
-    cardActionIcon: commonColors.grayDark,
+      tabBackground: commonColors.white,
+      tabBorder: commonColors.grayLight,
+      tabText: commonColors.grayDark,
+      tabActiveBackground: accent600,
+      tabActiveBorder: accent600,
+      tabActiveText: palette.primary,
+      tabIndicator: accent600,
+      tabBadgeBackground: '#F3F4F6',
+      tabBadgeText: commonColors.grayDark,
+      tabBadgeActiveBackground: '#E8EAF0',
+      tabBadgeActiveText: palette.primary,
 
-    emptyIcon: commonColors.gray,
-    emptyTitle: commonColors.navyDark,
-    emptySubtitle: commonColors.gray,
+      cardBackground: commonColors.white,
+      cardBorder: commonColors.grayLight,
+      cardName: palette.primary,
+      cardActionIcon: commonColors.grayDark,
 
-    fabBackground: commonColors.indigo,
-    fabIcon: commonColors.white,
+      emptyIcon: commonColors.gray,
+      emptyTitle: palette.primary,
+      emptySubtitle: commonColors.gray,
 
-    modalBackground: commonColors.white,
-    modalBackdrop: 'rgba(0,0,0,0.55)',
-    modalTitle: commonColors.navyDark,
-    modalSubtitle: commonColors.grayDark,
-    modalBorder: commonColors.grayLight,
+      fabBackground: accent600,
+      fabIcon: commonColors.white,
 
-    inputBackground: commonColors.white,
-    inputBorder: '#D1D5DB',
-    inputText: commonColors.navyDark,
-    inputLabel: commonColors.grayDark,
+      modalBackground: commonColors.white,
+      modalBackdrop: 'rgba(0,0,0,0.55)',
+      modalTitle: palette.primary,
+      modalSubtitle: commonColors.grayDark,
+      modalBorder: commonColors.grayLight,
 
-    buttonPrimary: commonColors.indigo,
-    buttonPrimaryText: commonColors.white,
-    buttonSecondary: commonColors.white,
-    buttonSecondaryText: commonColors.grayDark,
-    buttonSecondaryBorder: '#D1D5DB',
-    buttonDanger: '#DC2626',
-    buttonDangerText: commonColors.white,
+      inputBackground: commonColors.white,
+      inputBorder: '#D1D5DB',
+      inputText: palette.primary,
+      inputLabel: commonColors.grayDark,
 
-    gemBadgeBackground: '#EDE9F7',
-    gemBadgeText: '#5B21B6',
-    gemBadgeBorder: '#C4B5FD',
+      buttonPrimary: accent600,
+      buttonPrimaryText: commonColors.white,
+      buttonSecondary: commonColors.white,
+      buttonSecondaryText: commonColors.grayDark,
+      buttonSecondaryBorder: '#D1D5DB',
+      buttonDanger: '#DC2626',
+      buttonDangerText: commonColors.white,
 
-    noticeBackground: '#EFF6FF',
-    noticeText: '#1D4ED8',
-    noticeBorder: '#BFDBFE',
+      gemBadgeBackground: '#EDE9F7',
+      gemBadgeText: '#5B21B6',
+      gemBadgeBorder: '#C4B5FD',
 
-    secondLifeSell: '#059669',
-    secondLifeGift: '#7C3AED',
-    secondLifeExchange: '#D97706',
-    secondLifeOptionBackground: commonColors.white,
-    secondLifeOptionBorder: commonColors.grayLight,
-    secondLifeOptionText: commonColors.navyDark,
-    secondLifeOptionSubtext: commonColors.gray,
-    secondLifeActiveBackground: '#F0FDF4',
-    secondLifeActiveBorder: '#059669',
-    secondLifeActiveIcon: '#059669',
+      noticeBackground: '#EFF6FF',
+      noticeText: '#1D4ED8',
+      noticeBorder: '#BFDBFE',
 
-    itemSelectedAccent: commonColors.indigoLight,
-  },
-};
+      secondLifeSell: '#059669',
+      secondLifeGift: '#7C3AED',
+      secondLifeExchange: '#D97706',
+      secondLifeOptionBackground: commonColors.white,
+      secondLifeOptionBorder: commonColors.grayLight,
+      secondLifeOptionText: palette.primary,
+      secondLifeOptionSubtext: commonColors.gray,
+      secondLifeActiveBackground: '#F0FDF4',
+      cameraPickIcon: accent600,
+      secondLifeActiveBorder: '#059669',
+      secondLifeActiveIcon: '#059669',
 
-export const collectionDarkTheme: CollectionTheme = {
-  ...darkTheme,
-  collection: {
-    background: commonColors.darkSurface,
-    headerBackground: commonColors.darkCard,
-    headerBorder: commonColors.darkBorder,
-    headerTitle: commonColors.white,
+      itemSelectedAccent: accent400,
+    },
+  };
+}
 
-    searchBackground: commonColors.darkCard,
-    searchBorder: 'transparent',
-    searchText: commonColors.white,
-    searchPlaceholder: 'rgba(255,255,255,0.40)',
-    searchIcon: 'rgba(255,255,255,0.40)',
+function buildCollectionDark(palette: BrandPalette): CollectionTheme {
+  const accent400 = palette.accent[400];
+  const { accentDefault } = palette;
 
-    tabBackground: commonColors.darkCard,
-    tabBorder: commonColors.darkBorder,
-    tabText: 'rgba(255,255,255,0.55)',
-    tabActiveBackground: commonColors.white,
-    tabActiveBorder: commonColors.white,
-    tabActiveText: commonColors.white,
-    tabIndicator: commonColors.white,
-    tabBadgeBackground: commonColors.darkCard,
-    tabBadgeText: 'rgba(255,255,255,0.40)',
-    tabBadgeActiveBackground: 'rgba(255,255,255,0.15)',
-    tabBadgeActiveText: commonColors.white,
+  return {
+    ...getCommonTheme(palette),
+    collection: {
+      background: commonColors.darkSurface,
+      headerBackground: commonColors.darkCard,
+      headerBorder: commonColors.darkBorder,
+      headerTitle: commonColors.white,
 
-    cardBackground: commonColors.darkCard,
-    cardBorder: commonColors.darkBorder,
-    cardName: commonColors.white,
-    cardActionIcon: 'rgba(255,255,255,0.60)',
+      searchBackground: commonColors.darkCard,
+      searchBorder: 'transparent',
+      searchText: commonColors.white,
+      searchPlaceholder: 'rgba(255,255,255,0.40)',
+      searchIcon: 'rgba(255,255,255,0.40)',
 
-    emptyIcon: 'rgba(255,255,255,0.30)',
-    emptyTitle: commonColors.white,
-    emptySubtitle: 'rgba(255,255,255,0.50)',
+      tabBackground: commonColors.darkCard,
+      tabBorder: commonColors.darkBorder,
+      tabText: 'rgba(255,255,255,0.55)',
+      tabActiveBackground: commonColors.white,
+      tabActiveBorder: commonColors.white,
+      tabActiveText: accentDefault,
+      tabIndicator: accentDefault,
+      tabBadgeBackground: commonColors.darkCard,
+      tabBadgeText: 'rgba(255,255,255,0.40)',
+      tabBadgeActiveBackground: withAlpha(accentDefault, 0.4),
+      tabBadgeActiveText: palette.accent[300],
 
-    fabBackground: commonColors.white,
-    fabIcon: commonColors.navyDark,
+      cardBackground: commonColors.darkCard,
+      cardBorder: commonColors.darkBorder,
+      cardName: commonColors.white,
+      cardActionIcon: 'rgba(255,255,255,0.60)',
 
-    modalBackground: commonColors.darkCard,
-    modalBackdrop: 'rgba(0,0,0,0.70)',
-    modalTitle: commonColors.white,
-    modalSubtitle: 'rgba(255,255,255,0.60)',
-    modalBorder: commonColors.darkBorder,
+      emptyIcon: 'rgba(255,255,255,0.30)',
+      emptyTitle: commonColors.white,
+      emptySubtitle: 'rgba(255,255,255,0.50)',
 
-    inputBackground: commonColors.darkCard,
-    inputBorder: commonColors.darkBorder,
-    inputText: commonColors.white,
-    inputLabel: 'rgba(255,255,255,0.60)',
+      fabBackground: accentDefault,
+      fabIcon: commonColors.white,
 
-    buttonPrimary: commonColors.white,
-    buttonPrimaryText: commonColors.navyDark,
-    buttonSecondary: commonColors.darkCard,
-    buttonSecondaryText: 'rgba(255,255,255,0.80)',
-    buttonSecondaryBorder: commonColors.darkBorder,
-    buttonDanger: '#EF4444',
-    buttonDangerText: commonColors.white,
+      modalBackground: commonColors.darkCard,
+      modalBackdrop: 'rgba(0,0,0,0.70)',
+      modalTitle: commonColors.white,
+      modalSubtitle: 'rgba(255,255,255,0.60)',
+      modalBorder: commonColors.darkBorder,
 
-    gemBadgeBackground: '#2D1B69',
-    gemBadgeText: '#C4B5FD',
-    gemBadgeBorder: '#4C1D95',
+      inputBackground: commonColors.darkCard,
+      inputBorder: commonColors.darkBorder,
+      inputText: commonColors.white,
+      inputLabel: 'rgba(255,255,255,0.60)',
 
-    noticeBackground: 'rgba(30,64,175,0.25)',
-    noticeText: '#93C5FD',
-    noticeBorder: 'rgba(59,130,246,0.30)',
+      buttonPrimary: accentDefault,
+      buttonPrimaryText: commonColors.white,
+      buttonSecondary: commonColors.darkCard,
+      buttonSecondaryText: 'rgba(255,255,255,0.80)',
+      buttonSecondaryBorder: commonColors.darkBorder,
+      buttonDanger: '#EF4444',
+      buttonDangerText: commonColors.white,
 
-    secondLifeSell: '#34D399',
-    secondLifeGift: '#A78BFA',
-    secondLifeExchange: '#FCD34D',
-    secondLifeOptionBackground: commonColors.darkCard,
-    secondLifeOptionBorder: commonColors.darkBorder,
-    secondLifeOptionText: commonColors.white,
-    secondLifeOptionSubtext: 'rgba(255,255,255,0.50)',
-    secondLifeActiveBackground: 'rgba(16,185,129,0.15)',
-    secondLifeActiveBorder: '#34D399',
-    secondLifeActiveIcon: '#34D399',
+      gemBadgeBackground: '#2D1B69',
+      gemBadgeText: '#C4B5FD',
+      gemBadgeBorder: '#4C1D95',
 
-    itemSelectedAccent: '#818CF8',
-  },
-};
+      noticeBackground: 'rgba(30,64,175,0.25)',
+      noticeText: '#93C5FD',
+      noticeBorder: 'rgba(59,130,246,0.30)',
+
+      secondLifeSell: '#34D399',
+      secondLifeGift: '#A78BFA',
+      secondLifeExchange: '#FCD34D',
+      secondLifeOptionBackground: commonColors.darkCard,
+      secondLifeOptionBorder: commonColors.darkBorder,
+      secondLifeOptionText: commonColors.white,
+      secondLifeOptionSubtext: 'rgba(255,255,255,0.50)',
+      secondLifeActiveBackground: 'rgba(16,185,129,0.15)',
+      secondLifeActiveBorder: '#34D399',
+      cameraPickIcon: accent400,
+      secondLifeActiveIcon: '#34D399',
+
+      itemSelectedAccent: accent400,
+    },
+  };
+}
+
+export function getCollectionTheme(palette: BrandPalette): CollectionTheme {
+  return palette.dark ? buildCollectionDark(palette) : buildCollectionLight(palette);
+}

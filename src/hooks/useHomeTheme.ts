@@ -1,9 +1,9 @@
-import { HomeTheme, homeLightTheme, homeDarkTheme } from '@features/home/theme';
-import useAppColorScheme from './useAppColorScheme';
+import { HomeTheme, getHomeTheme } from '@features/home/theme';
+import useActiveThemePalette from './useActiveThemePalette';
 
 function useHomeTheme(): HomeTheme {
-  const colorScheme = useAppColorScheme();
-  return colorScheme === 'dark' ? homeDarkTheme : homeLightTheme;
+  const palette = useActiveThemePalette();
+  return getHomeTheme(palette);
 }
 
 export default useHomeTheme;

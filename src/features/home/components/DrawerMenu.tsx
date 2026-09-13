@@ -80,11 +80,6 @@ const NAV_ITEMS: NavItem[] = [
     labelKey: 'menu.community',
     icon: color => <UsersIcon size={20} color={color} />,
   },
-  {
-    module: 'support',
-    labelKey: 'menu.support',
-    icon: color => <LifeBuoyIcon size={20} color={color} />,
-  },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -157,7 +152,7 @@ const DrawerMenu = forwardRef<DrawerMenuHandle, DrawerMenuProps>(
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       {/* Backdrop */}
       <Animated.View
-        style={[styles.backdrop, { opacity: backdropOpacity }]}
+        style={[styles.backdrop, { backgroundColor: dt.drawerBackdrop, opacity: backdropOpacity }]}
         pointerEvents={isOpen ? 'auto' : 'none'}
       >
         <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => { animateClose(); onClose(); }} activeOpacity={1} />
@@ -209,8 +204,19 @@ const DrawerMenu = forwardRef<DrawerMenuHandle, DrawerMenuProps>(
           })}
         </View>
 
-        {/* Logout button — pinned to bottom */}
+        {/* Footer — secondary links (support, then logout), pinned to bottom */}
         <View style={[styles.logoutSection, { borderTopColor: dt.drawerBorder, paddingBottom: insets.bottom + 12 }]}>
+          <Touchable
+            style={styles.footerLink}
+            borderRadius={10}
+            onPress={() => { animateClose(); onNavigate('support'); }}
+          >
+            <LifeBuoyIcon size={18} color={dt.drawerText} />
+            <Text style={[styles.footerLinkText, { color: dt.drawerText }]}>
+              {t('menu.support')}
+            </Text>
+          </Touchable>
+
           <Touchable
             style={styles.logoutButton}
             borderRadius={10}
@@ -233,7 +239,6 @@ const DrawerMenu = forwardRef<DrawerMenuHandle, DrawerMenuProps>(
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.45)',
   },
   drawer: {
     position: 'absolute',
@@ -282,6 +287,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 2,
+  },
+  footerLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+  },
+  footerLinkText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   logoutButton: {
     paddingVertical: 14,

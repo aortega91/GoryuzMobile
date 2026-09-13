@@ -1,5 +1,6 @@
 import commonColors from '@theme/commonColors';
-import { Theme, lightTheme, darkTheme } from '@theme/index';
+import { Theme, getCommonTheme } from '@theme/index';
+import { BrandPalette, withAlpha } from '@theme/palettes';
 
 
 
@@ -49,55 +50,70 @@ export interface AuthTheme extends Theme {
 }
 
 // ─── Light variant ────────────────────────────────────────────────────────────
-export const authLightTheme: AuthTheme = {
-  ...lightTheme,
-  auth: {
-    background: commonColors.slateBackground,
-    surface: commonColors.white,
-    headlineText: commonColors.indigo,
-    bodyText: '#6B7280',
-    accentText: commonColors.copper,
-    logoCardBg: commonColors.white,
-    logoColor: commonColors.indigo,
-    googleButtonBg: commonColors.white,
-    googleButtonText: '#374151',
-    googleButtonBorder: '#E5E7EB',
-    errorText: commonColors.errorRed,
-    separator: 'rgba(0,0,0,0.10)',
-    blob1: 'rgba(99,102,241,0.15)',
-    blob2: 'rgba(168,85,247,0.15)',
-    blob3: 'rgba(244,114,182,0.15)',
-    pillarCardBg: commonColors.white,
-    pillarCardBorder: commonColors.grayLight,
-    pillarIconBg: commonColors.indigoSoft,
-    pillarIconColor: commonColors.indigo,
-    pillarText: '#1F2937',
-  },
-};
+function buildAuthLight(palette: BrandPalette): AuthTheme {
+  const accent600 = palette.accent[600];
+  const accent100 = palette.accent[100];
+
+  return {
+    ...getCommonTheme(palette),
+    auth: {
+      background: commonColors.slateBackground,
+      surface: commonColors.white,
+      headlineText: accent600,
+      bodyText: '#6B7280',
+      accentText: accent600,
+      logoCardBg: commonColors.white,
+      logoColor: accent600,
+      googleButtonBg: commonColors.white,
+      googleButtonText: '#374151',
+      googleButtonBorder: '#E5E7EB',
+      errorText: commonColors.errorRed,
+      separator: 'rgba(0,0,0,0.10)',
+      blob1: 'rgba(99,102,241,0.15)',
+      blob2: 'rgba(168,85,247,0.15)',
+      blob3: 'rgba(244,114,182,0.15)',
+      pillarCardBg: commonColors.white,
+      pillarCardBorder: commonColors.grayLight,
+      pillarIconBg: accent100,
+      pillarIconColor: accent600,
+      pillarText: '#1F2937',
+    },
+  };
+}
 
 // ─── Dark variant ─────────────────────────────────────────────────────────────
-export const authDarkTheme: AuthTheme = {
-  ...darkTheme,
-  auth: {
-    background: commonColors.darkSurface,
-    surface: commonColors.darkCard,
-    headlineText: commonColors.white,
-    bodyText: 'rgba(255,255,255,0.75)',
-    accentText: commonColors.copperLight,
-    logoCardBg: commonColors.darkCard,
-    logoColor: commonColors.white,
-    googleButtonBg: commonColors.white,
-    googleButtonText: commonColors.navyDark,
-    googleButtonBorder: commonColors.grayLight,
-    errorText: '#FF6B6B',
-    separator: 'rgba(255,255,255,0.15)',
-    blob1: 'rgba(99,102,241,0.10)',
-    blob2: 'rgba(168,85,247,0.10)',
-    blob3: 'rgba(244,114,182,0.10)',
-    pillarCardBg: 'rgba(27,42,74,0.85)',
-    pillarCardBorder: 'rgba(46,74,128,0.50)',
-    pillarIconBg: commonColors.navyMid,
-    pillarIconColor: commonColors.white,
-    pillarText: commonColors.white,
-  },
-};
+function buildAuthDark(palette: BrandPalette): AuthTheme {
+  const accent400 = palette.accent[400];
+
+  return {
+    ...getCommonTheme(palette),
+    auth: {
+      background: commonColors.darkSurface,
+      surface: commonColors.darkCard,
+      headlineText: commonColors.white,
+      bodyText: 'rgba(255,255,255,0.75)',
+      accentText: accent400,
+      logoCardBg: commonColors.darkCard,
+      logoColor: commonColors.white,
+      googleButtonBg: commonColors.white,
+      googleButtonText: palette.primary,
+      googleButtonBorder: commonColors.grayLight,
+      errorText: '#FF6B6B',
+      separator: 'rgba(255,255,255,0.15)',
+      blob1: 'rgba(99,102,241,0.10)',
+      blob2: 'rgba(168,85,247,0.10)',
+      blob3: 'rgba(244,114,182,0.10)',
+      pillarCardBg: 'rgba(27,42,74,0.85)',
+      pillarCardBorder: 'rgba(46,74,128,0.50)',
+      // Icon container is a raised surface over the dark card — a translucent
+      // primary tint reads better here than a flat deep accent tone.
+      pillarIconBg: withAlpha(palette.primary, 0.08),
+      pillarIconColor: commonColors.white,
+      pillarText: commonColors.white,
+    },
+  };
+}
+
+export function getAuthTheme(palette: BrandPalette): AuthTheme {
+  return palette.dark ? buildAuthDark(palette) : buildAuthLight(palette);
+}

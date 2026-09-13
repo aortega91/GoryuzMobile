@@ -1,5 +1,6 @@
 import commonColors from '@theme/commonColors';
-import { Theme, lightTheme, darkTheme } from '@theme/index';
+import { Theme, getCommonTheme } from '@theme/index';
+import { BrandPalette, withAlpha } from '@theme/palettes';
 
 export interface ProfileTheme extends Theme {
   profile: {
@@ -65,141 +66,196 @@ export interface ProfileTheme extends Theme {
 
     toastBackground: string;
     toastText: string;
+
+    // Theme picker (matches the reference's 4-swatch grid in Profile > Settings)
+    themePickerCardActiveBorder: string;
+    themePickerCardActiveRing: string;
+    themePickerCardBackground: string;
+    themePickerCardBorder: string;
+    themePickerLabel: string;
+
+    // Bottom submodules bar (account/app/subscription — mobile only)
+    submodulesBarBackground: string;
+    submodulesBarBorder: string;
+    submodulesBarIconInactive: string;
+    submodulesBarTextInactive: string;
+    submodulesBarIconActive: string;
+    submodulesBarTextActive: string;
   };
 }
 
-export const profileLightTheme: ProfileTheme = {
-  ...lightTheme,
-  profile: {
-    background: commonColors.offWhite,
-    headerBackground: commonColors.white,
-    headerBorder: commonColors.grayLight,
-    headerTitle: commonColors.navyDark,
-    headerIcon: commonColors.navyDark,
+function buildProfileLight(palette: BrandPalette): ProfileTheme {
+  const accent600 = palette.accent[600];
+  const accent100 = palette.accent[100];
 
-    sectionTitle: commonColors.navyDark,
-    sectionSubtitle: commonColors.grayDark,
+  return {
+    ...getCommonTheme(palette),
+    profile: {
+      background: commonColors.offWhite,
+      headerBackground: commonColors.white,
+      headerBorder: commonColors.grayLight,
+      headerTitle: palette.primary,
+      headerIcon: palette.primary,
 
-    cardBackground: commonColors.white,
-    cardBorder: commonColors.grayLight,
+      sectionTitle: palette.primary,
+      sectionSubtitle: commonColors.grayDark,
 
-    textPrimary: commonColors.navyDark,
-    textSecondary: commonColors.grayDark,
+      cardBackground: commonColors.white,
+      cardBorder: commonColors.grayLight,
 
-    inputBackground: commonColors.white,
-    inputBorder: '#D1D5DB',
-    inputText: commonColors.navyDark,
-    inputBorderFocused: commonColors.indigo,
+      textPrimary: palette.primary,
+      textSecondary: commonColors.grayDark,
 
-    fieldLabel: commonColors.grayDark,
-    fieldReadonlyBackground: '#F3F4F6',
-    fieldReadonlyText: commonColors.gray,
+      inputBackground: commonColors.white,
+      inputBorder: '#D1D5DB',
+      inputText: palette.primary,
+      inputBorderFocused: accent600,
 
-    pickerActiveBackground: commonColors.indigoSoft,
+      fieldLabel: commonColors.grayDark,
+      fieldReadonlyBackground: '#F3F4F6',
+      fieldReadonlyText: commonColors.gray,
 
-    avatarBorder: commonColors.grayLight,
+      pickerActiveBackground: accent100,
 
-    planBadgeFreeBackground: '#F3F4F6',
-    planBadgeFreeText: commonColors.grayDark,
-    planBadgePremiumBackground: commonColors.navyDark,
-    planBadgePremiumText: commonColors.copper,
-    planBadgePremiumBorder: commonColors.copper,
+      avatarBorder: commonColors.grayLight,
 
-    dangerCardBackground: '#FEF2F2',
-    dangerCardBorder: '#FECACA',
-    dangerTitle: '#991B1B',
-    danger: commonColors.errorRed,
-    dangerButtonBackground: '#DC2626',
+      planBadgeFreeBackground: '#F3F4F6',
+      planBadgeFreeText: commonColors.grayDark,
+      planBadgePremiumBackground: palette.primary,
+      planBadgePremiumText: accent600,
+      planBadgePremiumBorder: accent600,
 
-    divider: commonColors.grayLight,
+      dangerCardBackground: '#FEF2F2',
+      dangerCardBorder: '#FECACA',
+      dangerTitle: '#991B1B',
+      danger: commonColors.errorRed,
+      dangerButtonBackground: '#DC2626',
 
-    modalBackground: commonColors.white,
-    modalBackdrop: 'rgba(0,0,0,0.55)',
+      divider: commonColors.grayLight,
 
-    primary: commonColors.indigo,
-    primarySoft: commonColors.indigoSoft,
-    primaryText: commonColors.white,
+      modalBackground: commonColors.white,
+      modalBackdrop: 'rgba(0,0,0,0.55)',
 
-    buttonSecondaryBackground: commonColors.white,
-    buttonSecondaryBorder: '#D1D5DB',
-    buttonSecondaryText: commonColors.grayDark,
+      primary: accent600,
+      primarySoft: accent100,
+      primaryText: commonColors.white,
 
-    gemBadgeBackground: '#EDE9F7',
-    gemBadgeText: '#5B21B6',
-    gemBadgeBorder: '#C4B5FD',
+      buttonSecondaryBackground: commonColors.white,
+      buttonSecondaryBorder: '#D1D5DB',
+      buttonSecondaryText: commonColors.grayDark,
 
-    iconSecondary: commonColors.gray,
-    white: commonColors.white,
+      // Gem/coin badge is a fixed purple in the reference — not theme-tied.
+      gemBadgeBackground: '#EDE9F7',
+      gemBadgeText: '#5B21B6',
+      gemBadgeBorder: '#C4B5FD',
 
-    toastBackground: commonColors.successGreen,
-    toastText: commonColors.white,
-  },
-};
+      iconSecondary: commonColors.gray,
+      white: commonColors.white,
 
-export const profileDarkTheme: ProfileTheme = {
-  ...darkTheme,
-  profile: {
-    background: commonColors.darkSurface,
-    headerBackground: commonColors.darkCard,
-    headerBorder: commonColors.darkBorder,
-    headerTitle: commonColors.white,
-    headerIcon: commonColors.white,
+      toastBackground: commonColors.successGreen,
+      toastText: commonColors.white,
 
-    sectionTitle: commonColors.white,
-    sectionSubtitle: 'rgba(255,255,255,0.55)',
+      themePickerCardActiveBorder: accent600,
+      themePickerCardActiveRing: withAlpha(accent600, 0.3),
+      themePickerCardBackground: commonColors.white,
+      themePickerCardBorder: commonColors.grayLight,
+      themePickerLabel: commonColors.grayDark,
 
-    cardBackground: commonColors.darkCard,
-    cardBorder: commonColors.darkBorder,
+      submodulesBarBackground: withAlpha(commonColors.white, 0.95),
+      submodulesBarBorder: commonColors.grayLight,
+      submodulesBarIconInactive: commonColors.gray,
+      submodulesBarTextInactive: commonColors.gray,
+      submodulesBarIconActive: accent600,
+      submodulesBarTextActive: accent600,
+    },
+  };
+}
 
-    textPrimary: commonColors.white,
-    textSecondary: 'rgba(255,255,255,0.60)',
+function buildProfileDark(palette: BrandPalette): ProfileTheme {
+  const { accentDefault } = palette;
 
-    inputBackground: commonColors.darkCard,
-    inputBorder: commonColors.darkBorder,
-    inputText: commonColors.white,
-    inputBorderFocused: commonColors.indigoLight,
+  return {
+    ...getCommonTheme(palette),
+    profile: {
+      background: commonColors.darkSurface,
+      headerBackground: commonColors.darkCard,
+      headerBorder: commonColors.darkBorder,
+      headerTitle: commonColors.white,
+      headerIcon: commonColors.white,
 
-    fieldLabel: 'rgba(255,255,255,0.55)',
-    fieldReadonlyBackground: commonColors.darkCard,
-    fieldReadonlyText: 'rgba(255,255,255,0.35)',
+      sectionTitle: commonColors.white,
+      sectionSubtitle: 'rgba(255,255,255,0.55)',
 
-    pickerActiveBackground: 'rgba(79,70,229,0.20)',
+      cardBackground: commonColors.darkCard,
+      cardBorder: commonColors.darkBorder,
 
-    avatarBorder: commonColors.darkBorder,
+      textPrimary: commonColors.white,
+      textSecondary: 'rgba(255,255,255,0.60)',
 
-    planBadgeFreeBackground: commonColors.darkCard,
-    planBadgeFreeText: 'rgba(255,255,255,0.60)',
-    planBadgePremiumBackground: commonColors.navyDark,
-    planBadgePremiumText: commonColors.copper,
-    planBadgePremiumBorder: commonColors.copper,
+      inputBackground: commonColors.darkCard,
+      inputBorder: commonColors.darkBorder,
+      inputText: commonColors.white,
+      inputBorderFocused: accentDefault,
 
-    dangerCardBackground: 'rgba(220,38,38,0.12)',
-    dangerCardBorder: 'rgba(220,38,38,0.30)',
-    dangerTitle: '#FCA5A5',
-    danger: '#EF4444',
-    dangerButtonBackground: '#EF4444',
+      fieldLabel: 'rgba(255,255,255,0.55)',
+      fieldReadonlyBackground: commonColors.darkCard,
+      fieldReadonlyText: 'rgba(255,255,255,0.35)',
 
-    divider: commonColors.darkBorder,
+      pickerActiveBackground: withAlpha(accentDefault, 0.2),
 
-    modalBackground: commonColors.darkCard,
-    modalBackdrop: 'rgba(0,0,0,0.70)',
+      avatarBorder: commonColors.darkBorder,
 
-    primary: commonColors.white,
-    primarySoft: 'rgba(79,70,229,0.20)',
-    primaryText: commonColors.navyDark,
+      planBadgeFreeBackground: commonColors.darkCard,
+      planBadgeFreeText: 'rgba(255,255,255,0.60)',
+      planBadgePremiumBackground: palette.primary,
+      planBadgePremiumText: accentDefault,
+      planBadgePremiumBorder: accentDefault,
 
-    buttonSecondaryBackground: commonColors.darkCard,
-    buttonSecondaryBorder: commonColors.darkBorder,
-    buttonSecondaryText: 'rgba(255,255,255,0.80)',
+      dangerCardBackground: 'rgba(220,38,38,0.12)',
+      dangerCardBorder: 'rgba(220,38,38,0.30)',
+      dangerTitle: '#FCA5A5',
+      danger: '#EF4444',
+      dangerButtonBackground: '#EF4444',
 
-    gemBadgeBackground: '#2D1B69',
-    gemBadgeText: '#C4B5FD',
-    gemBadgeBorder: '#4C1D95',
+      divider: commonColors.darkBorder,
 
-    iconSecondary: 'rgba(255,255,255,0.40)',
-    white: commonColors.white,
+      modalBackground: commonColors.darkCard,
+      modalBackdrop: 'rgba(0,0,0,0.70)',
 
-    toastBackground: commonColors.successGreen,
-    toastText: commonColors.white,
-  },
-};
+      primary: accentDefault,
+      primarySoft: withAlpha(accentDefault, 0.2),
+      primaryText: commonColors.white,
+
+      buttonSecondaryBackground: commonColors.darkCard,
+      buttonSecondaryBorder: commonColors.darkBorder,
+      buttonSecondaryText: 'rgba(255,255,255,0.80)',
+
+      gemBadgeBackground: '#2D1B69',
+      gemBadgeText: '#C4B5FD',
+      gemBadgeBorder: '#4C1D95',
+
+      iconSecondary: 'rgba(255,255,255,0.40)',
+      white: commonColors.white,
+
+      toastBackground: commonColors.successGreen,
+      toastText: commonColors.white,
+
+      themePickerCardActiveBorder: accentDefault,
+      themePickerCardActiveRing: withAlpha(accentDefault, 0.4),
+      themePickerCardBackground: commonColors.darkSurface,
+      themePickerCardBorder: commonColors.darkBorder,
+      themePickerLabel: 'rgba(255,255,255,0.80)',
+
+      submodulesBarBackground: withAlpha(commonColors.darkCard, 0.95),
+      submodulesBarBorder: commonColors.darkBorder,
+      submodulesBarIconInactive: commonColors.gray,
+      submodulesBarTextInactive: commonColors.gray,
+      submodulesBarIconActive: accentDefault,
+      submodulesBarTextActive: accentDefault,
+    },
+  };
+}
+
+export function getProfileTheme(palette: BrandPalette): ProfileTheme {
+  return palette.dark ? buildProfileDark(palette) : buildProfileLight(palette);
+}

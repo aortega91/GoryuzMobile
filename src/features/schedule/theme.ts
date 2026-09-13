@@ -1,5 +1,6 @@
 import commonColors from '@theme/commonColors';
-import { Theme, lightTheme, darkTheme } from '@theme/index';
+import { Theme, getCommonTheme } from '@theme/index';
+import { BrandPalette } from '@theme/palettes';
 
 export interface ScheduleTheme extends Theme {
   schedule: {
@@ -15,6 +16,11 @@ export interface ScheduleTheme extends Theme {
     toggleActiveBackground: string;
     toggleActiveText: string;
     toggleInactiveText: string;
+
+    bottomBarBackground: string;
+    bottomBarBorder: string;
+    bottomBarActive: string;
+    bottomBarInactive: string;
 
     columnBorder: string;
     columnBackground: string;
@@ -90,188 +96,211 @@ export interface ScheduleTheme extends Theme {
   };
 }
 
-const scheduleLight: ScheduleTheme['schedule'] = {
-  background: commonColors.offWhite,
-  headerTitle: commonColors.navyDark,
-  headerSubtitle: commonColors.grayDark,
+// ─── Light-structural variant — used by natural/moderno/elegancia ─────────────
 
-  navBackground: commonColors.white,
-  navBorder: commonColors.grayLight,
-  navText: commonColors.navyDark,
+function buildScheduleLight(palette: BrandPalette): ScheduleTheme {
+  const accent600 = palette.accent[600];
 
-  toggleBackground: commonColors.grayLight,
-  toggleActiveBackground: commonColors.white,
-  toggleActiveText: commonColors.navyDark,
-  toggleInactiveText: commonColors.gray,
+  return {
+    ...getCommonTheme(palette),
+    schedule: {
+      background: commonColors.offWhite,
+      headerTitle: palette.primary,
+      headerSubtitle: commonColors.grayDark,
 
-  columnBorder: commonColors.grayLight,
-  columnBackground: commonColors.white,
-  columnHeaderBackground: commonColors.offWhite,
-  columnDayName: commonColors.gray,
-  columnDayNumber: commonColors.navyDark,
-  columnTodayBackground: commonColors.navyDark,
-  columnTodayText: commonColors.white,
+      navBackground: commonColors.white,
+      navBorder: commonColors.grayLight,
+      navText: palette.primary,
 
-  eventCardBackground: commonColors.offWhite,
-  eventCardBorder: commonColors.grayLight,
-  eventCardName: commonColors.navyDark,
+      toggleBackground: commonColors.grayLight,
+      toggleActiveBackground: commonColors.white,
+      toggleActiveText: palette.primary,
+      toggleInactiveText: commonColors.gray,
 
-  addButtonBorder: commonColors.grayLight,
-  addButtonIcon: commonColors.gray,
+      bottomBarBackground: commonColors.white,
+      bottomBarBorder: commonColors.grayLight,
+      bottomBarActive: accent600,
+      bottomBarInactive: commonColors.gray,
 
-  tripBadgeBackground: commonColors.navyDark,
-  tripBadgeText: commonColors.copper,
+      columnBorder: commonColors.grayLight,
+      columnBackground: commonColors.white,
+      columnHeaderBackground: commonColors.offWhite,
+      columnDayName: commonColors.gray,
+      columnDayNumber: palette.primary,
+      columnTodayBackground: palette.primary,
+      columnTodayText: commonColors.white,
 
-  weatherSunny: commonColors.warningAmber,
-  weatherCloudy: commonColors.gray,
-  weatherRainy: '#5B8DB8',
-  weatherSnowy: '#8BBBD9',
-  weatherTemp: commonColors.grayDark,
+      eventCardBackground: commonColors.offWhite,
+      eventCardBorder: commonColors.grayLight,
+      eventCardName: palette.primary,
 
-  emptyIcon: commonColors.grayLight,
-  emptyText: commonColors.gray,
+      addButtonBorder: commonColors.grayLight,
+      addButtonIcon: commonColors.gray,
 
-  modalBackground: commonColors.white,
-  modalBackdrop: commonColors.overlayDark,
-  modalTitle: commonColors.navyDark,
-  modalSubtitle: commonColors.grayDark,
-  modalBorder: commonColors.grayLight,
+      tripBadgeBackground: palette.primary,
+      tripBadgeText: accent600,
 
-  inputBackground: commonColors.offWhite,
-  inputBorder: commonColors.grayLight,
-  inputBorderFocus: commonColors.indigo,
-  inputText: commonColors.navyDark,
-  inputLabel: commonColors.grayDark,
-  inputPlaceholder: commonColors.gray,
-  inputHint: commonColors.gray,
+      weatherSunny: commonColors.warningAmber,
+      weatherCloudy: commonColors.gray,
+      weatherRainy: '#5B8DB8',
+      weatherSnowy: '#8BBBD9',
+      weatherTemp: commonColors.grayDark,
 
-  buttonPrimary: commonColors.indigo,
-  buttonPrimaryText: commonColors.white,
-  buttonSecondary: commonColors.offWhite,
-  buttonSecondaryText: commonColors.navyDark,
-  buttonSecondaryBorder: commonColors.grayLight,
-  buttonDanger: '#FEF2F2',
-  buttonDangerText: commonColors.errorRed,
-  buttonDangerBorder: '#FECACA',
+      emptyIcon: commonColors.grayLight,
+      emptyText: commonColors.gray,
 
-  outfitCardBackground: commonColors.white,
-  outfitCardBorder: commonColors.grayLight,
-  outfitCardName: commonColors.navyDark,
-  outfitCardSelected: commonColors.indigo,
+      modalBackground: commonColors.white,
+      modalBackdrop: commonColors.overlayDark,
+      modalTitle: palette.primary,
+      modalSubtitle: commonColors.grayDark,
+      modalBorder: commonColors.grayLight,
 
-  tripCardBackground: commonColors.white,
-  tripCardBorder: commonColors.grayLight,
+      inputBackground: commonColors.offWhite,
+      inputBorder: commonColors.grayLight,
+      inputBorderFocus: accent600,
+      inputText: palette.primary,
+      inputLabel: commonColors.grayDark,
+      inputPlaceholder: commonColors.gray,
+      inputHint: commonColors.gray,
 
-  calendarBackground: commonColors.white,
-  calendarDayText: commonColors.navyDark,
-  calendarDaySelected: commonColors.indigo,
-  calendarDaySelectedText: commonColors.white,
-  calendarDayToday: commonColors.copper,
-  calendarDayTodayText: commonColors.white,
-  calendarDayOtherMonth: commonColors.gray,
-  calendarNavIcon: commonColors.navyDark,
-  calendarHeaderText: commonColors.navyDark,
+      buttonPrimary: accent600,
+      buttonPrimaryText: commonColors.white,
+      buttonSecondary: commonColors.offWhite,
+      buttonSecondaryText: palette.primary,
+      buttonSecondaryBorder: commonColors.grayLight,
+      buttonDanger: '#FEF2F2',
+      buttonDangerText: commonColors.errorRed,
+      buttonDangerBorder: '#FECACA',
 
-  packingItemBackground: commonColors.offWhite,
-  packingItemBorder: commonColors.grayLight,
-  packingItemName: commonColors.navyDark,
-};
+      outfitCardBackground: commonColors.white,
+      outfitCardBorder: commonColors.grayLight,
+      outfitCardName: palette.primary,
+      outfitCardSelected: accent600,
 
-const scheduleDark: ScheduleTheme['schedule'] = {
-  background: commonColors.darkSurface,
-  headerTitle: commonColors.offWhite,
-  headerSubtitle: commonColors.gray,
+      tripCardBackground: commonColors.white,
+      tripCardBorder: commonColors.grayLight,
 
-  navBackground: commonColors.darkCard,
-  navBorder: commonColors.darkBorder,
-  navText: commonColors.offWhite,
+      calendarBackground: commonColors.white,
+      calendarDayText: palette.primary,
+      calendarDaySelected: accent600,
+      calendarDaySelectedText: commonColors.white,
+      calendarDayToday: accent600,
+      calendarDayTodayText: commonColors.white,
+      calendarDayOtherMonth: commonColors.gray,
+      calendarNavIcon: palette.primary,
+      calendarHeaderText: palette.primary,
 
-  toggleBackground: commonColors.darkCard,
-  toggleActiveBackground: commonColors.darkCard,
-  toggleActiveText: commonColors.offWhite,
-  toggleInactiveText: commonColors.gray,
+      packingItemBackground: commonColors.offWhite,
+      packingItemBorder: commonColors.grayLight,
+      packingItemName: palette.primary,
+    },
+  };
+}
 
-  columnBorder: commonColors.darkBorder,
-  columnBackground: commonColors.darkCard,
-  columnHeaderBackground: commonColors.darkCard,
-  columnDayName: commonColors.gray,
-  columnDayNumber: commonColors.offWhite,
-  columnTodayBackground: commonColors.copper,
-  columnTodayText: commonColors.white,
+// ─── Dark-structural variant — used only by `boutique` ────────────────────────
 
-  eventCardBackground: commonColors.darkCard,
-  eventCardBorder: commonColors.darkBorder,
-  eventCardName: commonColors.offWhite,
+function buildScheduleDark(palette: BrandPalette): ScheduleTheme {
+  const { accentDefault } = palette;
+  const accent400 = palette.accent[400];
+  const accent700 = palette.accent[700];
 
-  addButtonBorder: commonColors.darkBorder,
-  addButtonIcon: commonColors.gray,
+  return {
+    ...getCommonTheme(palette),
+    schedule: {
+      background: commonColors.darkSurface,
+      headerTitle: commonColors.offWhite,
+      headerSubtitle: commonColors.gray,
 
-  tripBadgeBackground: commonColors.navyMid,
-  tripBadgeText: commonColors.copperLight,
+      navBackground: commonColors.darkCard,
+      navBorder: commonColors.darkBorder,
+      navText: commonColors.offWhite,
 
-  weatherSunny: commonColors.warningAmber,
-  weatherCloudy: commonColors.gray,
-  weatherRainy: '#6B9DC4',
-  weatherSnowy: '#9BBFD9',
-  weatherTemp: commonColors.gray,
+      toggleBackground: commonColors.darkCard,
+      toggleActiveBackground: commonColors.darkCard,
+      toggleActiveText: commonColors.offWhite,
+      toggleInactiveText: commonColors.gray,
 
-  emptyIcon: commonColors.darkBorder,
-  emptyText: commonColors.gray,
+      bottomBarBackground: commonColors.darkCard,
+      bottomBarBorder: commonColors.darkBorder,
+      bottomBarActive: commonColors.offWhite,
+      bottomBarInactive: commonColors.gray,
 
-  modalBackground: commonColors.darkCard,
-  modalBackdrop: 'rgba(0,0,0,0.80)',
-  modalTitle: commonColors.offWhite,
-  modalSubtitle: commonColors.gray,
-  modalBorder: commonColors.darkBorder,
+      columnBorder: commonColors.darkBorder,
+      columnBackground: commonColors.darkCard,
+      columnHeaderBackground: commonColors.darkCard,
+      columnDayName: commonColors.gray,
+      columnDayNumber: commonColors.offWhite,
+      columnTodayBackground: accentDefault,
+      columnTodayText: commonColors.white,
 
-  inputBackground: commonColors.darkCard,
-  inputBorder: commonColors.darkBorder,
-  inputBorderFocus: commonColors.indigoLight,
-  inputText: commonColors.offWhite,
-  inputLabel: commonColors.gray,
-  inputPlaceholder: commonColors.grayDark,
-  inputHint: commonColors.grayDark,
+      eventCardBackground: commonColors.darkCard,
+      eventCardBorder: commonColors.darkBorder,
+      eventCardName: commonColors.offWhite,
 
-  buttonPrimary: commonColors.indigoLight,
-  buttonPrimaryText: commonColors.white,
-  buttonSecondary: commonColors.darkCard,
-  buttonSecondaryText: commonColors.offWhite,
-  buttonSecondaryBorder: commonColors.darkBorder,
-  buttonDanger: '#2D1515',
-  buttonDangerText: '#E05A5E',
-  buttonDangerBorder: '#5C1A1A',
+      addButtonBorder: commonColors.darkBorder,
+      addButtonIcon: commonColors.gray,
 
-  outfitCardBackground: commonColors.darkCard,
-  outfitCardBorder: commonColors.darkBorder,
-  outfitCardName: commonColors.offWhite,
-  outfitCardSelected: commonColors.indigo,
+      // Badge fill — deep accent tone rather than a raised/active surface.
+      tripBadgeBackground: accent700,
+      tripBadgeText: accent400,
 
-  tripCardBackground: commonColors.darkCard,
-  tripCardBorder: commonColors.darkBorder,
+      weatherSunny: commonColors.warningAmber,
+      weatherCloudy: commonColors.gray,
+      weatherRainy: '#6B9DC4',
+      weatherSnowy: '#9BBFD9',
+      weatherTemp: commonColors.gray,
 
-  calendarBackground: commonColors.darkCard,
-  calendarDayText: commonColors.offWhite,
-  calendarDaySelected: commonColors.indigo,
-  calendarDaySelectedText: commonColors.white,
-  calendarDayToday: commonColors.copper,
-  calendarDayTodayText: commonColors.white,
-  calendarDayOtherMonth: '#374151',
-  calendarNavIcon: commonColors.offWhite,
-  calendarHeaderText: commonColors.offWhite,
+      emptyIcon: commonColors.darkBorder,
+      emptyText: commonColors.gray,
 
-  packingItemBackground: commonColors.darkCard,
-  packingItemBorder: commonColors.darkBorder,
-  packingItemName: commonColors.offWhite,
-};
+      modalBackground: commonColors.darkCard,
+      modalBackdrop: 'rgba(0,0,0,0.80)',
+      modalTitle: commonColors.offWhite,
+      modalSubtitle: commonColors.gray,
+      modalBorder: commonColors.darkBorder,
 
-export interface ScheduleThemeInstance extends ScheduleTheme {}
+      inputBackground: commonColors.darkCard,
+      inputBorder: commonColors.darkBorder,
+      inputBorderFocus: accent400,
+      inputText: commonColors.offWhite,
+      inputLabel: commonColors.gray,
+      inputPlaceholder: commonColors.grayDark,
+      inputHint: commonColors.grayDark,
 
-export const scheduleLightTheme: ScheduleThemeInstance = {
-  ...lightTheme,
-  schedule: scheduleLight,
-};
+      buttonPrimary: accent400,
+      buttonPrimaryText: commonColors.white,
+      buttonSecondary: commonColors.darkCard,
+      buttonSecondaryText: commonColors.offWhite,
+      buttonSecondaryBorder: commonColors.darkBorder,
+      buttonDanger: '#2D1515',
+      buttonDangerText: '#E05A5E',
+      buttonDangerBorder: '#5C1A1A',
 
-export const scheduleDarkTheme: ScheduleThemeInstance = {
-  ...darkTheme,
-  schedule: scheduleDark,
-};
+      outfitCardBackground: commonColors.darkCard,
+      outfitCardBorder: commonColors.darkBorder,
+      outfitCardName: commonColors.offWhite,
+      outfitCardSelected: accentDefault,
+
+      tripCardBackground: commonColors.darkCard,
+      tripCardBorder: commonColors.darkBorder,
+
+      calendarBackground: commonColors.darkCard,
+      calendarDayText: commonColors.offWhite,
+      calendarDaySelected: accentDefault,
+      calendarDaySelectedText: commonColors.white,
+      calendarDayToday: accentDefault,
+      calendarDayTodayText: commonColors.white,
+      calendarDayOtherMonth: '#374151',
+      calendarNavIcon: commonColors.offWhite,
+      calendarHeaderText: commonColors.offWhite,
+
+      packingItemBackground: commonColors.darkCard,
+      packingItemBorder: commonColors.darkBorder,
+      packingItemName: commonColors.offWhite,
+    },
+  };
+}
+
+export function getScheduleTheme(palette: BrandPalette): ScheduleTheme {
+  return palette.dark ? buildScheduleDark(palette) : buildScheduleLight(palette);
+}

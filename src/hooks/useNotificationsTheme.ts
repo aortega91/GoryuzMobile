@@ -1,9 +1,9 @@
-import { notificationsLightTheme, notificationsDarkTheme, NotificationsTheme } from '@features/notifications/theme';
-import useAppColorScheme from './useAppColorScheme';
+import { NotificationsTheme, getNotificationsTheme } from '@features/notifications/theme';
+import useActiveThemePalette from './useActiveThemePalette';
 
 function useNotificationsTheme(): NotificationsTheme {
-  const colorScheme = useAppColorScheme();
-  return colorScheme === 'dark' ? notificationsDarkTheme : notificationsLightTheme;
+  const palette = useActiveThemePalette();
+  return getNotificationsTheme(palette);
 }
 
 export default useNotificationsTheme;

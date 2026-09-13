@@ -1,9 +1,9 @@
-import { communityLightTheme, communityDarkTheme, CommunityTheme } from '@features/community/theme';
-import useAppColorScheme from './useAppColorScheme';
+import { CommunityTheme, getCommunityTheme } from '@features/community/theme';
+import useActiveThemePalette from './useActiveThemePalette';
 
 function useCommunityTheme(): CommunityTheme {
-  const colorScheme = useAppColorScheme();
-  return colorScheme === 'dark' ? communityDarkTheme : communityLightTheme;
+  const palette = useActiveThemePalette();
+  return getCommunityTheme(palette);
 }
 
 export default useCommunityTheme;

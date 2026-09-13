@@ -1,13 +1,9 @@
-import {
-  stylesLightTheme,
-  stylesDarkTheme,
-  StylesThemeInstance,
-} from '@features/styles/theme';
-import useAppColorScheme from './useAppColorScheme';
+import { StylesTheme, getStylesTheme } from '@features/styles/theme';
+import useActiveThemePalette from './useActiveThemePalette';
 
-function useStylesTheme(): StylesThemeInstance {
-  const colorScheme = useAppColorScheme();
-  return colorScheme === 'dark' ? stylesDarkTheme : stylesLightTheme;
+function useStylesTheme(): StylesTheme {
+  const palette = useActiveThemePalette();
+  return getStylesTheme(palette);
 }
 
 export default useStylesTheme;

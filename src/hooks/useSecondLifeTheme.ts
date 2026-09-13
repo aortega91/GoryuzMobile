@@ -1,13 +1,9 @@
-import {
-  SecondLifeThemeInstance,
-  secondLifeLightTheme,
-  secondLifeDarkTheme,
-} from '@features/secondLife/theme';
-import useAppColorScheme from './useAppColorScheme';
+import { SecondLifeTheme, getSecondLifeTheme } from '@features/secondLife/theme';
+import useActiveThemePalette from './useActiveThemePalette';
 
-function useSecondLifeTheme(): SecondLifeThemeInstance {
-  const colorScheme = useAppColorScheme();
-  return colorScheme === 'dark' ? secondLifeDarkTheme : secondLifeLightTheme;
+function useSecondLifeTheme(): SecondLifeTheme {
+  const palette = useActiveThemePalette();
+  return getSecondLifeTheme(palette);
 }
 
 export default useSecondLifeTheme;

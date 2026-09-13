@@ -1,13 +1,9 @@
-import {
-  ProfileTheme,
-  profileLightTheme,
-  profileDarkTheme,
-} from '@features/profile/theme';
-import useAppColorScheme from './useAppColorScheme';
+import { ProfileTheme, getProfileTheme } from '@features/profile/theme';
+import useActiveThemePalette from './useActiveThemePalette';
 
 function useProfileTheme(): ProfileTheme {
-  const colorScheme = useAppColorScheme();
-  return colorScheme === 'dark' ? profileDarkTheme : profileLightTheme;
+  const palette = useActiveThemePalette();
+  return getProfileTheme(palette);
 }
 
 export default useProfileTheme;

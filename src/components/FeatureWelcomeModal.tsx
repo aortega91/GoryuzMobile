@@ -12,7 +12,7 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import { CheckIcon, SparklesIcon } from '@assets/icons';
 import Touchable from '@components/Touchable';
-import useTheme from '@hooks/useTheme';
+import useCommonTheme from '@hooks/useCommonTheme';
 import { RootState } from '@utilities/store';
 import { markTourCompleted, TourId } from '@utilities/onboardingSlice';
 
@@ -39,11 +39,11 @@ interface FeatureWelcomeModalProps {
 function FeatureWelcomeModal({ tour, titleKey, stepKeys }: FeatureWelcomeModalProps) {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const theme = useTheme();
+  const theme = useCommonTheme();
   const c = theme.common;
 
   const completedTours = useSelector((state: RootState) => state.onboarding.completedTours);
-  const alreadySeen = !ALWAYS_SHOW_TOURS && completedTours.includes(tour);
+  const alreadySeen = !ALWAYS_SHOW_TOURS && (completedTours ?? []).includes(tour);
 
   // Closing is driven locally rather than by the redux flag, so the dialog still
   // dismisses while ALWAYS_SHOW_TOURS is on.

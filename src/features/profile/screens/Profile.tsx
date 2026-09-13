@@ -25,12 +25,14 @@ import auth from '@react-native-firebase/auth';
 import AuthedImage from '@components/AuthedImage';
 import Touchable from '@components/Touchable';
 import PermissionModal from '@components/PermissionModal';
+import SubmodulesCoachMark, { SubmoduleHintItem } from '@components/SubmodulesCoachMark';
 import { RootState, AppDispatch } from '@utilities/store';
 import { logError } from '@utilities/crashlytics';
 import { teardownPush } from '@utilities/push';
 import { clearSession } from '@features/auth/sessionSlice';
 import { updateProfileLocally, loadProfile } from '@features/home/profileSlice';
-import { setThemePreference, AppThemePreference } from '@utilities/appThemeSlice';
+import { setThemeId } from '@utilities/appThemeSlice';
+import { THEME_ORDER, BRAND_PALETTES } from '@theme/palettes';
 import useCameraPermission from '@hooks/useCameraPermission';
 import {
   CameraIcon,
@@ -39,10 +41,9 @@ import {
   AlertTriangleIcon,
   ChevronDownIcon,
   GemIcon,
+  SlidersHorizontalIcon,
   TrashIcon,
-  SunIcon,
-  MoonIcon,
-  MonitorIcon,
+  UserIcon,
 } from '@assets/icons';
 
 import useProfileTheme from '@hooks/useProfileTheme';
@@ -58,6 +59,7 @@ interface PickerOption {
 
 type ActivePicker = 'gender' | 'language' | 'currency' | null;
 type ActiveConfirm = 'cancelSubscription' | 'deleteAccount' | null;
+type ProfileTab = 'account' | 'app' | 'subscription';
 
 // ─── Plan helpers ─────────────────────────────────────────────────────────────
 
@@ -472,10 +474,11 @@ function Profile({ onViewPlans }: ProfileProps) {
 
   const dispatch = useDispatch<AppDispatch>();
   const insets = useSafeAreaInsets();
+  const submodulesBarHeight = 56 + insets.bottom;
 
   const profile = useSelector((state: RootState) => state.profile.data);
   const user = useSelector((state: RootState) => state.session.user);
-  const themePreference = useSelector((state: RootState) => state.appTheme.preference);
+  const themeId = useSelector((state: RootState) => state.appTheme.themeId);
 
   // Editable local state
   const [nickname, setNickname] = useState(profile?.nickname ?? '');
@@ -513,6 +516,7 @@ function Profile({ onViewPlans }: ProfileProps) {
   const [activeConfirm, setActiveConfirm] = useState<ActiveConfirm>(null);
   const [isDangerOpen, setIsDangerOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<ProfileTab>('account');
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -742,6 +746,29 @@ function Profile({ onViewPlans }: ProfileProps) {
       })
     : null;
 
+  // ─── Bottom submodules bar (account/app/subscription — mobile only) ──────────
+
+  const profileTabs: (SubmoduleHintItem & { id: ProfileTab })[] = [
+    {
+      id: 'account',
+      Icon: UserIcon,
+      label: t('profile.tabAccount'),
+      hint: t('profile.hintAccount'),
+    },
+    {
+      id: 'app',
+      Icon: SlidersHorizontalIcon,
+      label: t('profile.tabApp'),
+      hint: t('profile.hintApp'),
+    },
+    {
+      id: 'subscription',
+      Icon: CrownIcon,
+      label: t('profile.tabSubscription'),
+      hint: t('profile.hintSubscription'),
+    },
+  ];
+
   return (
     <View style={[styles.root, { backgroundColor: pt.background }]}>
       {/* Save toast */}
@@ -770,7 +797,7 @@ function Profile({ onViewPlans }: ProfileProps) {
             style={styles.scroll}
             contentContainerStyle={[
               styles.scrollContent,
-              { paddingBottom: insets.bottom + 32 },
+              { paddingBottom: submodulesBarHeight + 32 },
             ]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
@@ -782,6 +809,8 @@ function Profile({ onViewPlans }: ProfileProps) {
               />
             }
           >
+            {activeTab === 'account' && (
+            <>
             {/* ── Avatar ── */}
             <View style={styles.avatarSection}>
               <Touchable
@@ -933,8 +962,11 @@ function Profile({ onViewPlans }: ProfileProps) {
                 </Text>
               </View>
             </SectionCard>
+            </>
+            )}
 
             {/* ── Suscripción ── */}
+            {activeTab === 'subscription' && (
             <SectionCard title={t('profile.subscription')} colors={pt}>
               <View style={styles.planRow}>
                 <View
@@ -1004,8 +1036,11 @@ function Profile({ onViewPlans }: ProfileProps) {
                 </Touchable>
               </View>
             </SectionCard>
+            )}
 
             {/* ── Preferencias ── */}
+            {activeTab === 'app' && (
+            <>
             <SectionCard title={t('profile.preferences')} colors={pt}>
               <View style={fieldStyles.wrapper}>
                 <Text style={[fieldStyles.label, { color: pt.fieldLabel }]}>
@@ -1052,43 +1087,54 @@ function Profile({ onViewPlans }: ProfileProps) {
                 {t('profile.appThemeDescription')}
               </Text>
               <View style={styles.themeRow}>
-                {(
-                  [
-                    { value: 'light', labelKey: 'profile.themeLight', Icon: SunIcon },
-                    { value: 'dark',  labelKey: 'profile.themeDark',  Icon: MoonIcon },
-                    { value: 'system', labelKey: 'profile.themeSystem', Icon: MonitorIcon },
-                  ] as { value: AppThemePreference; labelKey: string; Icon: React.ComponentType<{ size?: number; color?: string }> }[]
-                ).map(({ value, labelKey, Icon }) => {
-                  const active = themePreference === value;
+                {THEME_ORDER.map(id => {
+                  const palette = BRAND_PALETTES[id];
+                  const active = themeId === id;
                   return (
                     <Touchable
-                      key={value}
+                      key={id}
                       style={[
-                        styles.themeBtn,
+                        styles.themeCard,
                         {
-                          backgroundColor: active ? pt.primary : pt.inputBackground,
-                          borderColor: active ? pt.primary : pt.inputBorder,
+                          backgroundColor: pt.themePickerCardBackground,
+                          borderColor: active
+                            ? pt.themePickerCardActiveBorder
+                            : pt.themePickerCardBorder,
+                          borderWidth: active ? 2 : 1,
                         },
                       ]}
                       borderRadius={10}
-                      onPress={() => dispatch(setThemePreference(value))}
+                      accessibilityLabel={t(palette.labelKey)}
+                      onPress={() => dispatch(setThemeId(id))}
                     >
-                      <Icon size={18} color={active ? pt.primaryText : pt.textSecondary} />
+                      <View style={styles.themeSwatchRow}>
+                        <View
+                          style={[styles.themeSwatchDot, { backgroundColor: palette.swatch[0] }]}
+                        />
+                        <View
+                          style={[
+                            styles.themeSwatchDot,
+                            styles.themeSwatchDotOverlap,
+                            { backgroundColor: palette.swatch[1] },
+                          ]}
+                        />
+                      </View>
                       <Text
-                        style={[
-                          styles.themeBtnLabel,
-                          { color: active ? pt.primaryText : pt.textSecondary },
-                        ]}
+                        style={[styles.themeCardLabel, { color: pt.themePickerLabel }]}
+                        numberOfLines={1}
                       >
-                        {t(labelKey)}
+                        {t(palette.labelKey)}
                       </Text>
                     </Touchable>
                   );
                 })}
               </View>
             </SectionCard>
+            </>
+            )}
 
             {/* ── Zona de peligro ── */}
+            {activeTab === 'account' && (
             <View
               style={[
                 styles.dangerCard,
@@ -1157,9 +1203,55 @@ function Profile({ onViewPlans }: ProfileProps) {
                 </View>
               )}
             </View>
+            )}
           </ScrollView>
         </KeyboardAvoidingView>
       </View>
+
+      {/* Bottom submodules bar (account/app/subscription) */}
+      <View
+        style={[
+          styles.submodulesBar,
+          {
+            height: submodulesBarHeight,
+            paddingBottom: insets.bottom,
+            backgroundColor: pt.submodulesBarBackground,
+            borderTopColor: pt.submodulesBarBorder,
+          },
+        ]}
+      >
+        {profileTabs.map(tab => {
+          const isActive = activeTab === tab.id;
+          const { Icon } = tab;
+          return (
+            <Touchable
+              key={tab.id}
+              style={styles.submodulesBarItem}
+              onPress={() => setActiveTab(tab.id)}
+            >
+              <Icon
+                size={20}
+                color={isActive ? pt.submodulesBarIconActive : pt.submodulesBarIconInactive}
+              />
+              <Text
+                style={[
+                  styles.submodulesBarLabel,
+                  { color: isActive ? pt.submodulesBarTextActive : pt.submodulesBarTextInactive },
+                ]}
+                numberOfLines={1}
+              >
+                {tab.label}
+              </Text>
+            </Touchable>
+          );
+        })}
+      </View>
+
+      <SubmodulesCoachMark
+        viewId="profile"
+        barHeight={submodulesBarHeight}
+        items={profileTabs}
+      />
 
       {/* ── Pickers ── */}
       <PickerModal
@@ -1474,19 +1566,55 @@ const styles = StyleSheet.create({
   },
   themeRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
   },
-  themeBtn: {
+  themeCard: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderRadius: 10,
-    borderWidth: 1,
   },
-  themeBtnLabel: {
+  themeSwatchRow: {
+    flexDirection: 'row',
+  },
+  themeSwatchDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  themeSwatchDotOverlap: {
+    marginLeft: -8,
+  },
+  themeCardLabel: {
     fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  // Bottom submodules bar (account/app/subscription)
+  submodulesBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'stretch',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 8,
+  },
+  submodulesBarItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    paddingTop: 8,
+  },
+  submodulesBarLabel: {
+    fontSize: 10,
     fontWeight: '600',
   },
 });

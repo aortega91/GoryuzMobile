@@ -16,18 +16,20 @@ import useSubscriptionTheme from '@hooks/useSubscriptionTheme';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-// We first load /login (an unauthenticated route excluded from the API guard),
-// establish a Firebase session cookie there, then redirect to the subscription
-// view. /login renders no chrome we need to hide, so the flash is masked by the
-// loader overlay.
-const LOGIN_URL = `${ORIGIN}/login`;
+// zena has no dedicated `/login` page — it's a single `/` route that renders
+// the landing page or the app client-side depending on auth state, so loading
+// `/login` 404s. We instead load `/` with a marker query param: the bootstrap
+// script below only runs its token-exchange branch when that param is
+// present, so it never fires again after the redirect back to plain `/`.
+const LOGIN_URL = `${ORIGIN}/?mobileAuth=1`;
 
 /**
- * Builds the script injected after each page load. On /login it exchanges the
- * Firebase ID token for a `__session` cookie via POST /api/firebase/session
- * (zena verifies the token with the Admin SDK and Set-Cookies the session),
- * seeds sessionStorage so the web app opens straight on the subscription view,
- * then navigates to /. On every other page it hides the web app's nav chrome.
+ * Builds the script injected after each page load. On the `?mobileAuth=1`
+ * bootstrap load it exchanges the Firebase ID token for a `__session` cookie
+ * via POST /api/firebase/session (zena verifies the token with the Admin SDK
+ * and Set-Cookies the session), seeds sessionStorage so the web app opens
+ * straight on the subscription view, then navigates to plain /. On every
+ * other page it hides the web app's nav chrome.
  *
  * NOTE (brittle): the CSS selectors target zena Layout.tsx by Tailwind class
  * names (<header> = top bar, div[class*="w-64"][class*="bg-primary"] = sidebar).
@@ -36,7 +38,8 @@ const LOGIN_URL = `${ORIGIN}/login`;
 function buildInjectedJs(idToken: string): string {
   return `
   (function() {
-    if (location.pathname === '/login') {
+    var params = new URLSearchParams(location.search);
+    if (params.get('mobileAuth') === '1') {
       fetch('/api/firebase/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -44,7 +47,7 @@ function buildInjectedJs(idToken: string): string {
         credentials: 'include'
       }).then(function() {
         sessionStorage.setItem(
-          'zena-view-storage',
+          'goryuz-view-storage',
           JSON.stringify({ state: { activeView: 'subscription' }, version: 0 })
         );
         window.location.replace('/');

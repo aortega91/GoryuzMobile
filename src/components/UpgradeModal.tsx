@@ -9,8 +9,9 @@ import { useTranslation } from 'react-i18next';
 
 import Touchable from '@components/Touchable';
 import { CrownIcon, SparklesIcon, ArrowRightIcon } from '@assets/icons';
-import { AuthTheme } from '@features/auth/theme';
-import useTheme from '@hooks/useTheme';
+import useCommonTheme from '@hooks/useCommonTheme';
+import useActiveThemePalette from '@hooks/useActiveThemePalette';
+import { withAlpha } from '@theme/palettes';
 
 export type RequiredPlan = 'premium' | 'vip';
 
@@ -28,13 +29,21 @@ const PLAN_NAMES: Record<RequiredPlan, string> = {
 
 function UpgradeModal({ visible, requiredPlan, onUpgrade, onClose }: Props) {
   const { t } = useTranslation();
-  const theme = useTheme() as AuthTheme;
+  const theme = useCommonTheme();
+  const palette = useActiveThemePalette();
   const c = theme.common;
 
+  // The reference fixes these to a semantic emerald/rose per tier — not
+  // brand-accent-tied, so they stay put no matter which of the 4 themes is
+  // active. Only the small icon-chip background (below) tracks the theme.
   const isVip = requiredPlan === 'vip';
-  const accentColor = isVip ? '#B87333' : '#4F46E5';
-  const headerBgTop = isVip ? '#1a1205' : '#1e1b4b';
-  const headerBgBot = isVip ? '#2d1f0a' : '#312e81';
+  const accentColor = isVip ? '#FB7185' : '#34D399'; // rose-400 / emerald-400
+  const planNameColor = isVip ? '#F43F5E' : '#10B981'; // rose-500 / emerald-500
+  const headerBgTop = isVip ? '#111827' : '#064E3B'; // gray-900 / emerald-900
+  const headerBgBot = isVip ? '#1F2937' : '#065F46'; // gray-800 / emerald-800
+  const ctaBgTop = isVip ? '#111827' : '#059669'; // gray-900 / emerald-600
+  const ctaBgBot = isVip ? '#1F2937' : '#0D9488'; // gray-800 / teal-600
+  const chipBackground = theme.dark ? withAlpha(palette.accentDefault, 0.3) : palette.accent[50];
 
   return (
     <Modal
@@ -72,7 +81,7 @@ function UpgradeModal({ visible, requiredPlan, onUpgrade, onClose }: Props) {
           {/* Content */}
           <View style={styles.body}>
             <View style={styles.titleRow}>
-              <View style={[styles.titleIconBg, { backgroundColor: isVip ? '#FEF3C7' : '#EEF2FF' }]}>
+              <View style={[styles.titleIconBg, { backgroundColor: chipBackground }]}>
                 {isVip
                   ? <CrownIcon size={18} color={accentColor} />
                   : <SparklesIcon size={18} color={accentColor} />
@@ -89,7 +98,7 @@ function UpgradeModal({ visible, requiredPlan, onUpgrade, onClose }: Props) {
 
             <Text style={[styles.planLine, { color: theme.dark ? '#D1D5DB' : '#374151' }]}>
               {t('upgrade.availableOn')}{' '}
-              <Text style={[styles.planName, { color: accentColor }]}>
+              <Text style={[styles.planName, { color: planNameColor }]}>
                 {PLAN_NAMES[requiredPlan]}
               </Text>
             </Text>
@@ -98,8 +107,15 @@ function UpgradeModal({ visible, requiredPlan, onUpgrade, onClose }: Props) {
             <Touchable
               onPress={onUpgrade}
               borderRadius={16}
-              style={[styles.upgradeBtn, { backgroundColor: accentColor }]}
+              style={[styles.upgradeBtn, { backgroundColor: ctaBgTop }]}
             >
+              <View
+                style={[
+                  styles.upgradeBtn,
+                  StyleSheet.absoluteFillObject,
+                  { backgroundColor: ctaBgBot, opacity: 0.6, marginTop: 0 },
+                ]}
+              />
               <Text style={styles.upgradeBtnText}>{t('upgrade.cta')}</Text>
               <ArrowRightIcon size={18} color="#fff" />
             </Touchable>

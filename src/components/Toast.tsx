@@ -2,13 +2,13 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, Text, TouchableWithoutFeedback } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import useTheme from '@hooks/useTheme';
+import useCommonTheme from '@hooks/useCommonTheme';
 import toast, { ToastPayload, ToastType } from '@utilities/toast';
 
 const DEFAULT_DURATION = 2500;
 
 function Toast() {
-  const theme = useTheme();
+  const theme = useCommonTheme();
   const insets = useSafeAreaInsets();
 
   const [visible, setVisible] = useState(false);

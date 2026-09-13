@@ -1,5 +1,6 @@
 import commonColors from '@theme/commonColors';
-import { Theme, lightTheme, darkTheme } from '@theme/index';
+import { Theme, getCommonTheme } from '@theme/index';
+import { BrandPalette, withAlpha } from '@theme/palettes';
 
 export interface CommunityTheme extends Theme {
   community: {
@@ -18,6 +19,13 @@ export interface CommunityTheme extends Theme {
     segmentActiveBackground: string;
     segmentText: string;
     segmentActiveText: string;
+    // Bottom submodules bar (search/following/requests — mobile only)
+    submodulesBarBackground: string;
+    submodulesBarBorder: string;
+    submodulesBarIconInactive: string;
+    submodulesBarTextInactive: string;
+    submodulesBarIconActive: string;
+    submodulesBarTextActive: string;
     // Cards
     cardBackground: string;
     cardBorder: string;
@@ -65,110 +73,135 @@ export interface CommunityTheme extends Theme {
   };
 }
 
-export const communityLightTheme: CommunityTheme = {
-  ...lightTheme,
-  community: {
-    background: commonColors.slateBackground,
-    headerBackground: commonColors.white,
-    headerBorder: commonColors.grayLight,
-    headerTitle: commonColors.navyDark,
-    tabBackground: commonColors.white,
-    tabBorder: commonColors.grayLight,
-    tabText: commonColors.gray,
-    tabActiveText: commonColors.navyDark,
-    tabActiveIndicator: commonColors.indigo,
-    segmentBackground: '#F1F5F9',
-    segmentActiveBackground: commonColors.white,
-    segmentText: commonColors.gray,
-    segmentActiveText: commonColors.navyDark,
-    cardBackground: commonColors.white,
-    cardBorder: commonColors.grayLight,
-    cardTitle: commonColors.navyDark,
-    cardSubtitle: commonColors.grayDark,
-    searchBackground: commonColors.slateBackground,
-    searchBorder: commonColors.grayLight,
-    searchText: commonColors.navyDark,
-    searchPlaceholder: commonColors.gray,
-    followBackground: commonColors.indigo,
-    followText: commonColors.white,
-    followingBackground: commonColors.indigoSoft,
-    followingText: commonColors.indigo,
-    acceptBackground: commonColors.successGreen,
-    acceptText: commonColors.white,
-    rejectBackground: commonColors.white,
-    rejectBorder: commonColors.grayLight,
-    rejectText: commonColors.grayDark,
-    badgeBackground: commonColors.errorRed,
-    badgeText: commonColors.white,
-    bubbleMe: commonColors.indigo,
-    bubbleMeText: commonColors.white,
-    bubbleThem: commonColors.white,
-    bubbleThemText: commonColors.navyDark,
-    chatInputBackground: commonColors.white,
-    chatInputBorder: commonColors.grayLight,
-    chatInputText: commonColors.navyDark,
-    chatInputPlaceholder: commonColors.gray,
-    sendButton: commonColors.indigo,
-    sendButtonIcon: commonColors.white,
-    timestampText: commonColors.gray,
-    emptyIcon: commonColors.grayLight,
-    emptyText: '#6B7280',
-    emptySubtext: commonColors.gray,
-    avatarBorder: commonColors.grayLight,
-    unreadDot: commonColors.indigo,
-  },
-};
+function buildCommunityLight(palette: BrandPalette): CommunityTheme {
+  const accent600 = palette.accent[600];
+  const accent100 = palette.accent[100];
 
-export const communityDarkTheme: CommunityTheme = {
-  ...darkTheme,
-  community: {
-    background: commonColors.darkSurface,
-    headerBackground: commonColors.darkCard,
-    headerBorder: commonColors.darkBorder,
-    headerTitle: commonColors.white,
-    tabBackground: commonColors.darkCard,
-    tabBorder: commonColors.darkBorder,
-    tabText: commonColors.gray,
-    tabActiveText: commonColors.white,
-    tabActiveIndicator: '#818CF8',
-    segmentBackground: '#1A2440',
-    segmentActiveBackground: commonColors.darkBorder,
-    segmentText: commonColors.gray,
-    segmentActiveText: commonColors.white,
-    cardBackground: commonColors.darkCard,
-    cardBorder: commonColors.darkBorder,
-    cardTitle: commonColors.white,
-    cardSubtitle: commonColors.gray,
-    searchBackground: '#1A2440',
-    searchBorder: commonColors.darkBorder,
-    searchText: commonColors.offWhite,
-    searchPlaceholder: commonColors.grayDark,
-    followBackground: '#818CF8',
-    followText: commonColors.white,
-    followingBackground: 'rgba(129,140,248,0.15)',
-    followingText: '#818CF8',
-    acceptBackground: commonColors.successGreen,
-    acceptText: commonColors.white,
-    rejectBackground: commonColors.darkCard,
-    rejectBorder: commonColors.darkBorder,
-    rejectText: commonColors.gray,
-    badgeBackground: commonColors.errorRed,
-    badgeText: commonColors.white,
-    bubbleMe: '#818CF8',
-    bubbleMeText: commonColors.white,
-    bubbleThem: commonColors.darkCard,
-    bubbleThemText: commonColors.offWhite,
-    chatInputBackground: commonColors.darkCard,
-    chatInputBorder: commonColors.darkBorder,
-    chatInputText: commonColors.offWhite,
-    chatInputPlaceholder: commonColors.grayDark,
-    sendButton: '#818CF8',
-    sendButtonIcon: commonColors.white,
-    timestampText: commonColors.grayDark,
-    emptyIcon: commonColors.darkBorder,
-    emptyText: commonColors.gray,
-    emptySubtext: commonColors.grayDark,
-    avatarBorder: commonColors.darkBorder,
-    unreadDot: '#818CF8',
-  },
-};
+  return {
+    ...getCommonTheme(palette),
+    community: {
+      background: commonColors.slateBackground,
+      headerBackground: commonColors.white,
+      headerBorder: commonColors.grayLight,
+      headerTitle: palette.primary,
+      tabBackground: commonColors.white,
+      tabBorder: commonColors.grayLight,
+      tabText: commonColors.gray,
+      tabActiveText: palette.primary,
+      tabActiveIndicator: accent600,
+      segmentBackground: '#F1F5F9',
+      segmentActiveBackground: commonColors.white,
+      segmentText: commonColors.gray,
+      segmentActiveText: palette.primary,
+      submodulesBarBackground: withAlpha(commonColors.white, 0.95),
+      submodulesBarBorder: commonColors.grayLight,
+      submodulesBarIconInactive: commonColors.gray,
+      submodulesBarTextInactive: commonColors.gray,
+      submodulesBarIconActive: accent600,
+      submodulesBarTextActive: accent600,
+      cardBackground: commonColors.white,
+      cardBorder: commonColors.grayLight,
+      cardTitle: palette.primary,
+      cardSubtitle: commonColors.grayDark,
+      searchBackground: commonColors.slateBackground,
+      searchBorder: commonColors.grayLight,
+      searchText: palette.primary,
+      searchPlaceholder: commonColors.gray,
+      followBackground: accent600,
+      followText: commonColors.white,
+      followingBackground: accent100,
+      followingText: accent600,
+      acceptBackground: commonColors.successGreen,
+      acceptText: commonColors.white,
+      rejectBackground: commonColors.white,
+      rejectBorder: commonColors.grayLight,
+      rejectText: commonColors.grayDark,
+      badgeBackground: commonColors.errorRed,
+      badgeText: commonColors.white,
+      bubbleMe: accent600,
+      bubbleMeText: commonColors.white,
+      bubbleThem: commonColors.white,
+      bubbleThemText: palette.primary,
+      chatInputBackground: commonColors.white,
+      chatInputBorder: commonColors.grayLight,
+      chatInputText: palette.primary,
+      chatInputPlaceholder: commonColors.gray,
+      sendButton: accent600,
+      sendButtonIcon: commonColors.white,
+      timestampText: commonColors.gray,
+      emptyIcon: commonColors.grayLight,
+      emptyText: '#6B7280',
+      emptySubtext: commonColors.gray,
+      avatarBorder: commonColors.grayLight,
+      unreadDot: accent600,
+    },
+  };
+}
+
+function buildCommunityDark(palette: BrandPalette): CommunityTheme {
+  const accent400 = palette.accent[400];
+
+  return {
+    ...getCommonTheme(palette),
+    community: {
+      background: commonColors.darkSurface,
+      headerBackground: commonColors.darkCard,
+      headerBorder: commonColors.darkBorder,
+      headerTitle: commonColors.white,
+      tabBackground: commonColors.darkCard,
+      tabBorder: commonColors.darkBorder,
+      tabText: commonColors.gray,
+      tabActiveText: commonColors.white,
+      tabActiveIndicator: accent400,
+      segmentBackground: '#1A2440',
+      segmentActiveBackground: commonColors.darkBorder,
+      segmentText: commonColors.gray,
+      segmentActiveText: commonColors.white,
+      submodulesBarBackground: withAlpha(commonColors.darkCard, 0.95),
+      submodulesBarBorder: commonColors.darkBorder,
+      submodulesBarIconInactive: commonColors.gray,
+      submodulesBarTextInactive: commonColors.gray,
+      submodulesBarIconActive: accent400,
+      submodulesBarTextActive: accent400,
+      cardBackground: commonColors.darkCard,
+      cardBorder: commonColors.darkBorder,
+      cardTitle: commonColors.white,
+      cardSubtitle: commonColors.gray,
+      searchBackground: '#1A2440',
+      searchBorder: commonColors.darkBorder,
+      searchText: commonColors.offWhite,
+      searchPlaceholder: commonColors.grayDark,
+      followBackground: accent400,
+      followText: commonColors.white,
+      followingBackground: withAlpha(accent400, 0.15),
+      followingText: accent400,
+      acceptBackground: commonColors.successGreen,
+      acceptText: commonColors.white,
+      rejectBackground: commonColors.darkCard,
+      rejectBorder: commonColors.darkBorder,
+      rejectText: commonColors.gray,
+      badgeBackground: commonColors.errorRed,
+      badgeText: commonColors.white,
+      bubbleMe: accent400,
+      bubbleMeText: commonColors.white,
+      bubbleThem: commonColors.darkCard,
+      bubbleThemText: commonColors.offWhite,
+      chatInputBackground: commonColors.darkCard,
+      chatInputBorder: commonColors.darkBorder,
+      chatInputText: commonColors.offWhite,
+      chatInputPlaceholder: commonColors.grayDark,
+      sendButton: accent400,
+      sendButtonIcon: commonColors.white,
+      timestampText: commonColors.grayDark,
+      emptyIcon: commonColors.darkBorder,
+      emptyText: commonColors.gray,
+      emptySubtext: commonColors.grayDark,
+      avatarBorder: commonColors.darkBorder,
+      unreadDot: accent400,
+    },
+  };
+}
+
+export function getCommunityTheme(palette: BrandPalette): CommunityTheme {
+  return palette.dark ? buildCommunityDark(palette) : buildCommunityLight(palette);
+}

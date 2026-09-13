@@ -15,19 +15,22 @@ import Touchable from '@components/Touchable';
 import AuthedImage from '@components/AuthedImage';
 import useScheduleTheme from '@hooks/useScheduleTheme';
 import {
+  CalendarDaysIcon,
+  CalendarIcon,
+  CalendarRangeIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  ColumnsIcon,
-  ListIcon,
+  LuggageIcon,
+  MapPinIcon,
   PlaneIcon,
-  ShirtIcon,
   PlusCircleIcon,
+  ShirtIcon,
   Wand2Icon,
 } from '@assets/icons';
 import { AppDispatch, RootState } from '@utilities/store';
 import { logError } from '@utilities/crashlytics';
 
-import FeatureWelcomeModal from '@components/FeatureWelcomeModal';
+import SubmodulesCoachMark, { SubmoduleHintItem } from '@components/SubmodulesCoachMark';
 import {
   loadEvents,
   loadTrips,
@@ -58,6 +61,13 @@ function toDateStr(date: Date): string {
   return date.toISOString().split('T')[0];
 }
 
+function formatTripDate(dateStr: string): string {
+  return new Date(`${dateStr}T12:00:00`).toLocaleDateString('es-ES', {
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
 // Week starts on Sunday — matches the zena web implementation.
 function getWeekDays(date: Date): Date[] {
   const startOfWeek = new Date(date);
@@ -82,9 +92,10 @@ function weekRangeLabel(days: Date[]): string {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-type ViewMode = 'week' | 'day';
+type ViewMode = 'week' | 'day' | 'trips';
 
 const MAX_EVENTS_PER_DAY = 3;
+const BOTTOM_TAB_HEIGHT = 56;
 
 function Schedule() {
   const { t } = useTranslation();
@@ -97,8 +108,11 @@ function Schedule() {
   const trips = useSelector((state: RootState) => state.schedule.trips);
   const outfits = useSelector((state: RootState) => state.schedule.outfits);
   const eventsStatus = useSelector((state: RootState) => state.schedule.eventsStatus);
+  const tripsStatus = useSelector((state: RootState) => state.schedule.tripsStatus);
   const latitude = useSelector((state: RootState) => state.location.latitude);
   const longitude = useSelector((state: RootState) => state.location.longitude);
+
+  const bottomBarTotalHeight = BOTTOM_TAB_HEIGHT + insets.bottom;
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('week');
@@ -423,7 +437,7 @@ function Schedule() {
     <ScrollView
       style={styles.scroll}
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={[styles.weekContainer, { paddingBottom: insets.bottom + 16 }]}
+      contentContainerStyle={[styles.weekContainer, { paddingBottom: bottomBarTotalHeight + 16 }]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -458,7 +472,7 @@ function Schedule() {
     return (
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.dayViewContent, { paddingBottom: insets.bottom + 32 }]}
+        contentContainerStyle={[styles.dayViewContent, { paddingBottom: bottomBarTotalHeight + 32 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -591,22 +605,95 @@ function Schedule() {
     );
   };
 
+  const renderTripsView = () => {
+    const sortedTrips = [...trips].sort((a, b) => a.startDate.localeCompare(b.startDate));
+
+    return (
+      <ScrollView
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.tripsContainer, { paddingBottom: bottomBarTotalHeight + 16 }]}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={s.headerTitle}
+          />
+        }
+      >
+        <Touchable
+          onPress={handleCreateTrip}
+          borderRadius={12}
+          style={[styles.tripsCreateBtn, { backgroundColor: s.buttonPrimary }]}
+        >
+          <PlaneIcon size={16} color={s.buttonPrimaryText} />
+          <Text style={[styles.tripsCreateBtnText, { color: s.buttonPrimaryText }]}>
+            {t('schedule.createTrip')}
+          </Text>
+        </Touchable>
+
+        {sortedTrips.length === 0 ? (
+          <View style={styles.emptyDay}>
+            <PlaneIcon size={48} color={s.emptyIcon} />
+            <Text style={[styles.emptyText, { color: s.emptyText }]}>
+              {t('schedule.hintTrips')}
+            </Text>
+          </View>
+        ) : (
+          sortedTrips.map(trip => (
+            <Touchable
+              key={trip.id}
+              onPress={() => handleOpenTrip(trip)}
+              borderRadius={16}
+              style={[
+                styles.tripRow,
+                { backgroundColor: s.tripCardBackground, borderColor: s.tripCardBorder },
+              ]}
+            >
+              <View style={[styles.tripRowIcon, { backgroundColor: s.tripBadgeBackground }]}>
+                <PlaneIcon size={18} color={s.tripBadgeText} />
+              </View>
+              <View style={styles.tripRowInfo}>
+                <Text
+                  style={[styles.tripRowName, { color: s.eventCardName }]}
+                  numberOfLines={1}
+                >
+                  {trip.name}
+                </Text>
+                <View style={styles.tripRowMetaRow}>
+                  <MapPinIcon size={12} color={s.emptyText} />
+                  <Text style={[styles.tripRowMeta, { color: s.emptyText }]} numberOfLines={1}>
+                    {trip.destination}
+                  </Text>
+                </View>
+                <View style={styles.tripRowMetaRow}>
+                  <CalendarIcon size={12} color={s.emptyText} />
+                  <Text style={[styles.tripRowMeta, { color: s.emptyText }]}>
+                    {formatTripDate(trip.startDate)} – {formatTripDate(trip.endDate)}
+                  </Text>
+                </View>
+              </View>
+              <ChevronRightIcon size={18} color={s.emptyText} />
+            </Touchable>
+          ))
+        )}
+      </ScrollView>
+    );
+  };
+
   const dateLabel =
     viewMode === 'week'
       ? weekRangeLabel(weekDays)
       : currentDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
 
+  const scheduleTabs: SubmoduleHintItem[] = [
+    { id: 'week', label: t('schedule.tabWeek'), hint: t('schedule.hintWeek'), Icon: CalendarRangeIcon },
+    { id: 'day', label: t('schedule.tabDay'), hint: t('schedule.hintDay'), Icon: CalendarDaysIcon },
+    { id: 'trips', label: t('schedule.tabTrips'), hint: t('schedule.hintTrips'), Icon: LuggageIcon },
+  ];
+
   return (
     <View style={[styles.root, { backgroundColor: s.background }]}>
-      <FeatureWelcomeModal
-        tour="agenda-tour"
-        titleKey="menu.schedule"
-        stepKeys={[
-          'onboarding.scheduleStep1',
-          'onboarding.scheduleStep2',
-        ]}
-      />
-
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTitles}>
@@ -615,74 +702,80 @@ function Schedule() {
             {t('schedule.subtitle')}
           </Text>
         </View>
-        <View style={styles.headerActions}>
-          <View style={[styles.toggle, { backgroundColor: s.toggleBackground }]}>
-            <Touchable
-              onPress={() => setViewMode('week')}
-              borderRadius={7}
-              style={[
-                styles.toggleBtn,
-                viewMode === 'week' && { backgroundColor: s.toggleActiveBackground },
-              ]}
-            >
-              <ColumnsIcon
-                size={15}
-                color={viewMode === 'week' ? s.toggleActiveText : s.toggleInactiveText}
-              />
-            </Touchable>
-            <Touchable
-              onPress={() => setViewMode('day')}
-              borderRadius={7}
-              style={[
-                styles.toggleBtn,
-                viewMode === 'day' && { backgroundColor: s.toggleActiveBackground },
-              ]}
-            >
-              <ListIcon
-                size={15}
-                color={viewMode === 'day' ? s.toggleActiveText : s.toggleInactiveText}
-              />
-            </Touchable>
-          </View>
-          <Touchable
-            onPress={handleCreateTrip}
-            borderRadius={10}
-            style={[styles.tripBtn, { backgroundColor: s.buttonPrimary }]}
-          >
-            <PlaneIcon size={14} color={s.buttonPrimaryText} />
-            <Text style={[styles.tripBtnText, { color: s.buttonPrimaryText }]}>
-              {t('schedule.createTrip')}
-            </Text>
+      </View>
+
+      {/* Date navigation — only meaningful for the week/day views */}
+      {viewMode !== 'trips' && (
+        <View
+          style={[
+            styles.nav,
+            { backgroundColor: s.navBackground, borderColor: s.navBorder },
+          ]}
+        >
+          <Touchable onPress={() => navigateDate(-1)} hitSlop={8} borderRadius={20}>
+            <ChevronLeftIcon size={22} color={s.navText} />
+          </Touchable>
+          <Text style={[styles.navLabel, { color: s.navText }]}>{dateLabel}</Text>
+          <Touchable onPress={() => navigateDate(1)} hitSlop={8} borderRadius={20}>
+            <ChevronRightIcon size={22} color={s.navText} />
           </Touchable>
         </View>
-      </View>
-
-      {/* Date navigation */}
-      <View
-        style={[
-          styles.nav,
-          { backgroundColor: s.navBackground, borderColor: s.navBorder },
-        ]}
-      >
-        <Touchable onPress={() => navigateDate(-1)} hitSlop={8} borderRadius={20}>
-          <ChevronLeftIcon size={22} color={s.navText} />
-        </Touchable>
-        <Text style={[styles.navLabel, { color: s.navText }]}>{dateLabel}</Text>
-        <Touchable onPress={() => navigateDate(1)} hitSlop={8} borderRadius={20}>
-          <ChevronRightIcon size={22} color={s.navText} />
-        </Touchable>
-      </View>
+      )}
 
       {/* Content */}
-      {eventsStatus === 'loading' ? (
+      {viewMode !== 'trips' && eventsStatus === 'loading' ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator color={s.buttonPrimary} />
+        </View>
+      ) : viewMode === 'trips' && tripsStatus === 'loading' ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator color={s.buttonPrimary} />
         </View>
       ) : viewMode === 'week' ? (
         renderWeekView()
-      ) : (
+      ) : viewMode === 'day' ? (
         renderDayView()
+      ) : (
+        renderTripsView()
       )}
+
+      {/* Bottom submodules bar (week / day / trips) */}
+      <View
+        style={[
+          styles.bottomBar,
+          {
+            height: bottomBarTotalHeight,
+            paddingBottom: insets.bottom,
+            backgroundColor: s.bottomBarBackground,
+            borderTopColor: s.bottomBarBorder,
+          },
+        ]}
+      >
+        {scheduleTabs.map(tab => {
+          const isActive = viewMode === tab.id;
+          const color = isActive ? s.bottomBarActive : s.bottomBarInactive;
+          const { Icon } = tab;
+          return (
+            <Touchable
+              key={tab.id}
+              onPress={() => setViewMode(tab.id as ViewMode)}
+              borderRadius={8}
+              style={styles.bottomTabItem}
+            >
+              <Icon size={20} color={color} />
+              <Text style={[styles.bottomTabLabel, { color }]} numberOfLines={1}>
+                {tab.label}
+              </Text>
+            </Touchable>
+          );
+        })}
+      </View>
+
+      <SubmodulesCoachMark
+        viewId="agenda"
+        barHeight={bottomBarTotalHeight}
+        items={scheduleTabs}
+      />
 
       {/* Modals */}
       {selectedEvent && (
@@ -740,18 +833,6 @@ const styles = StyleSheet.create({
   headerTitles: { flex: 1 },
   title: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
   subtitle: { fontSize: 13, marginTop: 2 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  toggle: { flexDirection: 'row', borderRadius: 9, padding: 2 },
-  toggleBtn: { padding: 7, borderRadius: 7 },
-  tripBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-  },
-  tripBtnText: { fontSize: 13, fontWeight: '600' },
   nav: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -897,6 +978,54 @@ const styles = StyleSheet.create({
   eventCardName: { fontSize: 15, fontWeight: '700' },
   itemMini: { marginRight: 6 },
   itemMiniImage: { width: 36, height: 36, borderRadius: 6 },
+  // Trips view
+  tripsContainer: { paddingHorizontal: 20, paddingTop: 16, gap: 12 },
+  tripsCreateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginBottom: 2,
+  },
+  tripsCreateBtnText: { fontSize: 14, fontWeight: '700' },
+  tripRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 12,
+    gap: 12,
+  },
+  tripRowIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tripRowInfo: { flex: 1, gap: 4 },
+  tripRowName: { fontSize: 15, fontWeight: '700' },
+  tripRowMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  tripRowMeta: { fontSize: 12, flexShrink: 1 },
+  // Bottom submodules bar (week / day / trips)
+  bottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  bottomTabItem: {
+    flex: 1,
+    height: BOTTOM_TAB_HEIGHT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+  },
+  bottomTabLabel: { fontSize: 10, fontWeight: '600' },
 });
 
 export default Schedule;

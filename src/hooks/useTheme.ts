@@ -1,9 +1,9 @@
-import { AuthTheme, authLightTheme, authDarkTheme } from '@features/auth/theme';
-import useAppColorScheme from './useAppColorScheme';
+import { AuthTheme, getAuthTheme } from '@features/auth/theme';
+import useActiveThemePalette from './useActiveThemePalette';
 
 function useTheme(): AuthTheme {
-  const colorScheme = useAppColorScheme();
-  return colorScheme === 'dark' ? authDarkTheme : authLightTheme;
+  const palette = useActiveThemePalette();
+  return getAuthTheme(palette);
 }
 
 export default useTheme;

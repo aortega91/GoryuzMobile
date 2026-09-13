@@ -11,11 +11,12 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Touchable from '@components/Touchable';
 import AuthedImage from '@components/AuthedImage';
 import BottomSheet from '@components/BottomSheet';
-import FeatureWelcomeModal from '@components/FeatureWelcomeModal';
+import SubmodulesCoachMark from '@components/SubmodulesCoachMark';
 import useSecondLifeTheme from '@hooks/useSecondLifeTheme';
 import { AppDispatch, RootState } from '@utilities/store';
 import { loadProfile } from '@features/home/profileSlice';
@@ -33,6 +34,8 @@ import {
   StarIcon,
   ShirtIcon,
   SparklesIcon,
+  ArchiveIcon,
+  LeafIcon,
 } from '@assets/icons';
 
 import { updateProfile } from '@features/profile/api/profileUpdateApi';
@@ -68,6 +71,9 @@ function formatDate(ts: string | Date): string {
   }
 }
 
+// Height of the bottom submodules bar (vitrina/explorar/impacto), safe-area inset added separately.
+const BOTTOM_TAB_HEIGHT = 56;
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 function SecondLife() {
@@ -75,12 +81,14 @@ function SecondLife() {
   const sl = theme.secondLife;
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
+  const insets = useSafeAreaInsets();
 
   const profile = useSelector((s: RootState) => s.profile?.data);
 
   // ─── Main tab ──────────────────────────────────────────────────────────────
 
   const [mainTab, setMainTab] = useState<MainTab>('vitrina');
+  const bottomBarTotalHeight = BOTTOM_TAB_HEIGHT + insets.bottom;
 
   // ─── Vitrina state ─────────────────────────────────────────────────────────
 
@@ -595,23 +603,19 @@ function SecondLife() {
 
   // ─── Main tabs ─────────────────────────────────────────────────────────────
 
-  const MAIN_TABS: { id: MainTab; labelKey: string; Icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }> }[] = [
-    { id: 'vitrina', labelKey: 'secondLife.tabVitrina', Icon: ShirtIcon },
-    { id: 'explorar', labelKey: 'secondLife.tabExplorar', Icon: UsersIcon },
-    { id: 'impacto', labelKey: 'secondLife.tabImpacto', Icon: StarIcon },
+  const MAIN_TABS: {
+    id: MainTab;
+    label: string;
+    hint: string;
+    Icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
+  }[] = [
+    { id: 'vitrina', label: t('secondLife.tabVitrina'), hint: t('secondLife.hintVitrina'), Icon: ArchiveIcon },
+    { id: 'explorar', label: t('secondLife.tabExplorar'), hint: t('secondLife.hintExplorar'), Icon: ShoppingBagIcon },
+    { id: 'impacto', label: t('secondLife.tabImpacto'), hint: t('secondLife.hintImpacto'), Icon: LeafIcon },
   ];
 
   return (
     <View style={[styles.root, { backgroundColor: sl.background }]}>
-      <FeatureWelcomeModal
-        tour="sl-tour"
-        titleKey="menu.secondLife"
-        stepKeys={[
-          'onboarding.secondLifeStep1',
-          'onboarding.secondLifeStep2',
-          'onboarding.secondLifeStep3',
-        ]}
-      />
 
       {/* Header */}
       <View style={styles.header}>
@@ -619,42 +623,48 @@ function SecondLife() {
         <Text style={[styles.headerSubtitle, { color: sl.headerSubtitle }]}>{t('secondLife.subtitle')}</Text>
       </View>
 
-      {/* Main tab bar */}
-      <View style={[styles.mainTabBar, { backgroundColor: sl.tabBackground, borderBottomColor: sl.tabBorder }]}>
-        {MAIN_TABS.map(({ id, labelKey, Icon }) => {
+      {/* Content */}
+      <View style={[styles.content, { paddingBottom: bottomBarTotalHeight }]}>
+        {mainTab === 'vitrina' && renderVitrinaTab()}
+        {mainTab === 'explorar' && renderMarketplaceTab()}
+        {mainTab === 'impacto' && renderImpactTab()}
+      </View>
+
+      {/* Bottom submodules bar (vitrina/explorar/impacto) */}
+      <View
+        style={[
+          styles.submodulesBar,
+          {
+            height: bottomBarTotalHeight,
+            paddingBottom: insets.bottom,
+            backgroundColor: sl.tabBackground,
+            borderTopColor: sl.tabBorder,
+          },
+        ]}
+      >
+        {MAIN_TABS.map(({ id, label, Icon }) => {
           const isActive = mainTab === id;
+          const color = isActive ? sl.tabActiveBackground : sl.tabInactiveText;
           return (
             <Touchable
               key={id}
-              style={[
-                styles.mainTab,
-                isActive && [styles.mainTabActive, { borderBottomColor: sl.tabActiveBackground }],
-              ]}
+              style={styles.submodulesBarItem}
               onPress={() => setMainTab(id)}
-              borderRadius={0}
             >
-              <Icon
-                size={18}
-                color={isActive ? sl.tabActiveBackground : sl.tabInactiveText}
-                strokeWidth={isActive ? 2.5 : 2}
-              />
-              <Text
-                style={[
-                  styles.mainTabText,
-                  { color: isActive ? sl.tabActiveBackground : sl.tabInactiveText },
-                ]}
-              >
-                {t(labelKey)}
+              <Icon size={20} color={color} strokeWidth={isActive ? 2.5 : 2} />
+              <Text style={[styles.submodulesBarLabel, { color }]} numberOfLines={1}>
+                {label}
               </Text>
             </Touchable>
           );
         })}
       </View>
 
-      {/* Content */}
-      {mainTab === 'vitrina' && renderVitrinaTab()}
-      {mainTab === 'explorar' && renderMarketplaceTab()}
-      {mainTab === 'impacto' && renderImpactTab()}
+      <SubmodulesCoachMark
+        viewId="second-life"
+        barHeight={bottomBarTotalHeight}
+        items={MAIN_TABS.map(({ id, label, hint, Icon }) => ({ id, Icon, label, hint }))}
+      />
 
       {/* Item detail sheet */}
       {selectedItem && (() => {
@@ -819,26 +829,27 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 2,
   },
-  // ─── Main tabs ──────────────────────────────────────────────────────────────
-  mainTabBar: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-  },
-  mainTab: {
+  // ─── Content wrapper ────────────────────────────────────────────────────────
+  content: {
     flex: 1,
+  },
+  // ─── Bottom submodules bar (vitrina/explorar/impacto) ──────────────────────
+  submodulesBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     flexDirection: 'row',
+    borderTopWidth: 1,
+  },
+  submodulesBarItem: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
-    paddingVertical: 10,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
+    gap: 3,
   },
-  mainTabActive: {
-    borderBottomWidth: 2,
-  },
-  mainTabText: {
-    fontSize: 12,
+  submodulesBarLabel: {
+    fontSize: 10,
     fontWeight: '600',
   },
   // ─── Tab content ────────────────────────────────────────────────────────────

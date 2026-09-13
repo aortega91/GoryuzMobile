@@ -1,13 +1,9 @@
-import {
-  SubscriptionTheme,
-  subscriptionLightTheme,
-  subscriptionDarkTheme,
-} from '@features/subscription/theme';
-import useAppColorScheme from './useAppColorScheme';
+import { SubscriptionTheme, getSubscriptionTheme } from '@features/subscription/theme';
+import useActiveThemePalette from './useActiveThemePalette';
 
 function useSubscriptionTheme(): SubscriptionTheme {
-  const colorScheme = useAppColorScheme();
-  return colorScheme === 'dark' ? subscriptionDarkTheme : subscriptionLightTheme;
+  const palette = useActiveThemePalette();
+  return getSubscriptionTheme(palette);
 }
 
 export default useSubscriptionTheme;

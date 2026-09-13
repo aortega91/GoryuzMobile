@@ -1,24 +1,23 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-export type AppThemePreference = 'light' | 'dark' | 'system';
+import { ThemeId, DEFAULT_THEME_ID } from '@theme/palettes';
 
 interface AppThemeState {
-  preference: AppThemePreference;
+  themeId: ThemeId;
 }
 
 const initialState: AppThemeState = {
-  preference: 'system',
+  themeId: DEFAULT_THEME_ID,
 };
 
 const appThemeSlice = createSlice({
   name: 'appTheme',
   initialState,
   reducers: {
-    setThemePreference(state, action: PayloadAction<AppThemePreference>) {
-      state.preference = action.payload;
+    setThemeId(state, action: PayloadAction<ThemeId>) {
+      state.themeId = action.payload;
     },
   },
 });
 
-export const { setThemePreference } = appThemeSlice.actions;
+export const { setThemeId } = appThemeSlice.actions;
 export default appThemeSlice.reducer;

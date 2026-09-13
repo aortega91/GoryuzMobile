@@ -75,3 +75,8 @@ export { default as PaletteIcon } from './PaletteIcon';
 export { default as FramePersonIcon } from './FramePersonIcon';
 export { default as CommentIcon } from './CommentIcon';
 export { default as ApparelIcon } from './ApparelIcon';
+export { default as LeafIcon } from './LeafIcon';
+export { default as CalendarDaysIcon } from './CalendarDaysIcon';
+export { default as CalendarRangeIcon } from './CalendarRangeIcon';
+export { default as LuggageIcon } from './LuggageIcon';
+export { default as SlidersHorizontalIcon } from './SlidersHorizontalIcon';

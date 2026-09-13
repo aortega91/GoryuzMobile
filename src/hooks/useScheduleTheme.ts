@@ -1,13 +1,9 @@
-import {
-  scheduleLightTheme,
-  scheduleDarkTheme,
-  ScheduleThemeInstance,
-} from '@features/schedule/theme';
-import useAppColorScheme from './useAppColorScheme';
+import { ScheduleTheme, getScheduleTheme } from '@features/schedule/theme';
+import useActiveThemePalette from './useActiveThemePalette';
 
-function useScheduleTheme(): ScheduleThemeInstance {
-  const colorScheme = useAppColorScheme();
-  return colorScheme === 'dark' ? scheduleDarkTheme : scheduleLightTheme;
+function useScheduleTheme(): ScheduleTheme {
+  const palette = useActiveThemePalette();
+  return getScheduleTheme(palette);
 }
 
 export default useScheduleTheme;

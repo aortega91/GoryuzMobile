@@ -1,5 +1,6 @@
 import commonColors from '@theme/commonColors';
-import { Theme, lightTheme, darkTheme } from '@theme/index';
+import { Theme, getCommonTheme } from '@theme/index';
+import { BrandPalette, withAlpha } from '@theme/palettes';
 
 export interface NotificationsTheme extends Theme {
   notifications: {
@@ -20,42 +21,58 @@ export interface NotificationsTheme extends Theme {
   };
 }
 
-export const notificationsLightTheme: NotificationsTheme = {
-  ...lightTheme,
-  notifications: {
-    background: commonColors.slateBackground,
-    headerBorder: commonColors.grayLight,
-    headerTitle: commonColors.navyDark,
-    markAllText: commonColors.indigo,
-    itemBackground: commonColors.white,
-    itemUnreadBackground: commonColors.indigoSoft,
-    itemBorder: commonColors.grayLight,
-    unreadDot: commonColors.indigo,
-    text: '#1F2937',
-    timestamp: commonColors.grayDark,
-    deleteIcon: commonColors.gray,
-    emptyIcon: commonColors.grayLight,
-    emptyText: '#6B7280',
-    emptySubtext: commonColors.gray,
-  },
-};
+function buildNotificationsLight(palette: BrandPalette): NotificationsTheme {
+  const accent600 = palette.accent[600];
+  const accent100 = palette.accent[100];
 
-export const notificationsDarkTheme: NotificationsTheme = {
-  ...darkTheme,
-  notifications: {
-    background: commonColors.darkSurface,
-    headerBorder: commonColors.darkBorder,
-    headerTitle: commonColors.white,
-    markAllText: '#818CF8',
-    itemBackground: commonColors.darkCard,
-    itemUnreadBackground: '#1E2A4A',
-    itemBorder: commonColors.darkBorder,
-    unreadDot: '#818CF8',
-    text: commonColors.offWhite,
-    timestamp: commonColors.gray,
-    deleteIcon: commonColors.grayDark,
-    emptyIcon: commonColors.darkBorder,
-    emptyText: commonColors.gray,
-    emptySubtext: commonColors.grayDark,
-  },
-};
+  return {
+    ...getCommonTheme(palette),
+    notifications: {
+      background: commonColors.slateBackground,
+      headerBorder: commonColors.grayLight,
+      headerTitle: palette.primary,
+      markAllText: accent600,
+      itemBackground: commonColors.white,
+      itemUnreadBackground: accent100,
+      itemBorder: commonColors.grayLight,
+      unreadDot: accent600,
+      text: '#1F2937',
+      timestamp: commonColors.grayDark,
+      deleteIcon: commonColors.gray,
+      emptyIcon: commonColors.grayLight,
+      emptyText: '#6B7280',
+      emptySubtext: commonColors.gray,
+    },
+  };
+}
+
+function buildNotificationsDark(palette: BrandPalette): NotificationsTheme {
+  const { accentDefault } = palette;
+  const accent400 = palette.accent[400];
+
+  return {
+    ...getCommonTheme(palette),
+    notifications: {
+      background: commonColors.darkSurface,
+      headerBorder: commonColors.darkBorder,
+      headerTitle: commonColors.white,
+      markAllText: accent400,
+      itemBackground: commonColors.darkCard,
+      // Same role as the light theme's indigoSoft unread highlight — a pale
+      // accent tint, translated to a translucent overlay for dark surfaces.
+      itemUnreadBackground: withAlpha(accentDefault, 0.18),
+      itemBorder: commonColors.darkBorder,
+      unreadDot: accent400,
+      text: commonColors.offWhite,
+      timestamp: commonColors.gray,
+      deleteIcon: commonColors.grayDark,
+      emptyIcon: commonColors.darkBorder,
+      emptyText: commonColors.gray,
+      emptySubtext: commonColors.grayDark,
+    },
+  };
+}
+
+export function getNotificationsTheme(palette: BrandPalette): NotificationsTheme {
+  return palette.dark ? buildNotificationsDark(palette) : buildNotificationsLight(palette);
+}

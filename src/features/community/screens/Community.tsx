@@ -11,9 +11,11 @@ import {
 } from 'react-native';
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Touchable from '@components/Touchable';
 import AuthedImage from '@components/AuthedImage';
+import SubmodulesCoachMark, { SubmoduleHintItem } from '@components/SubmodulesCoachMark';
 import useCommunityTheme from '@hooks/useCommunityTheme';
 import useRequest from '@hooks/useRequest';
 import toast from '@utilities/toast';
@@ -211,6 +213,8 @@ function Community({
   const theme = useCommunityTheme();
   const c = theme.community;
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const submodulesBarHeight = 56 + insets.bottom;
   // The chat backend keys on the zena user id (the profile loaded behind the session).
   // NEVER fall back to the Firebase uid: it is not a row in the zena `users` table, so
   // the chat worker's `INSERT INTO messages` violates the `sender_id -> users.id` FK and
@@ -608,6 +612,33 @@ function Community({
 
   // ─ Layout ────────────────────────────────────────────────────────────────
 
+  // Bottom submodules bar (mobile-only in the web reference) replaces the old
+  // top segment control — search/following/requests now live at the foot of
+  // the screen, matching the reference's per-module bottom nav pattern.
+  const showConnectionsBar = view === 'connections' && !activeChat;
+
+  const connectionsTabs: (SubmoduleHintItem & { id: ConnectionsTab; badge?: number })[] = [
+    {
+      id: 'search',
+      Icon: SearchIcon,
+      label: t('community.tabSearch'),
+      hint: t('community.hintSearch'),
+    },
+    {
+      id: 'following',
+      Icon: UsersIcon,
+      label: t('community.tabFollowing'),
+      hint: t('community.hintFollowing'),
+    },
+    {
+      id: 'requests',
+      Icon: CheckIcon,
+      label: t('community.tabRequests'),
+      hint: t('community.hintRequests'),
+      badge: pendingRequestCount,
+    },
+  ];
+
   return (
     <View style={[styles.root, { backgroundColor: c.background }]}>
       {/* Header */}
@@ -622,25 +653,56 @@ function Community({
         </Text>
       </View>
 
-      {/* Connections sub-tabs */}
-      {view === 'connections' && !activeChat && (
-        <View style={[styles.segmentBar, { backgroundColor: c.segmentBackground }]}>
-          {([
-            { id: 'search' as ConnectionsTab, label: t('community.tabSearch') },
-            { id: 'following' as ConnectionsTab, label: t('community.tabFollowing') },
-            { id: 'requests' as ConnectionsTab, label: t('community.tabRequests') },
-          ]).map(seg => {
-            const isActive = connTab === seg.id;
+      {/* Content */}
+      <View style={[styles.content, showConnectionsBar && { paddingBottom: submodulesBarHeight }]}>
+        {view === 'connections' && !activeChat && connTab === 'search' && renderSearchTab()}
+        {view === 'connections' && !activeChat && connTab === 'following' && renderFollowingTab()}
+        {view === 'connections' && !activeChat && connTab === 'requests' && renderRequestsTab()}
+        {view === 'messages' && renderMessagesTab()}
+      </View>
+
+      {showConnectionsBar && (
+        <View
+          style={[
+            styles.submodulesBar,
+            {
+              height: submodulesBarHeight,
+              paddingBottom: insets.bottom,
+              backgroundColor: c.submodulesBarBackground,
+              borderTopColor: c.submodulesBarBorder,
+            },
+          ]}
+        >
+          {connectionsTabs.map(tab => {
+            const isActive = connTab === tab.id;
+            const { Icon } = tab;
             return (
               <Touchable
-                key={seg.id}
-                style={[styles.segmentItem, isActive && [styles.segmentItemActive, { backgroundColor: c.segmentActiveBackground }]]}
-                onPress={() => setConnTab(seg.id)}
-                borderRadius={8}
+                key={tab.id}
+                style={styles.submodulesBarItem}
+                onPress={() => setConnTab(tab.id)}
               >
-                <Text style={[styles.segmentText, { color: isActive ? c.segmentActiveText : c.segmentText }]}>
-                  {seg.label}
-                  {seg.id === 'requests' && pendingRequestCount > 0 ? ` (${pendingRequestCount})` : ''}
+                <View>
+                  <Icon
+                    size={20}
+                    color={isActive ? c.submodulesBarIconActive : c.submodulesBarIconInactive}
+                  />
+                  {!!tab.badge && tab.badge > 0 && (
+                    <View style={[styles.submodulesBarBadge, { backgroundColor: c.badgeBackground }]}>
+                      <Text style={[styles.submodulesBarBadgeText, { color: c.badgeText }]}>
+                        {tab.badge}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <Text
+                  style={[
+                    styles.submodulesBarLabel,
+                    { color: isActive ? c.submodulesBarTextActive : c.submodulesBarTextInactive },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {tab.label}
                 </Text>
               </Touchable>
             );
@@ -648,13 +710,13 @@ function Community({
         </View>
       )}
 
-      {/* Content */}
-      <View style={styles.content}>
-        {view === 'connections' && !activeChat && connTab === 'search' && renderSearchTab()}
-        {view === 'connections' && !activeChat && connTab === 'following' && renderFollowingTab()}
-        {view === 'connections' && !activeChat && connTab === 'requests' && renderRequestsTab()}
-        {view === 'messages' && renderMessagesTab()}
-      </View>
+      {showConnectionsBar && (
+        <SubmodulesCoachMark
+          viewId="connections"
+          barHeight={submodulesBarHeight}
+          items={connectionsTabs}
+        />
+      )}
     </View>
   );
 }
@@ -674,28 +736,38 @@ const styles = StyleSheet.create({
   },
   backBtn: { marginRight: 2 },
   headerTitle: { fontSize: 20, fontWeight: '800', letterSpacing: 0.2, flex: 1 },
-  // Segment control
-  segmentBar: {
+  // Bottom submodules bar (search/following/requests)
+  submodulesBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     flexDirection: 'row',
-    marginHorizontal: 16,
-    marginVertical: 12,
-    borderRadius: 10,
-    padding: 3,
+    justifyContent: 'space-around',
+    alignItems: 'stretch',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 8,
   },
-  segmentItem: {
+  submodulesBarItem: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 7,
+    justifyContent: 'center',
+    gap: 2,
+    paddingTop: 8,
+  },
+  submodulesBarLabel: { fontSize: 10, fontWeight: '600' },
+  submodulesBarBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -8,
+    minWidth: 16,
+    height: 16,
     borderRadius: 8,
+    paddingHorizontal: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  segmentItemActive: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  segmentText: { fontSize: 12, fontWeight: '600' },
+  submodulesBarBadgeText: { fontSize: 9, fontWeight: '700' },
   // Content
   content: { flex: 1 },
   tabContent: { flex: 1 },

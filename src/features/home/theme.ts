@@ -1,5 +1,6 @@
 import commonColors from '@theme/commonColors';
-import { Theme, lightTheme, darkTheme } from '@theme/index';
+import { Theme, getCommonTheme } from '@theme/index';
+import { BrandPalette, withAlpha } from '@theme/palettes';
 
 // ─── Home module theme tokens ─────────────────────────────────────────────────
 
@@ -68,7 +69,7 @@ export interface HomeTheme extends Theme {
     chipActiveBorder: string;
     chipActiveText: string;
 
-    // Drawer (always dark-navy regardless of device theme)
+    // Drawer (always the active palette's `primary`, regardless of light/dark structure)
     drawerBackground: string;
     drawerBorder: string;
     drawerText: string;
@@ -82,142 +83,165 @@ export interface HomeTheme extends Theme {
   };
 }
 
-// ─── Light variant ────────────────────────────────────────────────────────────
+// ─── Light-structural variant — used by natural/moderno/elegancia ─────────────
+// (every palette except `boutique`, the only one flagged `dark` in the reference)
 
-export const homeLightTheme: HomeTheme = {
-  ...lightTheme,
-  home: {
-    background: commonColors.offWhite,
-    headlineText: commonColors.navyDark,
-    subtitleText: 'rgba(15,30,53,0.55)',
+function buildHomeLight(palette: BrandPalette): HomeTheme {
+  const accent600 = palette.accent[600];
+  const accent500 = palette.accent[500];
+  const accent400 = palette.accent[400];
+  const accent100 = palette.accent[100];
 
-    topBarBackground: commonColors.white,
-    topBarBorder: commonColors.grayLight,
-    topBarText: commonColors.navyDark,
-    topBarIcon: commonColors.grayDark,
+  return {
+    ...getCommonTheme(palette),
+    home: {
+      background: commonColors.offWhite,
+      headlineText: palette.primary,
+      subtitleText: 'rgba(15,30,53,0.55)',
 
-    locationPillBg: commonColors.offWhite,
-    locationPillBorder: '#F3F4F6',
-    locationPinColor: commonColors.indigoLight,
+      topBarBackground: commonColors.white,
+      topBarBorder: commonColors.grayLight,
+      topBarText: palette.primary,
+      topBarIcon: commonColors.grayDark,
 
-    gemBadgeBg: '#EDE9F7',
-    gemBadgeText: '#5B21B6',
-    gemBadgeBorder: '#C4B5FD',
+      locationPillBg: commonColors.offWhite,
+      locationPillBorder: '#F3F4F6',
+      locationPinColor: accent500,
 
-    cardBackground: commonColors.white,
-    cardBorder: commonColors.grayLight,
-    cardTitle: commonColors.navyDark,
-    cardDescription: commonColors.gray,
-    cardIcon: commonColors.navyMid,
-    cardArrow: commonColors.gray,
+      // Gem/coin badge is a fixed purple in the reference — not theme-tied.
+      gemBadgeBg: '#EDE9F7',
+      gemBadgeText: '#5B21B6',
+      gemBadgeBorder: '#C4B5FD',
 
-    ctaCardBackground: commonColors.indigoSoft,
-    ctaCardBorder: commonColors.indigoLight,
-    ctaCardIcon: commonColors.indigoLight,
+      cardBackground: commonColors.white,
+      cardBorder: commonColors.grayLight,
+      cardTitle: palette.primary,
+      cardDescription: commonColors.gray,
+      cardIcon: accent600,
+      cardArrow: commonColors.gray,
 
-    tabBarBackground: commonColors.white,
-    tabBarBorder: commonColors.grayLight,
-    tabBarIcon: commonColors.gray,
-    tabBarText: commonColors.gray,
-    tabBarActiveIcon: commonColors.indigo,
-    tabBarActiveText: commonColors.indigo,
+      ctaCardBackground: accent100,
+      ctaCardBorder: accent400,
+      ctaCardIcon: accent500,
 
-    fabBackground: commonColors.indigo,
-    fabIcon: commonColors.white,
+      tabBarBackground: commonColors.white,
+      tabBarBorder: commonColors.grayLight,
+      tabBarIcon: commonColors.gray,
+      tabBarText: commonColors.gray,
+      tabBarActiveIcon: accent600,
+      tabBarActiveText: accent600,
 
-    gridItemBorder: commonColors.grayLight,
-    inputBackground: commonColors.slateBackground,
-    inputBorder: commonColors.grayLight,
-    inputText: commonColors.navyDark,
-    inputPlaceholder: commonColors.gray,
-    primaryButton: commonColors.indigo,
-    primaryButtonText: commonColors.white,
-    chipBackground: commonColors.white,
-    chipBorder: commonColors.grayLight,
-    chipText: commonColors.grayDark,
-    chipActiveBackground: commonColors.indigo,
-    chipActiveBorder: commonColors.indigo,
-    chipActiveText: commonColors.white,
+      fabBackground: accent600,
+      fabIcon: commonColors.white,
 
-    drawerBackground: commonColors.navyDark,
-    drawerBorder: 'rgba(255,255,255,0.08)',
-    drawerText: 'rgba(255,255,255,0.80)',
-    drawerSubtitle: commonColors.copper,
-    drawerActiveBackground: commonColors.navyMid,
-    drawerActiveText: commonColors.white,
-    drawerIcon: 'rgba(255,255,255,0.55)',
-    drawerActiveIcon: commonColors.copperLight,
-    drawerCloseIcon: 'rgba(255,255,255,0.55)',
-    drawerBackdrop: 'rgba(0,0,0,0.45)',
-  },
-};
+      gridItemBorder: commonColors.grayLight,
+      inputBackground: commonColors.slateBackground,
+      inputBorder: commonColors.grayLight,
+      inputText: palette.primary,
+      inputPlaceholder: commonColors.gray,
+      primaryButton: accent600,
+      primaryButtonText: commonColors.white,
+      chipBackground: commonColors.white,
+      chipBorder: commonColors.grayLight,
+      chipText: commonColors.grayDark,
+      chipActiveBackground: accent600,
+      chipActiveBorder: accent600,
+      chipActiveText: commonColors.white,
 
-// ─── Dark variant ─────────────────────────────────────────────────────────────
+      // Sidebar aside is always `bg-primary` in the reference, its active nav
+      // item always `bg-[#1F2937]` (fixed slate) with white text/icon — only
+      // the `dark` class (boutique only) swaps that text/icon to the accent.
+      drawerBackground: palette.primary,
+      drawerBorder: 'transparent',
+      drawerText: commonColors.gray,
+      drawerSubtitle: palette.accentDefault,
+      drawerActiveBackground: commonColors.darkCard,
+      drawerActiveText: commonColors.white,
+      drawerIcon: commonColors.gray,
+      drawerActiveIcon: commonColors.white,
+      drawerCloseIcon: commonColors.gray,
+      drawerBackdrop: withAlpha(palette.primary, 0.4),
+    },
+  };
+}
 
-export const homeDarkTheme: HomeTheme = {
-  ...darkTheme,
-  home: {
-    background: commonColors.darkSurface,
-    headlineText: commonColors.white,
-    subtitleText: 'rgba(255,255,255,0.55)',
+// ─── Dark-structural variant — used only by `boutique` ────────────────────────
 
-    topBarBackground: commonColors.darkCard,
-    topBarBorder: commonColors.darkBorder,
-    topBarText: commonColors.white,
-    topBarIcon: 'rgba(255,255,255,0.60)',
+function buildHomeDark(palette: BrandPalette): HomeTheme {
+  const { accentDefault } = palette;
+  const accent400 = palette.accent[400];
 
-    locationPillBg: commonColors.darkCard,
-    locationPillBorder: commonColors.darkBorder,
-    locationPinColor: '#818CF8',
+  return {
+    ...getCommonTheme(palette),
+    home: {
+      background: commonColors.darkSurface,
+      headlineText: commonColors.white,
+      subtitleText: 'rgba(255,255,255,0.55)',
 
-    gemBadgeBg: '#2D1B69',
-    gemBadgeText: '#C4B5FD',
-    gemBadgeBorder: '#4C1D95',
+      topBarBackground: commonColors.darkCard,
+      topBarBorder: commonColors.darkBorder,
+      topBarText: commonColors.white,
+      topBarIcon: 'rgba(255,255,255,0.60)',
 
-    cardBackground: commonColors.darkCard,
-    cardBorder: commonColors.darkBorder,
-    cardTitle: commonColors.white,
-    cardDescription: 'rgba(255,255,255,0.55)',
-    cardIcon: commonColors.copperLight,
-    cardArrow: 'rgba(255,255,255,0.35)',
+      locationPillBg: commonColors.darkCard,
+      locationPillBorder: commonColors.darkBorder,
+      locationPinColor: accent400,
 
-    ctaCardBackground: 'rgba(99,102,241,0.15)',
-    ctaCardBorder: commonColors.indigoLight,
-    ctaCardIcon: '#818CF8',
+      gemBadgeBg: '#2D1B69',
+      gemBadgeText: '#C4B5FD',
+      gemBadgeBorder: '#4C1D95',
 
-    tabBarBackground: commonColors.darkCard,
-    tabBarBorder: commonColors.darkBorder,
-    tabBarIcon: 'rgba(255,255,255,0.40)',
-    tabBarText: 'rgba(255,255,255,0.40)',
-    tabBarActiveIcon: '#818CF8',
-    tabBarActiveText: '#818CF8',
+      cardBackground: commonColors.darkCard,
+      cardBorder: commonColors.darkBorder,
+      cardTitle: commonColors.white,
+      cardDescription: 'rgba(255,255,255,0.55)',
+      cardIcon: accent400,
+      cardArrow: 'rgba(255,255,255,0.35)',
 
-    fabBackground: commonColors.indigo,
-    fabIcon: commonColors.white,
+      ctaCardBackground: withAlpha(accentDefault, 0.15),
+      ctaCardBorder: accent400,
+      ctaCardIcon: accent400,
 
-    gridItemBorder: commonColors.darkBorder,
-    inputBackground: '#1A2440',
-    inputBorder: commonColors.darkBorder,
-    inputText: commonColors.offWhite,
-    inputPlaceholder: commonColors.grayDark,
-    primaryButton: '#818CF8',
-    primaryButtonText: commonColors.white,
-    chipBackground: commonColors.darkCard,
-    chipBorder: commonColors.darkBorder,
-    chipText: commonColors.gray,
-    chipActiveBackground: '#818CF8',
-    chipActiveBorder: '#818CF8',
-    chipActiveText: commonColors.white,
+      tabBarBackground: commonColors.darkCard,
+      tabBarBorder: commonColors.darkBorder,
+      tabBarIcon: 'rgba(255,255,255,0.40)',
+      tabBarText: 'rgba(255,255,255,0.40)',
+      tabBarActiveIcon: accentDefault,
+      tabBarActiveText: accentDefault,
 
-    drawerBackground: commonColors.navyDark,
-    drawerBorder: 'rgba(255,255,255,0.08)',
-    drawerText: 'rgba(255,255,255,0.80)',
-    drawerSubtitle: commonColors.copper,
-    drawerActiveBackground: commonColors.navyMid,
-    drawerActiveText: commonColors.white,
-    drawerIcon: 'rgba(255,255,255,0.55)',
-    drawerActiveIcon: commonColors.copperLight,
-    drawerCloseIcon: 'rgba(255,255,255,0.55)',
-    drawerBackdrop: 'rgba(0,0,0,0.60)',
-  },
-};
+      fabBackground: accentDefault,
+      fabIcon: commonColors.white,
+
+      gridItemBorder: commonColors.darkBorder,
+      inputBackground: commonColors.darkSurface,
+      inputBorder: commonColors.darkBorder,
+      inputText: commonColors.offWhite,
+      inputPlaceholder: commonColors.grayDark,
+      primaryButton: accentDefault,
+      primaryButtonText: commonColors.white,
+      chipBackground: commonColors.darkCard,
+      chipBorder: commonColors.darkBorder,
+      chipText: commonColors.gray,
+      chipActiveBackground: accentDefault,
+      chipActiveBorder: accentDefault,
+      chipActiveText: commonColors.white,
+
+      drawerBackground: palette.primary,
+      drawerBorder: 'transparent',
+      drawerText: commonColors.gray,
+      drawerSubtitle: accentDefault,
+      drawerActiveBackground: commonColors.darkCard,
+      // `dark:text-accent` wins over the plain `text-white` once the `dark`
+      // class is active — only true for boutique.
+      drawerActiveText: accentDefault,
+      drawerIcon: commonColors.gray,
+      drawerActiveIcon: accentDefault,
+      drawerCloseIcon: commonColors.gray,
+      drawerBackdrop: 'rgba(0,0,0,0.60)',
+    },
+  };
+}
+
+export function getHomeTheme(palette: BrandPalette): HomeTheme {
+  return palette.dark ? buildHomeDark(palette) : buildHomeLight(palette);
+}

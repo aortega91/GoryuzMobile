@@ -19,7 +19,7 @@ import AuthedImage from '@components/AuthedImage';
 import Touchable from '@components/Touchable';
 import BottomSheet from '@components/BottomSheet';
 import UpgradeModal from '@components/UpgradeModal';
-import FeatureWelcomeModal from '@components/FeatureWelcomeModal';
+import SubmodulesCoachMark from '@components/SubmodulesCoachMark';
 import useStylesTheme from '@hooks/useStylesTheme';
 import useCameraPermission from '@hooks/useCameraPermission';
 import {
@@ -184,8 +184,8 @@ function OutfitCard({ outfit, onViewDetail, onTags, onShare, onDelete }: OutfitC
         {outfit.tags.length > 0 && (
           <View style={styles.tagsOverlay}>
             {outfit.tags.slice(0, 2).map(tag => (
-              <View key={tag} style={styles.tagChip}>
-                <Text style={styles.tagChipText}>{tag}</Text>
+              <View key={tag} style={[styles.tagChip, { backgroundColor: s.cardTagChipBackground }]}>
+                <Text style={[styles.tagChipText, { color: s.cardTagChipText }]}>{tag}</Text>
               </View>
             ))}
           </View>
@@ -1381,17 +1381,16 @@ function Styles() {
     { key: 'tags', label: t('styles.tabTags'), Icon: TagIcon },
   ];
 
+  const TAB_HINT_KEYS: Record<Tab, string> = {
+    looks: 'styles.hintLooks',
+    prompt: 'styles.hintPrompt',
+    body: 'styles.hintBody',
+    colorimetry: 'styles.hintColorimetry',
+    tags: 'styles.hintTags',
+  };
+
   return (
     <View style={[styles.root, { backgroundColor: s.background }]}>
-      <FeatureWelcomeModal
-        tour="stylist-tour"
-        titleKey="menu.styles"
-        stepKeys={[
-          'onboarding.stylesStep1',
-          'onboarding.stylesStep2',
-          'onboarding.stylesStep3',
-        ]}
-      />
 
       {/* Header */}
       <View style={styles.header}>
@@ -1445,7 +1444,7 @@ function Styles() {
           {createStep === 1 && (
             <View style={styles.createGrid}>
               {[
-                { label: t('styles.createOutfits'),  Icon: ShirtIcon,    color: '#6366F1', onPress: () => setCreateStep(2),                                               soon: false },
+                { label: t('styles.createOutfits'),  Icon: ShirtIcon,    color: s.createOutfitsIcon, onPress: () => setCreateStep(2),                                               soon: false },
                 { label: t('styles.createHaircuts'), Icon: ScissorsIcon, color: '#F97316', onPress: () => { setShowCreate(false); setShowHaircut(true); },                 soon: true },
                 { label: t('styles.createMakeup'),   Icon: SparklesIcon, color: '#EC4899', onPress: () => { setShowCreate(false); setShowMakeup(true); },                  soon: true },
                 { label: t('styles.createNails'),    Icon: HandIcon,     color: '#14B8A6', onPress: () => { setShowCreate(false); setShowNails(true); },                   soon: true },
@@ -1493,14 +1492,14 @@ function Styles() {
               <Touchable
                 onPress={() => { setShowCreate(false); setCreateStep(1); setShowAICreator(true); }}
                 borderRadius={16}
-                style={[styles.createMethod, { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' }]}
+                style={[styles.createMethod, { backgroundColor: s.createAiBackground, borderColor: s.createAiBorder }]}
               >
                 <View style={[styles.createMethodIcon, { backgroundColor: s.modalBackground }]}>
-                  <SparklesIcon size={24} color="#4F46E5" />
+                  <SparklesIcon size={24} color={s.createAiIcon} />
                 </View>
                 <View style={styles.createMethodText}>
-                  <Text style={[styles.createMethodTitle, { color: '#312E81' }]}>{t('styles.createAI')}</Text>
-                  <Text style={[styles.createMethodDesc, { color: '#4338CA' }]}>{t('styles.createAIDesc')}</Text>
+                  <Text style={[styles.createMethodTitle, { color: s.createAiTitle }]}>{t('styles.createAI')}</Text>
+                  <Text style={[styles.createMethodDesc, { color: s.createAiDesc }]}>{t('styles.createAIDesc')}</Text>
                 </View>
               </Touchable>
             </View>
@@ -1542,6 +1541,17 @@ function Styles() {
           );
         })}
       </View>
+
+      <SubmodulesCoachMark
+        viewId="stylist"
+        barHeight={bottomBarTotalHeight}
+        items={TABS.map(tab => ({
+          id: tab.key,
+          Icon: tab.Icon,
+          label: tab.label,
+          hint: t(TAB_HINT_KEYS[tab.key]),
+        }))}
+      />
 
       {/* Filter sheets */}
       {filterSheet === 'stars' && (
@@ -1792,17 +1802,13 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   tagChip: {
-    backgroundColor: 'rgba(255,255,255,0.92)',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(99,102,241,0.2)',
   },
   tagChipText: {
     fontSize: 9,
     fontWeight: '700',
-    color: '#6366F1',
   },
   cardInfo: {
     padding: 14,

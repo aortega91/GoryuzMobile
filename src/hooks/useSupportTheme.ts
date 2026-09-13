@@ -1,13 +1,9 @@
-import {
-  SupportTheme,
-  supportLightTheme,
-  supportDarkTheme,
-} from '@features/support/theme';
-import useAppColorScheme from './useAppColorScheme';
+import { SupportTheme, getSupportTheme } from '@features/support/theme';
+import useActiveThemePalette from './useActiveThemePalette';
 
 function useSupportTheme(): SupportTheme {
-  const colorScheme = useAppColorScheme();
-  return colorScheme === 'dark' ? supportDarkTheme : supportLightTheme;
+  const palette = useActiveThemePalette();
+  return getSupportTheme(palette);
 }
 
 export default useSupportTheme;
