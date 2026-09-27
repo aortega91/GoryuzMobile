@@ -5,13 +5,15 @@ import {
   Easing,
   StyleSheet,
   Text,
-  TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import auth from '@react-native-firebase/auth';
 import { useTranslation } from 'react-i18next';
+import { useSelector } from 'react-redux';
 import { teardownPush } from '@utilities/push';
+import { RootState } from '@utilities/store';
 
 import Touchable from '@components/Touchable';
 import useHomeTheme from '@hooks/useHomeTheme';
@@ -26,7 +28,7 @@ import {
   StarIcon,
   UsersIcon,
 } from '@assets/icons';
-import { ActiveModule } from '../types';
+import { ActiveModule, TRACKED_MODULES } from '../types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -45,8 +47,14 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   {
     module: 'home',
-    labelKey: 'menu.lookbook',
+    labelKey: 'menu.home',
     icon: color => <HomeIcon size={20} color={color} />,
+  },
+  {
+    // The design's LookBook feed has no backend yet (mock data only).
+    module: 'lookbook',
+    labelKey: 'menu.lookbook',
+    icon: color => <SparklesIcon size={20} color={color} />,
     hidden: true,
   },
   {
@@ -103,6 +111,9 @@ const DrawerMenu = forwardRef<DrawerMenuHandle, DrawerMenuProps>(
   const dt = theme.home;
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const visitedModules = useSelector(
+    (state: RootState) => state.onboarding.visitedModules ?? [],
+  );
 
   const translateX = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
@@ -155,7 +166,9 @@ const DrawerMenu = forwardRef<DrawerMenuHandle, DrawerMenuProps>(
         style={[styles.backdrop, { backgroundColor: dt.drawerBackdrop, opacity: backdropOpacity }]}
         pointerEvents={isOpen ? 'auto' : 'none'}
       >
-        <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => { animateClose(); onClose(); }} activeOpacity={1} />
+        <TouchableWithoutFeedback onPress={() => { animateClose(); onClose(); }}>
+          <View style={StyleSheet.absoluteFill} />
+        </TouchableWithoutFeedback>
       </Animated.View>
 
       {/* Drawer panel */}
@@ -181,6 +194,8 @@ const DrawerMenu = forwardRef<DrawerMenuHandle, DrawerMenuProps>(
         <View style={styles.nav}>
           {NAV_ITEMS.filter(item => !item.hidden).map(item => {
             const isActive = activeModule === item.module;
+            const unvisited =
+              TRACKED_MODULES.includes(item.module) && !visitedModules.includes(item.module);
             return (
               <Touchable
                 key={item.module}
@@ -199,12 +214,18 @@ const DrawerMenu = forwardRef<DrawerMenuHandle, DrawerMenuProps>(
                 ]}>
                   {t(item.labelKey)}
                 </Text>
+                {unvisited && (
+                  <View
+                    style={[styles.unvisitedDot, { backgroundColor: dt.unvisitedDot }]}
+                    accessibilityLabel={t('menu.moduleNotVisited')}
+                  />
+                )}
               </Touchable>
             );
           })}
         </View>
 
-        {/* Footer — secondary links (support, then logout), pinned to bottom */}
+        {/* Footer — secondary links ("Mejoras" i.e. support tickets, then logout), pinned to bottom */}
         <View style={[styles.logoutSection, { borderTopColor: dt.drawerBorder, paddingBottom: insets.bottom + 12 }]}>
           <Touchable
             style={styles.footerLink}
@@ -326,6 +347,12 @@ const styles = StyleSheet.create({
   },
   navLabelActive: {
     fontWeight: '700',
+  },
+  unvisitedDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginLeft: -6,
   },
 });
 

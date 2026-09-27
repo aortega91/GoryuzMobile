@@ -80,6 +80,44 @@ export interface HomeTheme extends Theme {
     drawerActiveIcon: string;
     drawerCloseIcon: string;
     drawerBackdrop: string;
+
+    // Inicio — nudge banners (avatar setup / first item)
+    nudgeBackground: string;
+    nudgeBorder: string;
+    nudgeIcon: string;
+    nudgeTitle: string;
+    nudgeText: string;
+    nudgeBrand: string;
+
+    // Inicio — "first steps" checklist
+    checklistBackground: string;
+    checklistBorder: string;
+    checklistTitle: string;
+    checklistSubtitle: string;
+    checklistChevron: string;
+    rewardBadgeBackground: string;
+    rewardBadgeText: string;
+    rewardBoxBorder: string;
+    progressTrack: string;
+    progressFill: string;
+    progressText: string;
+    taskBackground: string;
+    taskBorder: string;
+    taskText: string;
+    taskIconBackground: string;
+    taskIcon: string;
+    taskArrow: string;
+    taskDoneBackground: string;
+    taskDoneBorder: string;
+    taskDoneIconBackground: string;
+    taskDoneIcon: string;
+    taskDoneText: string;
+    claimButton: string;
+    claimButtonText: string;
+
+    // Drawer "not visited yet" dot
+    unvisitedDot: string;
+    unvisitedDotRing: string;
   };
 }
 
@@ -91,6 +129,8 @@ function buildHomeLight(palette: BrandPalette): HomeTheme {
   const accent500 = palette.accent[500];
   const accent400 = palette.accent[400];
   const accent100 = palette.accent[100];
+  // The reference's bare `accent` var (`bg-accent`, `border-accent`, …).
+  const accentDefaultL = palette.accentDefault;
 
   return {
     ...getCommonTheme(palette),
@@ -161,6 +201,41 @@ function buildHomeLight(palette: BrandPalette): HomeTheme {
       drawerActiveIcon: commonColors.white,
       drawerCloseIcon: commonColors.gray,
       drawerBackdrop: withAlpha(palette.primary, 0.4),
+
+      nudgeBackground: withAlpha(accentDefaultL, 0.1),
+      nudgeBorder: accentDefaultL,
+      nudgeIcon: accentDefaultL,
+      nudgeTitle: '#1F2937',
+      nudgeText: '#4B5563',
+      nudgeBrand: palette.primary,
+
+      checklistBackground: commonColors.white,
+      checklistBorder: '#F3F4F6',
+      checklistTitle: palette.primary,
+      checklistSubtitle: commonColors.grayDark,
+      checklistChevron: commonColors.gray,
+      rewardBadgeBackground: '#FAF5FF',
+      rewardBadgeText: '#7E22CE',
+      rewardBoxBorder: '#F3E8FF',
+      progressTrack: '#F3F4F6',
+      progressFill: accentDefaultL,
+      progressText: commonColors.grayDark,
+      taskBackground: commonColors.offWhite,
+      taskBorder: '#F3F4F6',
+      taskText: '#374151',
+      taskIconBackground: commonColors.white,
+      taskIcon: accentDefaultL,
+      taskArrow: '#D1D5DB',
+      taskDoneBackground: '#F0FDF4',
+      taskDoneBorder: '#BBF7D0',
+      taskDoneIconBackground: '#22C55E',
+      taskDoneIcon: commonColors.white,
+      taskDoneText: commonColors.gray,
+      claimButton: accentDefaultL,
+      claimButtonText: commonColors.white,
+
+      unvisitedDot: accent600,
+      unvisitedDotRing: commonColors.white,
     },
   };
 }
@@ -238,6 +313,41 @@ function buildHomeDark(palette: BrandPalette): HomeTheme {
       drawerActiveIcon: accentDefault,
       drawerCloseIcon: commonColors.gray,
       drawerBackdrop: 'rgba(0,0,0,0.60)',
+
+      nudgeBackground: withAlpha(accentDefault, 0.2),
+      nudgeBorder: accentDefault,
+      nudgeIcon: accentDefault,
+      nudgeTitle: commonColors.grayLight,
+      nudgeText: '#D1D5DB',
+      nudgeBrand: accentDefault,
+
+      checklistBackground: commonColors.darkSurface,
+      checklistBorder: commonColors.darkCard,
+      checklistTitle: commonColors.white,
+      checklistSubtitle: commonColors.gray,
+      checklistChevron: commonColors.gray,
+      rewardBadgeBackground: 'rgba(59,7,100,0.3)',
+      rewardBadgeText: '#D8B4FE',
+      rewardBoxBorder: 'rgba(88,28,135,0.4)',
+      progressTrack: commonColors.darkCard,
+      progressFill: accentDefault,
+      progressText: commonColors.gray,
+      taskBackground: 'rgba(31,41,55,0.5)',
+      taskBorder: commonColors.darkCard,
+      taskText: commonColors.grayLight,
+      taskIconBackground: commonColors.darkSurface,
+      taskIcon: accentDefault,
+      taskArrow: '#4B5563',
+      taskDoneBackground: 'rgba(5,46,22,0.2)',
+      taskDoneBorder: 'rgba(20,83,45,0.4)',
+      taskDoneIconBackground: '#22C55E',
+      taskDoneIcon: commonColors.white,
+      taskDoneText: commonColors.grayDark,
+      claimButton: accentDefault,
+      claimButtonText: commonColors.white,
+
+      unvisitedDot: accentDefault,
+      unvisitedDotRing: commonColors.darkCard,
     },
   };
 }

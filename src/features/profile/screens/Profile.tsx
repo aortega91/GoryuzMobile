@@ -5,6 +5,7 @@ import React, {
   useCallback,
 } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Modal,
@@ -35,20 +36,36 @@ import { setThemeId } from '@utilities/appThemeSlice';
 import { THEME_ORDER, BRAND_PALETTES } from '@theme/palettes';
 import useCameraPermission from '@hooks/useCameraPermission';
 import {
+  AlertCircleIcon,
   CameraIcon,
   CheckIcon,
+  ChevronRightIcon,
   CrownIcon,
   AlertTriangleIcon,
   ChevronDownIcon,
+  FileTextIcon,
   GemIcon,
+  LockIcon,
   SlidersHorizontalIcon,
+  SmileIcon,
   TrashIcon,
   UserIcon,
 } from '@assets/icons';
 
 import useProfileTheme from '@hooks/useProfileTheme';
 import toast from '@utilities/toast';
-import { updateProfile, deleteAccount } from '../api/profileUpdateApi';
+import { ApiError } from '@api/client';
+import {
+  ALIAS_MAX_LENGTH,
+  NICKNAME_MAX_LENGTH,
+  checkNicknameAvailability,
+  deleteAccount,
+  isValidNickname,
+  normalizeNickname,
+  updateProfile,
+} from '../api/profileUpdateApi';
+import LegalDocumentView from '../components/LegalDocumentView';
+import { PRIVACY_POLICY, TERMS_AND_CONDITIONS } from '../legal';
 
 // ─── Option types ─────────────────────────────────────────────────────────────
 
@@ -58,8 +75,10 @@ interface PickerOption {
 }
 
 type ActivePicker = 'gender' | 'language' | 'currency' | null;
-type ActiveConfirm = 'cancelSubscription' | 'deleteAccount' | null;
+type ActiveConfirm = 'deleteAccount' | null;
 type ProfileTab = 'account' | 'app' | 'subscription';
+type NicknameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
+type LegalDoc = 'terms' | 'privacy' | null;
 
 // ─── Plan helpers ─────────────────────────────────────────────────────────────
 
@@ -433,6 +452,11 @@ const fieldStyles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.2,
   },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   pickerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -481,33 +505,29 @@ function Profile({ onViewPlans }: ProfileProps) {
   const themeId = useSelector((state: RootState) => state.appTheme.themeId);
 
   // Editable local state
+  const [alias, setAlias] = useState(profile?.alias ?? '');
   const [nickname, setNickname] = useState(profile?.nickname ?? '');
+  const [nicknameStatus, setNicknameStatus] = useState<NicknameStatus>('idle');
   const [phone, setPhone] = useState(profile?.phone ?? '');
   const [gender, setGender] = useState(profile?.gender ?? 'neutral');
   const [aiName, setAiName] = useState(profile?.aiName ?? 'GORYUZ');
   const [language, setLanguage] = useState(profile?.language ?? 'es');
   const [currency, setCurrency] = useState(profile?.currency || 'USD');
-  const [outfitRepetitionDays, setOutfitRepetitionDays] = useState(
-    profile?.outfitRepetitionDays ?? 7,
-  );
-  const [frequencyText, setFrequencyText] = useState(
-    String(profile?.outfitRepetitionDays ?? 7),
-  );
   const [localAvatarUri, setLocalAvatarUri] = useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [openLegalDoc, setOpenLegalDoc] = useState<LegalDoc>(null);
 
   // Sync editable fields when profile loads (profile may arrive after first render)
   const profileId = profile?.id;
   useEffect(() => {
     if (!profile) return;
+    setAlias(profile.alias ?? '');
     setNickname(profile.nickname ?? '');
     setPhone(profile.phone ?? '');
     setGender(profile.gender ?? 'neutral');
     setAiName(profile.aiName ?? 'GORYUZ');
     setLanguage(profile.language ?? 'es');
     setCurrency(profile.currency || 'USD');
-    setOutfitRepetitionDays(profile.outfitRepetitionDays ?? 7);
-    setFrequencyText(String(profile.outfitRepetitionDays ?? 7));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileId]);
 
@@ -537,12 +557,11 @@ function Profile({ onViewPlans }: ProfileProps) {
       if (loadProfile.fulfilled.match(result)) {
         const fresh = result.payload;
         skipNextAutoSaveRef.current = true;
+        setAlias(fresh.alias ?? '');
         setNickname(fresh.nickname ?? '');
         setPhone(fresh.phone ?? '');
         setGender(fresh.gender ?? 'neutral');
         setAiName(fresh.aiName ?? 'GORYUZ');
-        setOutfitRepetitionDays(fresh.outfitRepetitionDays ?? 7);
-        setFrequencyText(String(fresh.outfitRepetitionDays ?? 7));
         setLanguage(fresh.language ?? 'es');
         setCurrency(fresh.currency || 'USD');
         languageRef.current = fresh.language ?? 'es';
@@ -567,12 +586,24 @@ function Profile({ onViewPlans }: ProfileProps) {
   useEffect(() => { languageRef.current = language; }, [language]);
   useEffect(() => { currencyRef.current = currency; }, [currency]);
 
-  // Debounced auto-save for text fields (nickname, phone, gender, aiName).
+  // Debounced auto-save for text fields (alias, phone, gender, aiName).
+  // The @nickname is NOT part of it: it is unique and validated server-side
+  // (400 invalid / 409 taken), so it saves on its own on blur once the
+  // availability check has confirmed it — mirror of zena ProfileView.
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
+
+    // Only save what actually differs from the stored profile, so the
+    // post-load field sync doesn't fire a redundant POST.
+    const hasChanges = !profile
+      || alias.trim() !== (profile.alias ?? '').trim()
+      || phone !== (profile.phone ?? '')
+      || gender !== (profile.gender ?? 'neutral')
+      || aiName !== (profile.aiName ?? 'GORYUZ');
+    if (!hasChanges) return;
 
     const timer = setTimeout(async () => {
       if (isSaving) return;
@@ -583,11 +614,11 @@ function Profile({ onViewPlans }: ProfileProps) {
       setIsSaving(true);
       try {
         const updated = await updateProfile({
-          nickname: nickname || undefined,
+          // Saved trimmed: " " must not count as an alias (zena).
+          alias: alias.trim(),
           phone,
           gender: (gender as 'male' | 'female' | 'neutral') || undefined,
           aiName,
-          outfitRepetitionDays,
           language: languageRef.current,
           currency: currencyRef.current,
         });
@@ -603,14 +634,71 @@ function Profile({ onViewPlans }: ProfileProps) {
 
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nickname, phone, gender, aiName, outfitRepetitionDays]);
+  }, [alias, phone, gender, aiName]);
+
+  // ─── Nickname (@handle) availability — mirror of zena ProfileView ──────────
+
+  const nicknameChanged = normalizeNickname(nickname) !== (profile?.nickname ?? '');
+
+  useEffect(() => {
+    const value = normalizeNickname(nickname);
+
+    if (!nicknameChanged) {
+      setNicknameStatus('idle');
+      return undefined;
+    }
+    if (!isValidNickname(value)) {
+      setNicknameStatus('invalid');
+      return undefined;
+    }
+
+    setNicknameStatus('checking');
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const { available } = await checkNicknameAvailability(value);
+        if (!cancelled) setNicknameStatus(available ? 'available' : 'taken');
+      } catch {
+        // Already logged by the API client; fall back to neutral state.
+        if (!cancelled) setNicknameStatus('idle');
+      }
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [nickname, nicknameChanged]);
+
+  const handleNicknameBlur = useCallback(async () => {
+    // Only save what the server already confirmed as free; taken/invalid keeps
+    // the message on screen.
+    if (nicknameStatus !== 'available') return;
+    setIsSaving(true);
+    try {
+      // The server re-checks: someone may have taken it since — then 409.
+      const updated = await updateProfile({ nickname: normalizeNickname(nickname) });
+      dispatch(updateProfileLocally(updated));
+      setNicknameStatus('idle');
+      toast.success(t('profile.saved'));
+    } catch (err) {
+      if (err instanceof ApiError && (err.status === 409 || err.status === 400)) {
+        setNicknameStatus(err.status === 409 ? 'taken' : 'invalid');
+      } else {
+        logError(err, 'profile:nickname');
+        Alert.alert(t('common.error'), t('profile.errorUpdate'));
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  }, [nicknameStatus, nickname, dispatch, t]);
 
   // Immediate save for picker fields (language, currency).
   const savePickerField = useCallback(async (newLanguage: string, newCurrency: string) => {
     setIsSaving(true);
     try {
       const updated = await updateProfile({
-        nickname: nickname || undefined,
+        alias: alias.trim(),
         phone,
         gender: (gender as 'male' | 'female' | 'neutral') || undefined,
         aiName,
@@ -629,7 +717,7 @@ function Profile({ onViewPlans }: ProfileProps) {
       setIsSaving(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nickname, phone, gender, aiName, dispatch, t]);
+  }, [alias, phone, gender, aiName, dispatch, t]);
 
   // ─── Option lists ────────────────────────────────────────────────────────────
 
@@ -674,13 +762,7 @@ function Profile({ onViewPlans }: ProfileProps) {
     }
   }, [dispatch, t]);
 
-  const handleConfirmCancelSubscription = useCallback(() => {
-    setActiveConfirm(null);
-    Alert.alert(
-      t('profile.comingSoonTitle'),
-      t('profile.manageOnWeb'),
-    );
-  }, [t]);
+  const closeLegalDoc = useCallback(() => setOpenLegalDoc(null), []);
 
   // ─── Avatar upload ────────────────────────────────────────────────────────────
 
@@ -738,6 +820,17 @@ function Profile({ onViewPlans }: ProfileProps) {
   const nameInitial = (profile?.name ?? user?.displayName ?? '?').charAt(0).toUpperCase();
   const planName = getPlanName(profile?.plan ?? 'free', t);
   const isPremium = profile?.plan && profile.plan !== 'free';
+  const nicknameHasError = nicknameStatus === 'taken' || nicknameStatus === 'invalid';
+  const nicknameFeedbackText = {
+    idle: t('profile.usernameHint'),
+    checking: t('profile.usernameChecking'),
+    available: t('profile.usernameAvailable'),
+    taken: t('profile.usernameTaken'),
+    invalid: t('profile.usernameInvalid'),
+  }[nicknameStatus];
+  let nicknameFeedbackColor = pt.textSecondary;
+  if (nicknameHasError) nicknameFeedbackColor = pt.danger;
+  else if (nicknameStatus === 'available') nicknameFeedbackColor = pt.success;
   const renewalDate = profile?.stripeCurrentPeriodEnd
     ? new Date(profile.stripeCurrentPeriodEnd).toLocaleDateString(language, {
         day: 'numeric',
@@ -861,6 +954,37 @@ function Profile({ onViewPlans }: ProfileProps) {
                 hint={t('profile.fieldReadonly')}
                 colors={pt}
               />
+              {/* Alias: the name comes locked from the account, so this is how
+                  the user chooses what the app calls her. Empty = her name. */}
+              <View style={fieldStyles.wrapper}>
+                <View style={fieldStyles.labelRow}>
+                  <SmileIcon size={13} color={pt.iconSecondary} />
+                  <Text style={[fieldStyles.label, { color: pt.fieldLabel }]}>
+                    {t('profile.alias')}
+                  </Text>
+                </View>
+                <TextInput
+                  style={[
+                    styles.textInputStandalone,
+                    {
+                      color: pt.inputText,
+                      backgroundColor: pt.inputBackground,
+                      borderColor: pt.inputBorder,
+                    },
+                    isSaving && styles.disabled,
+                  ]}
+                  value={alias}
+                  onChangeText={setAlias}
+                  editable={!isSaving}
+                  maxLength={ALIAS_MAX_LENGTH}
+                  placeholder={t('profile.aliasPlaceholder')}
+                  placeholderTextColor={pt.iconSecondary}
+                />
+                <Text style={[fieldStyles.hint, { color: pt.textSecondary }]}>
+                  {t('profile.aliasHint')}
+                </Text>
+              </View>
+
               <ReadonlyField
                 label={t('profile.email')}
                 value={profile?.email ?? user?.email ?? '—'}
@@ -874,23 +998,41 @@ function Profile({ onViewPlans }: ProfileProps) {
                 <View
                   style={[
                     styles.usernameRow,
-                    { backgroundColor: pt.inputBackground, borderColor: pt.inputBorder },
+                    {
+                      backgroundColor: pt.inputBackground,
+                      borderColor: nicknameHasError ? pt.danger : pt.inputBorder,
+                    },
                   ]}
                 >
                   <Text style={[styles.atSign, { color: pt.iconSecondary }]}>@</Text>
                   <TextInput
                     style={[styles.textInput, { color: pt.inputText }, isSaving && styles.disabled]}
                     value={nickname}
-                    onChangeText={text =>
-                      setNickname(text.replace(/[^a-zA-Z0-9_]/g, ''))
-                    }
+                    onChangeText={text => setNickname(normalizeNickname(text))}
+                    onBlur={handleNicknameBlur}
                     editable={!isSaving}
-                    placeholder="usuario_unico"
+                    maxLength={NICKNAME_MAX_LENGTH}
+                    placeholder={t('profile.usernamePlaceholder')}
                     placeholderTextColor={pt.iconSecondary}
                     autoCapitalize="none"
                     autoCorrect={false}
                   />
+                  {nicknameStatus === 'checking' && (
+                    <ActivityIndicator size="small" color={pt.iconSecondary} />
+                  )}
+                  {nicknameStatus === 'available' && (
+                    <CheckIcon size={14} color={pt.success} />
+                  )}
+                  {nicknameHasError && <AlertCircleIcon size={14} color={pt.danger} />}
                 </View>
+                <Text
+                  style={[
+                    fieldStyles.hint,
+                    { color: nicknameFeedbackColor },
+                  ]}
+                >
+                  {nicknameFeedbackText}
+                </Text>
               </View>
 
               <View style={fieldStyles.wrapper}>
@@ -923,44 +1065,30 @@ function Profile({ onViewPlans }: ProfileProps) {
                 disabled={isSaving}
                 colors={pt}
               />
+            </SectionCard>
 
-              <View style={fieldStyles.wrapper}>
-                <Text style={[fieldStyles.label, { color: pt.fieldLabel }]}>
-                  {t('profile.frequency')}
-                </Text>
-                <TextInput
-                  style={[
-                    styles.textInputStandalone,
-                    {
-                      color: pt.inputText,
-                      backgroundColor: pt.inputBackground,
-                      borderColor: pt.inputBorder,
-                    },
-                    isSaving && styles.disabled,
-                  ]}
-                  value={frequencyText}
-                  editable={!isSaving}
-                  onChangeText={val => {
-                    setFrequencyText(val);
-                    const n = parseInt(val, 10);
-                    if (!Number.isNaN(n) && n >= 1 && n <= 60) {
-                      setOutfitRepetitionDays(n);
-                    }
-                  }}
-                  onBlur={() => {
-                    const n = parseInt(frequencyText, 10);
-                    const clamped = Number.isNaN(n) || n < 1 ? 1 : Math.min(n, 60);
-                    setOutfitRepetitionDays(clamped);
-                    setFrequencyText(String(clamped));
-                  }}
-                  keyboardType="number-pad"
-                  maxLength={2}
-                  placeholderTextColor={pt.iconSecondary}
-                />
-                <Text style={[fieldStyles.hint, { color: pt.textSecondary }]}>
-                  {t('profile.frequencyHint')}
-                </Text>
-              </View>
+            {/* ── Legal ── */}
+            <SectionCard title={t('profile.legal')} colors={pt}>
+              <Text style={[styles.sectionDescription, { color: pt.textSecondary }]}>
+                {t('profile.legalDescription')}
+              </Text>
+              {[
+                { id: 'terms' as const, Icon: FileTextIcon, label: t('profile.termsTitle') },
+                { id: 'privacy' as const, Icon: LockIcon, label: t('profile.privacyTitle') },
+              ].map(({ id, Icon, label }) => (
+                <Touchable
+                  key={id}
+                  style={[styles.legalRow, { borderColor: pt.legalRowBorder }]}
+                  onPress={() => setOpenLegalDoc(id)}
+                  borderRadius={12}
+                >
+                  <View style={[styles.legalRowIcon, { backgroundColor: pt.legalIconBackground }]}>
+                    <Icon size={18} color={pt.legalIcon} />
+                  </View>
+                  <Text style={[styles.legalRowLabel, { color: pt.textPrimary }]}>{label}</Text>
+                  <ChevronRightIcon size={16} color={pt.iconSecondary} />
+                </Touchable>
+              ))}
             </SectionCard>
             </>
             )}
@@ -1006,22 +1134,9 @@ function Profile({ onViewPlans }: ProfileProps) {
                 )}
               </View>
 
+              {/* Cancelling the subscription is intentionally not offered in
+                  the app (client requirement) — only the detail view. */}
               <View style={styles.subscriptionButtons}>
-                {isPremium && (
-                  <Touchable
-                    style={[
-                      styles.subscriptionBtn,
-                      styles.subscriptionBtnDanger,
-                      { borderColor: pt.danger },
-                    ]}
-                    onPress={() => setActiveConfirm('cancelSubscription')}
-                    borderRadius={10}
-                  >
-                    <Text style={[styles.subscriptionBtnText, { color: pt.danger }]}>
-                      {t('profile.cancelSubscription')}
-                    </Text>
-                  </Touchable>
-                )}
                 <Touchable
                   style={[
                     styles.subscriptionBtn,
@@ -1031,7 +1146,7 @@ function Profile({ onViewPlans }: ProfileProps) {
                   borderRadius={10}
                 >
                   <Text style={[styles.subscriptionBtnText, { color: pt.primary }]}>
-                    {t('profile.viewPlans')}
+                    {t('profile.viewDetail')}
                   </Text>
                 </Touchable>
               </View>
@@ -1290,17 +1405,6 @@ function Profile({ onViewPlans }: ProfileProps) {
 
       {/* ── Confirm modals ── */}
       <ConfirmModal
-        visible={activeConfirm === 'cancelSubscription'}
-        title={t('profile.cancelSubscriptionTitle')}
-        description={t('profile.cancelSubscriptionDesc')}
-        confirmLabel={t('profile.cancelSubscriptionConfirm')}
-        cancelLabel={t('profile.keepSubscription')}
-        isDanger
-        onConfirm={handleConfirmCancelSubscription}
-        onCancel={() => setActiveConfirm(null)}
-        colors={pt}
-      />
-      <ConfirmModal
         visible={activeConfirm === 'deleteAccount'}
         title={t('profile.deleteAccountConfirmTitle')}
         description={t('profile.deleteAccountConfirmDesc')}
@@ -1311,6 +1415,17 @@ function Profile({ onViewPlans }: ProfileProps) {
         onCancel={() => setActiveConfirm(null)}
         colors={pt}
       />
+
+      {/* Legal document viewer — full-screen over the Profile module */}
+      {openLegalDoc && (
+        <LegalDocumentView
+          document={openLegalDoc === 'terms' ? TERMS_AND_CONDITIONS : PRIVACY_POLICY}
+          headerTitle={
+            openLegalDoc === 'terms' ? t('profile.termsTitle') : t('profile.privacyTitle')
+          }
+          onBack={closeLegalDoc}
+        />
+      )}
 
       {blockedPermission && (
         <PermissionModal
@@ -1467,13 +1582,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 120,
   },
-  subscriptionBtnDanger: {
-    borderWidth: 1,
-    backgroundColor: 'transparent',
-  },
   subscriptionBtnText: {
     fontSize: 13,
     fontWeight: '700',
+  },
+  // Legal
+  sectionDescription: {
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: -8,
+  },
+  legalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderRadius: 12,
+  },
+  legalRowIcon: {
+    padding: 8,
+    borderRadius: 8,
+  },
+  legalRowLabel: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
   },
   // Danger zone
   dangerCard: {

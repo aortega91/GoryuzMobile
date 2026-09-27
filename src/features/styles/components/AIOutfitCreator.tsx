@@ -22,7 +22,7 @@ import { logError } from '@utilities/crashlytics';
 import { AppDispatch } from '@utilities/store';
 import { ClothingItem } from '@features/collection/types';
 import { loadProfile } from '@features/home/profileSlice';
-import { suggestOutfit } from '../api/stylesApi';
+import { completeOutfit, generateOutfitName } from '../api/stylesGenerateApi';
 
 interface Props {
   visible: boolean;
@@ -36,7 +36,7 @@ interface Props {
 type Step = 'prompt' | 'loading' | 'result';
 
 function AIOutfitCreator({ visible, closetItems, closetLoading, saving, onClose, onSave }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { styles: s } = useStylesTheme();
   const dispatch = useDispatch<AppDispatch>();
 
@@ -46,7 +46,10 @@ function AIOutfitCreator({ visible, closetItems, closetLoading, saving, onClose,
   const [outfitName, setOutfitName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const closetItemIds = useMemo(() => closetItems.map(i => i.id), [closetItems]);
+  const candidates = useMemo(
+    () => closetItems.map(i => ({ id: i.id, name: i.name, category: i.category })),
+    [closetItems],
+  );
 
   const suggestedItems = useMemo(
     () => suggestedIds.map(id => closetItems.find(i => i.id === id)).filter(Boolean) as ClothingItem[],
@@ -63,15 +66,28 @@ function AIOutfitCreator({ visible, closetItems, closetLoading, saving, onClose,
   };
 
   const handleGenerate = async () => {
-    if (!prompt.trim() || closetItemIds.length === 0) return;
+    if (!prompt.trim() || candidates.length === 0) return;
     setStep('loading');
     setError(null);
     try {
-      const result = await suggestOutfit({ prompt: prompt.trim(), closetItemIds });
-      setSuggestedIds(result.itemIds);
-      setOutfitName(result.name);
-      setStep('result');
+      // zena "Completar el look": the AI picks from the real closet (ids it
+      // invents are filtered out server-side), then a free call names it.
+      const result = await completeOutfit({ occasion: prompt.trim(), garments: [], candidates });
       dispatch(loadProfile());
+      if (result.ids.length === 0) throw new Error('complete-outfit returned no garments');
+      const picked = candidates.filter(c => result.ids.includes(c.id));
+      let name = prompt.trim().slice(0, 40);
+      try {
+        name = await generateOutfitName(
+          picked.map(p => ({ name: p.name, category: p.category })),
+          i18n.language,
+        );
+      } catch (nameErr) {
+        logError(nameErr instanceof Error ? nameErr : new Error(String(nameErr)), 'AIOutfitCreator.name');
+      }
+      setSuggestedIds(result.ids);
+      setOutfitName(name);
+      setStep('result');
     } catch (err) {
       logError(err instanceof Error ? err : new Error(String(err)), 'AIOutfitCreator.generate');
       setError(t('styles.aiCreatorError'));
@@ -103,7 +119,7 @@ function AIOutfitCreator({ visible, closetItems, closetLoading, saving, onClose,
         <View style={[styles.header, { borderBottomColor: s.modalBorder }]}>
           <Touchable
             onPress={step === 'result' ? () => setStep('prompt') : handleClose}
-            hitSlop={8}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             borderRadius={20}
             style={styles.backBtn}
             disabled={step === 'loading' || saving}

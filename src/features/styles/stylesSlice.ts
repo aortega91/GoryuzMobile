@@ -6,8 +6,10 @@ import { Outfit } from './types';
 import {
   fetchOutfits,
   createOutfit,
-  renameOutfit,
+  updateOutfit,
   deleteOutfit,
+  CreateOutfitParams,
+  OutfitPatch,
 } from './api/stylesApi';
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -17,6 +19,11 @@ interface StylesState {
   closetItems: ClothingItem[];
   outfitsStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
   closetStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
+  /**
+   * Set by the Closet's "create outfit" shortcut: Styles opens its creation
+   * sheet straight on the outfit-method step, then clears the flag.
+   */
+  createChoiceRequested: boolean;
 }
 
 const initialState: StylesState = {
@@ -24,6 +31,7 @@ const initialState: StylesState = {
   closetItems: [],
   outfitsStatus: 'idle',
   closetStatus: 'idle',
+  createChoiceRequested: false,
 };
 
 // ─── Thunks ───────────────────────────────────────────────────────────────────
@@ -38,28 +46,17 @@ export const loadClosetItems = createAsyncThunk('styles/loadClosetItems', async 
 
 export const addOutfit = createAsyncThunk(
   'styles/addOutfit',
-  async (params: { name: string; itemIds: string[] }) => createOutfit(params),
+  async (params: CreateOutfitParams) => createOutfit(params),
 );
 
-// TODO(backend): `tags` and `rating` are stored locally only — the zena backend
-// has no columns for them in the `outfits` table. Until that's added and a
-// PATCH /outfits/:id endpoint is implemented, these fields live in Redux persist
-// (MMKV) and are merged back in on every server refresh (see loadOutfits.fulfilled).
+/** PUT /outfits/:id — name, rating, tags, preview image and tech sheet all persist server-side. */
 export const editOutfit = createAsyncThunk(
   'styles/editOutfit',
-  async ({
-    id,
-    ...params
-  }: {
-    id: string;
-    name?: string;
-    tags?: string[];
-    rating?: number | null;
-  }) => {
-    if (params.name != null) {
-      await renameOutfit(id, params.name);
-    }
-    return { id, ...params };
+  async ({ id, ...patch }: OutfitPatch & { id: string }) => {
+    const saved = await updateOutfit(id, patch);
+    // A base64 preview comes back as its R2 URL; keep that, not the data URL.
+    const imageData = saved.imageUrl ?? patch.imageData;
+    return { id, ...patch, ...(imageData !== undefined ? { imageData } : {}) };
   },
 );
 
@@ -76,7 +73,14 @@ export const removeOutfit = createAsyncThunk(
 const stylesSlice = createSlice({
   name: 'styles',
   initialState,
-  reducers: {},
+  reducers: {
+    requestCreateChoice: state => {
+      state.createChoiceRequested = true;
+    },
+    clearCreateChoiceRequest: state => {
+      state.createChoiceRequested = false;
+    },
+  },
   extraReducers: builder => {
     builder
       .addCase(loadOutfits.pending, state => {
@@ -84,13 +88,7 @@ const stylesSlice = createSlice({
       })
       .addCase(loadOutfits.fulfilled, (state, action: PayloadAction<Outfit[]>) => {
         state.outfitsStatus = 'succeeded';
-        // tags and rating are local-only — preserve them across server refreshes
-        const local = new Map(state.outfits.map(o => [o.id, { tags: o.tags, rating: o.rating }]));
-        state.outfits = action.payload.map(o => ({
-          ...o,
-          tags: local.get(o.id)?.tags ?? o.tags,
-          rating: local.get(o.id)?.rating ?? o.rating,
-        }));
+        state.outfits = action.payload;
       })
       .addCase(loadOutfits.rejected, (state, action) => {
         state.outfitsStatus = 'failed';
@@ -154,5 +152,7 @@ const stylesSlice = createSlice({
       });
   },
 });
+
+export const { requestCreateChoice, clearCreateChoiceRequest } = stylesSlice.actions;
 
 export default stylesSlice.reducer;

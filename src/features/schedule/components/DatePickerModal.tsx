@@ -95,13 +95,13 @@ function DatePickerModal({ visible, value, onChange, onClose, title, minDate }: 
             <Text style={[styles.title, { color: s.modalTitle }]}>{title}</Text>
           )}
           <View style={styles.header}>
-            <Touchable onPress={handlePrevMonth} hitSlop={8}>
+            <Touchable onPress={handlePrevMonth} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <ChevronLeftIcon size={20} color={s.calendarNavIcon} />
             </Touchable>
             <Text style={[styles.monthLabel, { color: s.calendarHeaderText }]}>
               {MONTH_NAMES[viewMonth]} {viewYear}
             </Text>
-            <Touchable onPress={handleNextMonth} hitSlop={8}>
+            <Touchable onPress={handleNextMonth} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <ChevronRightIcon size={20} color={s.calendarNavIcon} />
             </Touchable>
           </View>

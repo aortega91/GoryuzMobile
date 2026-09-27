@@ -36,6 +36,8 @@ import {
   SparklesIcon,
   ArchiveIcon,
   LeafIcon,
+  CalendarDaysIcon,
+  ChevronDownIcon,
 } from '@assets/icons';
 
 import { updateProfile } from '@features/profile/api/profileUpdateApi';
@@ -62,6 +64,11 @@ function isCompleted(status: SecondLifeStatus): boolean {
   return status === 'sold' || status === 'gifted' || status === 'traded';
 }
 
+/** "YYYY-MM" key used to group the impact history by month (mirrors zena). */
+function monthKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
 function formatDate(ts: string | Date): string {
   try {
     const d = typeof ts === 'string' ? new Date(ts) : ts;
@@ -79,7 +86,7 @@ const BOTTOM_TAB_HEIGHT = 56;
 function SecondLife() {
   const theme = useSecondLifeTheme();
   const sl = theme.secondLife;
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const insets = useSafeAreaInsets();
 
@@ -266,19 +273,51 @@ function SecondLife() {
     return statusMatch && favMatch;
   });
 
-  const allHistory = myItems
-    .flatMap(item =>
-      item.activityLog.map(entry => ({
-        itemName: item.name,
-        description: entry.description,
-        timestamp: entry.timestamp,
-      })),
-    )
-    .sort((a, b) => {
-      const ta = typeof a.timestamp === 'string' ? new Date(a.timestamp).getTime() : (a.timestamp as Date).getTime();
-      const tb = typeof b.timestamp === 'string' ? new Date(b.timestamp).getTime() : (b.timestamp as Date).getTime();
-      return tb - ta;
+  // Flattened activity log, newest first. Entries with an unparseable timestamp
+  // are dropped (same as zena) since they can't be placed in any month.
+  const allHistory = useMemo(
+    () =>
+      myItems
+        .flatMap(item =>
+          item.activityLog.map(entry => ({
+            itemName: item.name,
+            description: entry.description,
+            timestamp: entry.timestamp,
+            date: typeof entry.timestamp === 'string' ? new Date(entry.timestamp) : entry.timestamp,
+          })),
+        )
+        .filter(entry => !Number.isNaN(entry.date.getTime()))
+        .sort((a, b) => b.date.getTime() - a.date.getTime()),
+    [myItems],
+  );
+
+  // ─── History month/year filter (zena parity) ───────────────────────────────
+  // Only months that actually have movements are offered, newest first. The
+  // selection defaults to (and falls back to) the most recent available month.
+  const [historyMonth, setHistoryMonth] = useState('');
+  const [monthSheetOpen, setMonthSheetOpen] = useState(false);
+
+  const monthOptions = useMemo(() => {
+    const seen = new Map<string, string>();
+    allHistory.forEach(entry => {
+      const key = monthKey(entry.date);
+      if (!seen.has(key)) {
+        const month = entry.date.toLocaleDateString(i18n.language, { month: 'long' });
+        seen.set(key, `${month.charAt(0).toUpperCase()}${month.slice(1)} ${entry.date.getFullYear()}`);
+      }
     });
+    return Array.from(seen.entries()).map(([value, label]) => ({ value, label }));
+  }, [allHistory, i18n.language]);
+
+  const selectedMonth = monthOptions.some(o => o.value === historyMonth)
+    ? historyMonth
+    : (monthOptions[0]?.value ?? '');
+  const selectedMonthLabel = monthOptions.find(o => o.value === selectedMonth)?.label ?? '';
+
+  const filteredHistory = useMemo(
+    () => allHistory.filter(entry => monthKey(entry.date) === selectedMonth),
+    [allHistory, selectedMonth],
+  );
 
   // ─── Status badge ──────────────────────────────────────────────────────────
 
@@ -572,15 +611,33 @@ function SecondLife() {
         <Text style={[styles.envText, { color: sl.impactEnvText }]}>{t('secondLife.impactEnvMsg')}</Text>
       </View>
 
-      {/* History */}
-      <Text style={[styles.sectionTitle, { color: sl.headerTitle }]}>{t('secondLife.impactHistory')}</Text>
-      {allHistory.length === 0 ? (
+      {/* History, filterable by month/year */}
+      <View style={styles.historyHeader}>
+        <Text style={[styles.sectionTitle, styles.historyTitle, { color: sl.headerTitle }]}>
+          {t('secondLife.impactHistory')}
+        </Text>
+        {monthOptions.length > 0 && (
+          <Touchable
+            style={[styles.monthPill, { backgroundColor: sl.filterPillBackground, borderColor: sl.filterPillBorder }]}
+            onPress={() => setMonthSheetOpen(true)}
+            borderRadius={20}
+            accessibilityLabel={t('secondLife.filterByMonth')}
+          >
+            <CalendarDaysIcon size={15} color={sl.historyMeta} strokeWidth={2} />
+            <Text style={[styles.monthPillText, { color: sl.filterPillText }]} numberOfLines={1}>
+              {selectedMonthLabel}
+            </Text>
+            <ChevronDownIcon size={14} color={sl.filterPillText} strokeWidth={2} />
+          </Touchable>
+        )}
+      </View>
+      {filteredHistory.length === 0 ? (
         <View style={styles.historyEmpty}>
           <StarIcon size={32} color={sl.emptyIcon} strokeWidth={1.5} />
           <Text style={[styles.emptySubtitle, { color: sl.emptySubtitle }]}>{t('secondLife.historyEmpty')}</Text>
         </View>
       ) : (
-        allHistory.map((entry, idx) => (
+        filteredHistory.map((entry, idx) => (
           <View
             // eslint-disable-next-line react/no-array-index-key
             key={idx}
@@ -802,6 +859,32 @@ function SecondLife() {
           </BottomSheet>
         );
       })()}
+
+      {/* History month/year picker */}
+      {monthSheetOpen && (
+        <BottomSheet onClose={() => setMonthSheetOpen(false)} backgroundColor={sl.modalBackground}>
+          <ScrollView contentContainerStyle={styles.monthSheetBody} showsVerticalScrollIndicator={false}>
+            <Text style={[styles.monthSheetTitle, { color: sl.modalTitle }]}>{t('secondLife.filterByMonth')}</Text>
+            {monthOptions.map(option => {
+              const active = option.value === selectedMonth;
+              return (
+                <Touchable
+                  key={option.value}
+                  style={[styles.monthOption, active && { backgroundColor: sl.monthOptionActiveBackground }]}
+                  onPress={() => {
+                    setHistoryMonth(option.value);
+                    setMonthSheetOpen(false);
+                  }}
+                  borderRadius={12}
+                >
+                  <Text style={[styles.monthOptionText, { color: sl.monthOptionText }]}>{option.label}</Text>
+                  {active && <CheckIcon size={16} color={sl.monthOptionCheck} strokeWidth={3} />}
+                </Touchable>
+              );
+            })}
+          </ScrollView>
+        </BottomSheet>
+      )}
     </View>
   );
 }
@@ -1036,6 +1119,53 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     marginTop: 4,
+  },
+  historyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginTop: 4,
+  },
+  historyTitle: {
+    flexShrink: 1,
+    marginTop: 0,
+  },
+  monthPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+    maxWidth: '60%',
+  },
+  monthPillText: {
+    fontSize: 13,
+    fontWeight: '500',
+    flexShrink: 1,
+  },
+  monthSheetBody: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+    gap: 2,
+  },
+  monthSheetTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  monthOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  monthOptionText: {
+    fontSize: 14,
   },
   historyEmpty: {
     alignItems: 'center',

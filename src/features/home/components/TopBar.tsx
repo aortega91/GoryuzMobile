@@ -8,6 +8,7 @@ import {
 import AuthedImage from '@components/AuthedImage';
 import Touchable from '@components/Touchable';
 
+import { useTranslation } from 'react-i18next';
 import useHomeTheme from '@hooks/useHomeTheme';
 import {
   MenuIcon,
@@ -20,6 +21,8 @@ import {
 
 interface TopBarProps {
   onMenuPress: () => void;
+  /** Some drawer module is still unvisited — the closed menu carries a dot (zena). */
+  showMenuDot?: boolean;
   location?: string;
   onLocationPress?: () => void;
   gemCount?: number;
@@ -36,6 +39,7 @@ function TopBar({
   onMenuPress,
   location,
   onLocationPress,
+  showMenuDot = false,
   gemCount = 0,
   onGemPress,
   onMessagePress,
@@ -47,6 +51,7 @@ function TopBar({
 }: TopBarProps) {
   const theme = useHomeTheme();
   const t = theme.home;
+  const { t: tr } = useTranslation();
 
   return (
     <View
@@ -59,8 +64,20 @@ function TopBar({
       ]}
     >
       {/* Left — hamburger */}
-      <Touchable onPress={onMenuPress} style={styles.iconButton}>
+      <Touchable
+        onPress={onMenuPress}
+        style={styles.iconButton}
+        accessibilityLabel={showMenuDot ? tr('menu.moduleNotVisited') : undefined}
+      >
         <MenuIcon size={22} color={t.topBarIcon} />
+        {showMenuDot && (
+          <View
+            style={[
+              styles.menuDot,
+              { backgroundColor: t.unvisitedDot, borderColor: t.unvisitedDotRing },
+            ]}
+          />
+        )}
       </Touchable>
 
       {/* Center — location pill */}
@@ -99,9 +116,10 @@ function TopBar({
 
       {/* Right — gem counter + message + bell + avatar */}
       <View style={styles.rightRow}>
-        {/* Gem badge */}
+        {/* Gem badge — opens the plan details (zena: setActiveView('subscription')) */}
         <Touchable
           onPress={onGemPress}
+          accessibilityLabel={tr('home.goToSubscription')}
           style={[
             styles.gemBadge,
             {
@@ -183,6 +201,15 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: 4,
+  },
+  menuDot: {
+    position: 'absolute',
+    top: 3,
+    right: 3,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    borderWidth: 1.5,
   },
   locationPill: {
     flex: 1,

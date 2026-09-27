@@ -24,6 +24,8 @@ export interface UserProfile {
   email: string;
   phone: string | null;
   name: string;
+  /** Optional nickname the app greets the user by instead of `name` (zena `getDisplayName`). */
+  alias?: string | null;
   avatarUrl: string | null;
   /** Total spendable tokens (subscriptionTokens + purchasedTokens) */
   tokens: number;
@@ -51,6 +53,10 @@ export interface UserProfile {
   avatarDescription: string | null;
   avatarImage: string | null;
   bodyImage: string | null;
+  /** Real face photo — raw material for the face avatar (zena `faceImage`) */
+  faceImage?: string | null;
+  /** Close-up face avatar used as the canvas for hair / makeup / nails */
+  faceAvatarImage?: string | null;
   avatarPrompt: string | null;
   colorSeason: string | null;
   colorimetryResult: string | null;

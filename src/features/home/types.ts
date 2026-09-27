@@ -1,5 +1,7 @@
 export type ActiveModule =
   | 'home'
+  /** The design's LookBook social feed — mock data only, hidden from the drawer. */
+  | 'lookbook'
   | 'closet'
   | 'styles'
   | 'schedule'
@@ -10,6 +12,20 @@ export type ActiveModule =
   | 'notifications'
   | 'subscription'
   | 'support';
+
+/**
+ * Drawer modules that carry the "not visited yet" dot — zena's
+ * `TRACKED_MODULES`. Messages, notifications and the gem counter are left out
+ * on purpose: they already signal on their own and are not discovery.
+ */
+export const TRACKED_MODULES: ActiveModule[] = [
+  'home',
+  'closet',
+  'styles',
+  'schedule',
+  'second_life',
+  'community',
+];
 
 export interface FeedUser {
   id: string;

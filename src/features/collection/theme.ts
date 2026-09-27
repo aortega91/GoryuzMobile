@@ -83,6 +83,12 @@ export interface CollectionTheme extends Theme {
     secondLifeActiveIcon: string;
 
     itemSelectedAccent: string;
+
+    // "Create outfit" shortcut to Styles (header, top-right) — outlined
+    // accent pill like zena's ClosetView.
+    stylesShortcutBackground: string;
+    stylesShortcutBorder: string;
+    stylesShortcutIcon: string;
   };
 }
 
@@ -168,6 +174,10 @@ function buildCollectionLight(palette: BrandPalette): CollectionTheme {
       secondLifeActiveIcon: '#059669',
 
       itemSelectedAccent: accent400,
+
+      stylesShortcutBackground: commonColors.white,
+      stylesShortcutBorder: palette.accent[200],
+      stylesShortcutIcon: palette.accent[700],
     },
   };
 }
@@ -254,6 +264,10 @@ function buildCollectionDark(palette: BrandPalette): CollectionTheme {
       secondLifeActiveIcon: '#34D399',
 
       itemSelectedAccent: accent400,
+
+      stylesShortcutBackground: commonColors.darkCard,
+      stylesShortcutBorder: palette.accent[800],
+      stylesShortcutIcon: accentDefault,
     },
   };
 }

@@ -8,7 +8,13 @@ import {
   RESULTS,
   type Permission,
 } from 'react-native-permissions';
-import { launchCamera, launchImageLibrary, ImagePickerResponse } from 'react-native-image-picker';
+import {
+  launchCamera,
+  launchImageLibrary,
+  type CameraOptions,
+  type ImageLibraryOptions,
+  ImagePickerResponse,
+} from 'react-native-image-picker';
 
 import { logError } from '@utilities/crashlytics';
 import { PermissionType } from '@components/PermissionModal';
@@ -80,7 +86,9 @@ function useCameraPermission() {
 
   // ─── Camera ─────────────────────────────────────────────────────────────────
 
-  const openCamera = useCallback(async (): Promise<LaunchResult> => {
+  // `options` override the defaults below (e.g. the colour test asks for the
+  // front camera and a small JPEG); omitted, behaviour is unchanged.
+  const openCamera = useCallback(async (options?: Partial<CameraOptions>): Promise<LaunchResult> => {
     try {
       const perm = await ensurePermission(CAMERA_PERMISSION, 'camera');
       if (perm !== 'granted') {
@@ -91,6 +99,7 @@ function useCameraPermission() {
         mediaType: 'photo',
         includeBase64: true,
         quality: 0.8,
+        ...options,
       });
 
       if (response.didCancel) {
@@ -109,7 +118,7 @@ function useCameraPermission() {
 
   // ─── Gallery ─────────────────────────────────────────────────────────────────
 
-  const openGallery = useCallback(async (): Promise<LaunchResult> => {
+  const openGallery = useCallback(async (options?: Partial<ImageLibraryOptions>): Promise<LaunchResult> => {
     try {
       const perm = await ensurePermission(PHOTO_PERMISSION, 'photo');
       if (perm !== 'granted') {
@@ -120,6 +129,7 @@ function useCameraPermission() {
         mediaType: 'photo',
         includeBase64: true,
         quality: 0.8,
+        ...options,
       });
 
       if (response.didCancel) {

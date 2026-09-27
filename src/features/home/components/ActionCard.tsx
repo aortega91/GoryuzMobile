@@ -1,123 +1,59 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-} from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import Touchable from '@components/Touchable';
 import useHomeTheme from '@hooks/useHomeTheme';
-import { ChevronRightIcon } from '@assets/icons';
+
+type IconComponent = React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
 
 interface ActionCardProps {
-  icon: React.ReactNode;
+  Icon: IconComponent;
   title: string;
-  description: string;
   onPress: () => void;
-  /** When true, renders with the CTA (indigo) accent style */
-  isCta?: boolean;
 }
 
-function ActionCard({ icon, title, description, onPress, isCta = false }: ActionCardProps) {
-  const theme = useHomeTheme();
-  const t = theme.home;
-
-  const bgColor = isCta ? t.ctaCardBackground : t.cardBackground;
-  const borderColor = isCta ? t.ctaCardBorder : t.cardBorder;
-  const iconColor = isCta ? t.ctaCardIcon : t.cardIcon;
+/**
+ * Inicio shortcut tile — port of zena `HomeView`'s `ActionCard`: accent icon
+ * over a short title, laid out in a single row that splits the width evenly.
+ */
+function ActionCard({ Icon, title, onPress }: ActionCardProps) {
+  const h = useHomeTheme().home;
 
   return (
-    <Touchable
-      onPress={onPress}
-      borderRadius={12}
-      style={[
-        styles.card,
-        {
-          backgroundColor: bgColor,
-          borderColor,
-        },
-        isCta && styles.ctaCard,
-      ]}
-    >
-      {/* Left accent bar for CTA */}
-      {isCta && (
-        <View style={[styles.ctaAccentBar, { backgroundColor: t.ctaCardBorder }]} />
-      )}
-
-      {/* Icon */}
-      <View style={[styles.iconWrapper, isCta ? styles.iconWrapperCta : styles.iconWrapperDefault]}>
-        {React.isValidElement(icon)
-          ? React.cloneElement(icon as React.ReactElement<{ color?: string }>, {
-              color: iconColor,
-            })
-          : icon}
-      </View>
-
-      {/* Text */}
-      <View style={styles.textWrapper}>
-        <Text
-          style={[styles.title, { color: t.cardTitle }]}
-          numberOfLines={1}
-        >
+    <View style={styles.wrapper}>
+      <Touchable
+        onPress={onPress}
+        borderRadius={8}
+        style={[styles.card, { backgroundColor: h.cardBackground, borderColor: h.checklistBorder }]}
+      >
+        <Icon size={24} color={h.cardIcon} />
+        <Text style={[styles.title, { color: h.cardTitle }]} numberOfLines={2}>
           {title}
         </Text>
-        <Text
-          style={[styles.description, { color: t.cardDescription }]}
-          numberOfLines={2}
-        >
-          {description}
-        </Text>
-      </View>
-
-      {/* Arrow */}
-      <ChevronRightIcon size={18} color={t.cardArrow} strokeWidth={2.5} />
-    </Touchable>
+      </Touchable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 16,
-    gap: 12,
-    overflow: 'hidden',
-  },
-  ctaCard: {
-    paddingLeft: 20,
-  },
-  ctaAccentBar: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-  },
-  iconWrapper: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconWrapperDefault: {
-    opacity: 0.85,
-  },
-  iconWrapperCta: {
-    opacity: 1,
-  },
-  textWrapper: {
+  wrapper: {
     flex: 1,
-    gap: 2,
+  },
+  card: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 16,
+    borderRadius: 8,
+    borderWidth: 1,
   },
   title: {
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: '700',
-  },
-  description: {
-    fontSize: 13,
-    lineHeight: 18,
+    textAlign: 'center',
+    lineHeight: 15,
   },
 });
 

@@ -1,11 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
-  Image,
   RefreshControl,
   ScrollView,
-  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -15,262 +14,109 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 
-import AuthedImage from '@components/AuthedImage';
 import Touchable from '@components/Touchable';
 import BottomSheet from '@components/BottomSheet';
 import UpgradeModal from '@components/UpgradeModal';
 import SubmodulesCoachMark from '@components/SubmodulesCoachMark';
 import useStylesTheme from '@hooks/useStylesTheme';
-import useCameraPermission from '@hooks/useCameraPermission';
 import {
-  SparklesIcon,
-  StarIcon,
-  CrownIcon,
-  FilterIcon,
-  CheckIcon,
-  ShirtIcon,
-  ScissorsIcon,
-  HandIcon,
-  ArrowLeftIcon,
-  BrainIcon,
-  TargetIcon,
-  UserIcon,
-  ImageIcon,
-  AlertCircleIcon,
   AlertTriangleIcon,
-  GemIcon,
-  EyeIcon,
-  TagIcon,
-  Share2Icon,
-  TrashIcon,
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  BotIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  CloseIcon,
+  HandIcon,
+  LayersIcon,
   LayoutGridIcon,
-  Wand2Icon,
-  NailIcon,
+  LightbulbIcon,
+  PaletteIcon,
   PersonStandingIcon,
+  PlusIcon,
+  ScissorsIcon,
+  ShirtIcon,
+  SmileIcon,
+  StarIcon,
+  TagIcon,
   ApparelIcon,
   CommentIcon,
   FramePersonIcon,
-  PaletteIcon,
-  PlusCircleIcon,
-  CloseIcon,
-  RefreshCwIcon,
 } from '@assets/icons';
-import { updateProfile } from '@features/profile/api/profileUpdateApi';
+import { updateProfile, UpdateProfilePayload } from '@features/profile/api/profileUpdateApi';
 import { updateProfileLocally, loadProfile } from '@features/home/profileSlice';
 import { logError } from '@utilities/crashlytics';
+import toast from '@utilities/toast';
 import { AppDispatch, RootState } from '@utilities/store';
 import { addCalendarEvent } from '@features/schedule/api/calendarApi';
 import { loadCollection } from '@features/collection/collectionSlice';
 import {
-  analyzeStyle,
-  generateAvatarImage,
-  validateBodyPhoto,
-  analyzeColorimetry,
+  asDataUrl,
+  combineOutfit,
+  generateHaircut,
+  generateMakeup,
+  generateNails,
+  generateTechSheet,
+  toBase64Image,
 } from '../api/stylesGenerateApi';
-import HaircutCreator from '../components/HaircutCreator';
-import MakeupCreator from '../components/MakeupCreator';
-import NailCreator from '../components/NailCreator';
-import ManualOutfitCreator from '../components/ManualOutfitCreator';
-import AIOutfitCreator from '../components/AIOutfitCreator';
-
 import {
   loadOutfits,
   addOutfit,
   editOutfit,
   removeOutfit,
+  clearCreateChoiceRequest,
 } from '../stylesSlice';
-import { Outfit, OutfitCategory, OUTFIT_CATEGORIES } from '../types';
+import { BeautyKind, Outfit, OutfitKind, TechSheet } from '../types';
+import OutfitCard from '../components/OutfitCard';
 import OutfitDetailSheet from '../components/OutfitDetailSheet';
 import TagSheet from '../components/TagSheet';
+import TechSheetSheet from '../components/TechSheetSheet';
 import ScheduleOutfitSheet from '../components/ScheduleOutfitSheet';
+import ManualOutfitCreator from '../components/ManualOutfitCreator';
+import AIOutfitCreator from '../components/AIOutfitCreator';
+import BeautyDesignCreator from '../components/BeautyDesignCreator';
+import OutfitIdeasCreator from '../components/OutfitIdeasCreator';
+import MixCreator from '../components/MixCreator';
+import AvatarSection from '../components/AvatarSection';
+import PresetChips from '../components/PresetChips';
+import ColorimetrySection from '../components/colorimetry/ColorimetrySection';
+import ColorimetryWizard from '../components/colorimetry/ColorimetryWizard';
+import { seasonLabel } from '../colorimetry/labels';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Tab = 'looks' | 'prompt' | 'body' | 'colorimetry' | 'tags';
-type Sheet = 'detail' | 'tags' | 'schedule' | null;
-type CategoryFilter = OutfitCategory | 'all';
+export type StylesTab = 'looks' | 'prompt' | 'body' | 'colorimetry' | 'tags';
+type Tab = StylesTab;
+
+interface StylesProps {
+  /** Tab to open on mount — used by Home's shortcuts and checklist tasks. */
+  initialTab?: StylesTab;
+  /** Colour results' "see my closet" link; hidden while the host doesn't pass it. */
+  onGoToCloset?: () => void;
+}
+type Sheet = 'detail' | 'tags' | 'schedule' | 'techSheet' | null;
+type KindFilter = OutfitKind | 'all';
+type Creator = 'manual' | 'ai' | 'ideas' | 'mix' | BeautyKind | null;
+type IconCmp = React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
 
 const BOTTOM_TAB_HEIGHT = 56;
+const TRY_ON_GEM_COST = 10;
+const RATINGS = [1, 2, 3, 4, 5];
 
-type CatIcon = (props: { size?: number; color?: string; strokeWidth?: number }) => React.ReactElement;
-
-const CATEGORY_ICONS: Record<OutfitCategory, CatIcon> = {
-  Outfits: ShirtIcon,
-  'Corte/Barba': ScissorsIcon,
-  Maquillaje: Wand2Icon,
-  'Uñas': NailIcon,
-};
-
-const CATEGORY_LABEL_KEYS: Record<OutfitCategory, string> = {
-  Outfits: 'styles.categoryOutfits',
-  'Corte/Barba': 'styles.categoryHaircut',
-  Maquillaje: 'styles.categoryMakeup',
-  'Uñas': 'styles.categoryNails',
-};
-
-// ─── Outfit card (portrait, native fashion-app style) ─────────────────────────
-
-interface OutfitCardProps {
-  outfit: Outfit;
-  onViewDetail: () => void;
-  onTags: () => void;
-  onShare: () => void;
-  onDelete: () => void;
-}
-
-function OutfitCard({ outfit, onViewDetail, onTags, onShare, onDelete }: OutfitCardProps) {
-  const { styles: s } = useStylesTheme();
-  const { t } = useTranslation();
-  const items = outfit.items.slice(0, 4);
-  const isAI = outfit.source === 'ai';
-
-  return (
-    <View
-      style={[
-        styles.card,
-        { backgroundColor: s.outfitCardBackground, borderColor: s.outfitCardBorder },
-      ]}
-    >
-      {/* Square image area — tap opens detail (the "eye") */}
-      <Touchable
-        onPress={onViewDetail}
-        borderRadius={0}
-        style={[styles.cardMedia, { backgroundColor: s.outfitCardMosaicBackground }]}
-      >
-        {outfit.imageData ? (
-          <AuthedImage
-            data={outfit.imageData}
-            style={StyleSheet.absoluteFill}
-            resizeMode="contain"
-          />
-        ) : (
-          <View style={[styles.mosaic, { backgroundColor: s.outfitCardBorder }]}>
-            {([[0, 1], [2, 3]] as const).map((pair, rowIdx) => (
-              // eslint-disable-next-line react/no-array-index-key
-              <View key={rowIdx} style={styles.mosaicRow}>
-                {pair.map(i => (
-                  <View
-                    key={i}
-                    style={[styles.mosaicCell, { backgroundColor: s.outfitCardBackground }]}
-                  >
-                    {items[i]?.imageData ? (
-                      <AuthedImage
-                        data={items[i].imageData!}
-                        style={StyleSheet.absoluteFill}
-                        resizeMode="cover"
-                      />
-                    ) : items[i] ? (
-                      <Text
-                        style={[styles.mosaicLabel, { color: s.emptySubtitle }]}
-                        numberOfLines={2}
-                      >
-                        {items[i].name}
-                      </Text>
-                    ) : (
-                      <View
-                        style={[
-                          StyleSheet.absoluteFillObject,
-                          { backgroundColor: s.outfitCardMosaicBackground },
-                        ]}
-                      />
-                    )}
-                  </View>
-                ))}
-              </View>
-            ))}
-          </View>
-        )}
-
-        {outfit.tags.length > 0 && (
-          <View style={styles.tagsOverlay}>
-            {outfit.tags.slice(0, 2).map(tag => (
-              <View key={tag} style={[styles.tagChip, { backgroundColor: s.cardTagChipBackground }]}>
-                <Text style={[styles.tagChipText, { color: s.cardTagChipText }]}>{tag}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-      </Touchable>
-
-      {/* Info below image */}
-      <View style={styles.cardInfo}>
-        <View style={styles.cardRow}>
-          <View style={styles.cardNameWrap}>
-            <Text style={[styles.cardName, { color: s.outfitCardName }]} numberOfLines={1}>
-              {outfit.name}
-            </Text>
-            {outfit.rating != null ? (
-              <View style={styles.cardRatingRow}>
-                <StarIcon size={11} color={s.starFilled} fill={s.starFilled} strokeWidth={0} />
-                <Text style={[styles.cardRatingText, { color: s.emptySubtitle }]}>
-                  {outfit.rating}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-          <View
-            style={[
-              styles.sourceBadge,
-              isAI
-                ? { backgroundColor: s.outfitCardAIBadge, borderColor: s.outfitCardAIBadge }
-                : { backgroundColor: 'transparent', borderColor: s.outfitCardBorder },
-            ]}
-          >
-            <Text
-              style={[
-                styles.sourceBadgeText,
-                { color: isAI ? s.outfitCardAIText : s.outfitCardSourceText },
-              ]}
-            >
-              {isAI ? 'IA' : 'MANUAL'}
-            </Text>
-          </View>
-        </View>
-
-        {/* Action row — always visible at the bottom of the card */}
-        <View style={[styles.cardActions, { borderTopColor: s.outfitCardBorder }]}>
-          <Touchable
-            onPress={onViewDetail}
-            borderRadius={8}
-            accessibilityLabel={t('styles.detailView')}
-            style={styles.cardActionBtn}
-          >
-            <EyeIcon size={16} color={s.actionIcon} />
-          </Touchable>
-          <Touchable
-            onPress={onTags}
-            borderRadius={8}
-            accessibilityLabel={t('styles.actionTags')}
-            style={styles.cardActionBtn}
-          >
-            <TagIcon size={16} color={s.actionIcon} />
-          </Touchable>
-          <Touchable
-            onPress={onShare}
-            borderRadius={8}
-            accessibilityLabel={t('styles.actionShare')}
-            style={styles.cardActionBtn}
-          >
-            <Share2Icon size={16} color={s.actionIcon} />
-          </Touchable>
-          <Touchable
-            onPress={onDelete}
-            borderRadius={8}
-            accessibilityLabel={t('styles.actionDelete')}
-            style={styles.cardActionBtn}
-          >
-            <TrashIcon size={16} color={s.actionDangerText} />
-          </Touchable>
-        </View>
-      </View>
-    </View>
-  );
-}
+/** Kind filter row at the top of the grid, same order as zena. */
+const KIND_TABS: { id: KindFilter; Icon: IconCmp; labelKey: string }[] = [
+  { id: 'all', Icon: LayoutGridIcon, labelKey: 'styles.kindAll' },
+  { id: 'outfit', Icon: ShirtIcon, labelKey: 'styles.kindOutfit' },
+  { id: 'hair', Icon: ScissorsIcon, labelKey: 'styles.kindHair' },
+  { id: 'nails', Icon: HandIcon, labelKey: 'styles.kindNails' },
+  { id: 'makeup', Icon: SmileIcon, labelKey: 'styles.kindMakeup' },
+  { id: 'mix', Icon: LayersIcon, labelKey: 'styles.kindMix' },
+];
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
-function Styles() {
-  const { t } = useTranslation();
+function Styles({ initialTab = 'looks', onGoToCloset }: StylesProps) {
+  const { t, i18n } = useTranslation();
   const theme = useStylesTheme();
   const s = theme.styles;
   const dispatch = useDispatch<AppDispatch>();
@@ -278,27 +124,30 @@ function Styles() {
 
   const outfits = useSelector((state: RootState) => state.styles.outfits);
   const outfitsStatus = useSelector((state: RootState) => state.styles.outfitsStatus);
+  const createChoiceRequested = useSelector((state: RootState) => state.styles.createChoiceRequested);
   const closetItems = useSelector((state: RootState) => state.collection.items);
   const closetStatus = useSelector((state: RootState) => state.collection.status);
   const profile = useSelector((state: RootState) => state.profile.data);
 
-  const [activeTab, setActiveTab] = useState<Tab>('looks');
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [activeSheet, setActiveSheet] = useState<Sheet>(null);
   const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null);
-  const [tagFilter, setTagFilter] = useState<string | null>(null);
-  const [starFilter, setStarFilter] = useState<number | null>(null);
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
-  const [filterSheet, setFilterSheet] = useState<'stars' | 'tags' | null>(null);
+  const [sheetLoading, setSheetLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Grid filters
+  const [kindFilter, setKindFilter] = useState<KindFilter>('all');
+  const [openFilter, setOpenFilter] = useState<'rating' | 'tags' | null>(null);
+  const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  // Creation
   const [showCreate, setShowCreate] = useState(false);
   const [createStep, setCreateStep] = useState<1 | 2>(1);
-  const [sheetLoading, setSheetLoading] = useState(false);
+  const [creator, setCreator] = useState<Creator>(null);
   const [creatorSaving, setCreatorSaving] = useState(false);
-  const [showHaircut, setShowHaircut] = useState(false);
-  const [showMakeup, setShowMakeup] = useState(false);
-  const [showNails, setShowNails] = useState(false);
-  const [showManualCreator, setShowManualCreator] = useState(false);
-  const [showAICreator, setShowAICreator] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  const [dressingOutfitId, setDressingOutfitId] = useState<string | null>(null);
+  const [showVipUpgrade, setShowVipUpgrade] = useState(false);
 
   // ─── Load data ───────────────────────────────────────────────────────────────
 
@@ -306,6 +155,16 @@ function Styles() {
     if (outfitsStatus === 'idle') dispatch(loadOutfits());
     if (closetStatus === 'idle') dispatch(loadCollection());
   }, [dispatch, outfitsStatus, closetStatus]);
+
+  // Arriving from the Closet shortcut: open straight on the outfit-method
+  // step — there it was already decided that an outfit is what's wanted.
+  useEffect(() => {
+    if (!createChoiceRequested) return;
+    setActiveTab('looks');
+    setCreateStep(2);
+    setShowCreate(true);
+    dispatch(clearCreateChoiceRequest());
+  }, [createChoiceRequested, dispatch]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -315,49 +174,59 @@ function Styles() {
 
   // ─── Derived ─────────────────────────────────────────────────────────────────
 
-  const allTags = useMemo(
-    () => profile?.availableTags ?? [],
-    [profile?.availableTags],
+  const availableTags = useMemo(() => profile?.availableTags ?? [], [profile?.availableTags]);
+  const isVip = profile?.plan === 'vip';
+
+  const kindCounts = useMemo(() => {
+    const counts: Record<KindFilter, number> = { all: outfits.length, outfit: 0, hair: 0, nails: 0, makeup: 0, mix: 0 };
+    outfits.forEach(o => {
+      counts[o.kind] += 1;
+    });
+    return counts;
+  }, [outfits]);
+
+  // Tags accumulate: an outfit matches if it has ANY of the chosen tags.
+  const visibleOutfits = useMemo(
+    () =>
+      outfits.filter(o => {
+        if (kindFilter !== 'all' && o.kind !== kindFilter) return false;
+        if (selectedRatings.length > 0 && !selectedRatings.includes(o.rating ?? 0)) return false;
+        if (selectedTags.length > 0 && !selectedTags.some(tag => o.tags.includes(tag))) return false;
+        return true;
+      }),
+    [outfits, kindFilter, selectedRatings, selectedTags],
   );
 
-  const hasItemsInCategory = useCallback(
-    (cat: OutfitCategory) =>
-      cat === 'Outfits'
-        ? outfits.some(o => !o.category || o.category === 'Outfits')
-        : outfits.some(o => o.category === cat),
-    [outfits],
+  const closetIds = useMemo(() => new Set(closetItems.map(i => i.id)), [closetItems]);
+  const hasMissingItems = useCallback(
+    (outfit: Outfit) =>
+      closetStatus === 'succeeded' && outfit.items.some(item => !closetIds.has(item.id)),
+    [closetIds, closetStatus],
   );
 
-  const visibleCategories = useMemo(
-    () => OUTFIT_CATEGORIES.filter(hasItemsInCategory),
-    [hasItemsInCategory],
-  );
-
-  const filteredOutfits = useMemo(() => {
-    let result = outfits;
-    if (categoryFilter !== 'all') {
-      result = result.filter(o => (o.category ?? 'Outfits') === categoryFilter);
-    }
-    if (tagFilter) result = result.filter(o => o.tags.includes(tagFilter));
-    if (starFilter) result = result.filter(o => o.rating === starFilter);
-    return result;
-  }, [outfits, categoryFilter, tagFilter, starFilter]);
-
-  const hasActiveFilter = tagFilter != null || starFilter != null || categoryFilter !== 'all';
-
-  // Bottom bar height including safe area
+  const activeFilterCount = selectedRatings.length + selectedTags.length;
   const bottomBarTotalHeight = BOTTOM_TAB_HEIGHT + insets.bottom;
 
-  // ─── Handlers ────────────────────────────────────────────────────────────────
+  // ─── Profile helpers ─────────────────────────────────────────────────────────
 
-  const openDetail = useCallback((outfit: Outfit) => {
-    setSelectedOutfit(outfit);
-    setActiveSheet('detail');
-  }, []);
+  const saveProfile = useCallback(
+    async (patch: UpdateProfilePayload) => {
+      try {
+        const updated = await updateProfile(patch);
+        dispatch(updateProfileLocally(updated));
+      } catch (err) {
+        logError(err instanceof Error ? err : new Error(String(err)), 'styles/saveProfile');
+        toast.error(t('styles.profileSaveError'));
+      }
+    },
+    [dispatch, t],
+  );
 
-  const openTags = useCallback((outfit: Outfit) => {
+  // ─── Sheet handlers ──────────────────────────────────────────────────────────
+
+  const openSheet = useCallback((sheet: Sheet, outfit: Outfit) => {
     setSelectedOutfit(outfit);
-    setActiveSheet('tags');
+    setActiveSheet(sheet);
   }, []);
 
   const closeSheet = useCallback(() => {
@@ -369,7 +238,8 @@ function Styles() {
   const handleDetailSave = async ({ name, rating }: { name: string; rating: number | null }) => {
     if (!selectedOutfit) return;
     setSheetLoading(true);
-    await dispatch(editOutfit({ id: selectedOutfit.id, name, rating }));
+    const patch = name === selectedOutfit.name ? { rating } : { name, rating };
+    await dispatch(editOutfit({ id: selectedOutfit.id, ...patch }));
     closeSheet();
   };
 
@@ -390,1124 +260,744 @@ function Styles() {
     }
   };
 
-  const handleDelete = useCallback(
+  const requestSchedule = useCallback(
     (outfit: Outfit) => {
-      dispatch(removeOutfit(outfit.id));
+      if (!isVip) {
+        setShowVipUpgrade(true);
+        return;
+      }
+      openSheet('schedule', outfit);
     },
-    [dispatch],
+    [isVip, openSheet],
   );
 
-  const handleShare = useCallback(async (outfit: Outfit) => {
-    const pieces = outfit.items.map(i => i.name).join(', ');
-    await Share.share({
-      title: outfit.name,
-      message: pieces ? `${outfit.name} — ${pieces}` : outfit.name,
-    });
-  }, []);
-
-  const handleManualSave = async (name: string, itemIds: string[]) => {
-    setCreatorSaving(true);
-    await dispatch(addOutfit({ name, itemIds }));
-    setCreatorSaving(false);
-    setShowManualCreator(false);
-    setActiveTab('looks');
-  };
-
-  const handleAISave = async (name: string, itemIds: string[]) => {
-    setCreatorSaving(true);
-    await dispatch(addOutfit({ name, itemIds }));
-    setCreatorSaving(false);
-    setShowAICreator(false);
-    setActiveTab('looks');
-  };
-
-  // ─── Render helpers ───────────────────────────────────────────────────────────
-
-  const starFilterLabel = starFilter != null ? `${starFilter}★` : t('styles.filterStars');
-  const tagFilterLabel = tagFilter ?? t('styles.filterTags');
-
-  const renderLooksTab = () => (
-    <View style={styles.tabContent}>
-      {/* Category filter — rounded icon buttons at the top */}
-      {visibleCategories.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryRow}
-        >
-          <Touchable
-            onPress={() => setCategoryFilter('all')}
-            borderRadius={22}
-            accessibilityLabel={t('styles.categoryAll')}
-            style={[
-              styles.categoryBtn,
-              categoryFilter === 'all'
-                ? { backgroundColor: s.buttonPrimary, borderColor: s.buttonPrimary }
-                : { backgroundColor: s.filterPillBackground, borderColor: s.filterPillBorder },
-            ]}
-          >
-            <LayoutGridIcon
-              size={18}
-              color={categoryFilter === 'all' ? s.buttonPrimaryText : s.filterPillText}
-            />
-          </Touchable>
-          {visibleCategories.map(cat => {
-            const Icon = CATEGORY_ICONS[cat];
-            const isActive = categoryFilter === cat;
-            return (
-              <Touchable
-                key={cat}
-                onPress={() => setCategoryFilter(cat)}
-                borderRadius={22}
-                accessibilityLabel={t(CATEGORY_LABEL_KEYS[cat])}
-                style={[
-                  styles.categoryBtn,
-                  isActive
-                    ? { backgroundColor: s.buttonPrimary, borderColor: s.buttonPrimary }
-                    : { backgroundColor: s.filterPillBackground, borderColor: s.filterPillBorder },
-                ]}
-              >
-                <Icon size={18} color={isActive ? s.buttonPrimaryText : s.filterPillText} />
-              </Touchable>
-            );
-          })}
-        </ScrollView>
-      )}
-
-      {/* Filter pills */}
-      <View style={styles.filterRow}>
-        <Touchable
-          onPress={() => setFilterSheet('stars')}
-          borderRadius={24}
-          style={[
-            styles.filterPill,
-            starFilter != null
-              ? { backgroundColor: s.filterPillActiveBackground, borderColor: s.filterPillActiveBorder }
-              : { backgroundColor: s.filterPillBackground, borderColor: s.filterPillBorder },
-          ]}
-        >
-          {starFilter == null && (
-            <StarIcon
-              size={15}
-              color={s.filterPillText}
-              strokeWidth={1.5}
-            />
-          )}
-          <Text style={[styles.filterPillText, { color: starFilter != null ? s.filterPillActiveText : s.filterPillText }]}>
-            {starFilterLabel}
-          </Text>
-        </Touchable>
-
-        <Touchable
-          onPress={() => setFilterSheet('tags')}
-          borderRadius={24}
-          style={[
-            styles.filterPill,
-            tagFilter != null
-              ? { backgroundColor: s.filterPillActiveBackground, borderColor: s.filterPillActiveBorder }
-              : { backgroundColor: s.filterPillBackground, borderColor: s.filterPillBorder },
-          ]}
-        >
-          <FilterIcon
-            size={15}
-            color={tagFilter != null ? s.filterPillActiveText : s.filterPillText}
-            strokeWidth={1.5}
-          />
-          <Text style={[styles.filterPillText, { color: tagFilter != null ? s.filterPillActiveText : s.filterPillText }]}>
-            {tagFilterLabel}
-          </Text>
-        </Touchable>
-      </View>
-
-      {/* Grid */}
-      {outfitsStatus === 'loading' ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={s.buttonPrimary} />
-        </View>
-      ) : filteredOutfits.length === 0 ? (
-        <View style={[styles.dashedContainer, { paddingBottom: bottomBarTotalHeight + 16 }]}>
-          <View style={[styles.dashedBox, { borderColor: s.emptySubtitle }]}>
-            <StarIcon size={44} color={s.emptySubtitle} strokeWidth={1.5} />
-            <Text style={[styles.emptySub, { color: s.emptySubtitle }]}>
-              {hasActiveFilter ? t('styles.emptyTitle') : t('styles.emptyDashed')}
-            </Text>
-          </View>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredOutfits}
-          keyExtractor={item => item.id}
-          contentContainerStyle={[styles.listContent, { paddingBottom: bottomBarTotalHeight + 16 }]}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <OutfitCard
-              outfit={item}
-              onViewDetail={() => openDetail(item)}
-              onTags={() => openTags(item)}
-              onShare={() => handleShare(item)}
-              onDelete={() => handleDelete(item)}
-            />
-          )}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-          }
-        />
-      )}
-    </View>
+  const requestDelete = useCallback(
+    (outfit: Outfit) => {
+      Alert.alert(t('styles.confirmDeleteTitle'), t('styles.confirmDeleteMessage'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('styles.actionDelete'), style: 'destructive', onPress: () => dispatch(removeOutfit(outfit.id)) },
+      ]);
+    },
+    [dispatch, t],
   );
 
-  // ─── Essence sections state (prompt / body / colorimetry / tags) ──────────────
+  const showMissingItems = useCallback(() => {
+    Alert.alert(t('styles.missingItemTitle'), t('styles.missingItemMessage'));
+  }, [t]);
+
+  /** Generates a saved design's tech sheet — its image lives in R2 by now. */
+  const handleGenerateTechSheet = useCallback(
+    async (outfit: Outfit): Promise<TechSheet | null> => {
+      const { kind } = outfit;
+      if (!outfit.imageData || (kind !== 'hair' && kind !== 'nails' && kind !== 'makeup')) return null;
+      try {
+        const image = await toBase64Image(outfit.imageData);
+        if (!image) return null;
+        const techSheet = await generateTechSheet({
+          kind,
+          prompt: outfit.designPrompt || outfit.name,
+          image,
+          language: i18n.language,
+        });
+        dispatch(loadProfile());
+        await dispatch(editOutfit({ id: outfit.id, techSheet })).unwrap();
+        return techSheet;
+      } catch (err) {
+        logError(err instanceof Error ? err : new Error(String(err)), 'styles/techSheet');
+        toast.error(t('styles.techSheetError'));
+        return null;
+      }
+    },
+    [dispatch, i18n.language, t],
+  );
+
+  // ─── Try on the avatar ───────────────────────────────────────────────────────
+
+  /**
+   * Redoes the creation on the user's body (outfit) or face (beauty design)
+   * and stores it as its new preview. A design created without an avatar can
+   * be "claimed" this way once there is one.
+   */
+  const handleTryOn = useCallback(
+    async (outfit: Outfit) => {
+      const avatarImage = profile?.bodyImage || profile?.avatarImage;
+      if (!avatarImage) return;
+      setDressingOutfitId(outfit.id);
+      try {
+        let b64: string;
+        if (outfit.kind === 'outfit' || outfit.kind === 'mix') {
+          b64 = await combineOutfit({ items: outfit.items, avatarImage });
+        } else {
+          const avatar = await toBase64Image(avatarImage);
+          if (!avatar) throw new Error('Avatar unreadable');
+          const req = { prompt: outfit.designPrompt!, avatar };
+          b64 =
+            outfit.kind === 'hair'
+              ? await generateHaircut(req)
+              : outfit.kind === 'makeup'
+              ? await generateMakeup(req)
+              // Shape and target weren't stored with the design: redo it with
+              // the nails flow's defaults, like zena.
+              : await generateNails({ ...req, shape: 'almond', target: 'hands' });
+        }
+        dispatch(loadProfile());
+        await dispatch(editOutfit({ id: outfit.id, imageData: asDataUrl(b64) })).unwrap();
+      } catch (err) {
+        logError(err instanceof Error ? err : new Error(String(err)), 'styles/tryOnAvatar');
+        toast.error(t('styles.tryOnError'));
+      } finally {
+        setDressingOutfitId(null);
+      }
+    },
+    [dispatch, profile?.avatarImage, profile?.bodyImage, t],
+  );
+
+  /** Before spending: without an avatar or the original prompt there is nothing to redo. */
+  const requestTryOn = useCallback(
+    (outfit: Outfit) => {
+      if (!profile?.bodyImage && !profile?.avatarImage) {
+        Alert.alert(t('styles.avatarMissingTitle'), t('styles.avatarMissingMessage'), [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('styles.avatarCreate'), onPress: () => setActiveTab('body') },
+        ]);
+        return;
+      }
+      if (outfit.kind === 'outfit' && outfit.items.length === 0) return;
+      if (outfit.kind === 'mix') {
+        Alert.alert(t('styles.tryOnAvatarAction'), t('styles.tryOnMixUnsupported'));
+        return;
+      }
+      if (outfit.kind !== 'outfit' && !outfit.designPrompt) {
+        Alert.alert(t('styles.tryOnAvatarAction'), t('styles.tryOnNoPrompt'));
+        return;
+      }
+      Alert.alert(
+        t('styles.tryOnConfirmTitle'),
+        `${outfit.kind === 'outfit' ? t('styles.tryOnConfirmOutfit') : t('styles.tryOnConfirmDesign')}\n\n${t(
+          'styles.tryOnCost',
+          { count: TRY_ON_GEM_COST },
+        )}`,
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('styles.tryOnAvatarAction'), onPress: () => handleTryOn(outfit) },
+        ],
+      );
+    },
+    [handleTryOn, profile?.avatarImage, profile?.bodyImage, t],
+  );
+
+  // ─── Creation handlers ───────────────────────────────────────────────────────
+
+  const startCreate = () => {
+    setCreateStep(1);
+    setShowCreate(true);
+  };
+
+  const openCreator = (next: Creator) => {
+    setShowCreate(false);
+    setCreateStep(1);
+    setCreator(next);
+  };
+
+  const handleCreatorSaved = () => {
+    setActiveTab('looks');
+    setKindFilter('all');
+  };
+
+  const handleOutfitSave = async (name: string, itemIds: string[], source: 'manual' | 'ai') => {
+    setCreatorSaving(true);
+    try {
+      await dispatch(addOutfit({ name, itemIds, source })).unwrap();
+      setCreator(null);
+      handleCreatorSaved();
+    } catch {
+      // addOutfit.rejected already logs to Crashlytics
+      toast.error(t('styles.generatorSaveError'));
+    } finally {
+      setCreatorSaving(false);
+    }
+  };
+
+  // ─── Style prompt / avatar prompt (auto-saved) ───────────────────────────────
 
   const [stylePrompt, setStylePrompt] = useState(profile?.stylePrompt ?? '');
-  const [stylePromptImage, setStylePromptImage] = useState(profile?.stylePromptImage ?? '');
   const [avatarPrompt, setAvatarPrompt] = useState(profile?.avatarPrompt ?? '');
-  const [avatarRefImage, setAvatarRefImage] = useState<string | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
-  const [avatarError, setAvatarError] = useState<string | null>(null);
-  const [isValidatingBodyPhoto, setIsValidatingBodyPhoto] = useState(false);
-  const [bodyPhotoError, setBodyPhotoError] = useState<string | null>(null);
-  const [isTestingColorimetry, setIsTestingColorimetry] = useState(false);
-  const [colorimetryError, setColorimetryError] = useState<string | null>(null);
   const [newTagInput, setNewTagInput] = useState('');
-  const [showVipUpgrade, setShowVipUpgrade] = useState(false);
-  const isFirstRender = useRef(true);
+  const profileSynced = useRef(false);
+  const skipNextSave = useRef(true);
 
-  const { openGallery } = useCameraPermission();
-
-  // Sync local state if profile loads/changes after mount
+  // Sync local state once the profile arrives after mount
   useEffect(() => {
-    if (profile && isFirstRender.current) {
+    if (profile && !profileSynced.current) {
+      profileSynced.current = true;
+      skipNextSave.current = true;
       setStylePrompt(profile.stylePrompt ?? '');
-      setStylePromptImage(profile.stylePromptImage ?? '');
       setAvatarPrompt(profile.avatarPrompt ?? '');
     }
   }, [profile]);
 
-  // Auto-save style fields with 1.5s debounce
+  // Auto-save with a 1.5s debounce
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
+    if (skipNextSave.current) {
+      skipNextSave.current = false;
+      return undefined;
     }
-    const timer = setTimeout(async () => {
-      try {
-        const updated = await updateProfile({
-          stylePrompt,
-          stylePromptImage: stylePromptImage || undefined,
-          avatarPrompt,
-        });
-        dispatch(updateProfileLocally(updated));
-      } catch (err) {
-        logError(err instanceof Error ? err : new Error(String(err)), 'essence/autoSave');
-      }
+    const timer = setTimeout(() => {
+      saveProfile({ stylePrompt, avatarPrompt });
     }, 1500);
     return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stylePrompt, stylePromptImage, avatarPrompt]);
+  }, [stylePrompt, avatarPrompt, saveProfile]);
 
-  const handlePickStyleImage = async () => {
-    const result = await openGallery();
-    if (result.status === 'success') {
-      const asset = result.response.assets?.[0];
-      if (asset?.base64 && asset?.type) {
-        setStylePromptImage(`data:${asset.type};base64,${asset.base64}`);
-      }
-    }
-  };
-
-  const handlePickAvatarRefImage = async () => {
-    const result = await openGallery();
-    if (result.status === 'success') {
-      const asset = result.response.assets?.[0];
-      if (asset?.base64 && asset?.type) {
-        setAvatarRefImage(`data:${asset.type};base64,${asset.base64}`);
-      }
-    }
-  };
-
-  const handlePickBodyImage = async () => {
-    const result = await openGallery();
-    if (result.status !== 'success') return;
-    const asset = result.response.assets?.[0];
-    if (!asset?.base64 || !asset?.type) return;
-
-    setIsValidatingBodyPhoto(true);
-    setBodyPhotoError(null);
-    try {
-      const validation = await validateBodyPhoto({ imageBase64: asset.base64, mimeType: asset.type });
-      if (!validation.isValid) {
-        setBodyPhotoError(validation.reason || t('styles.bodyPhotoInvalid'));
-        return;
-      }
-      const dataUri = `data:${asset.type};base64,${asset.base64}`;
-      const updated = await updateProfile({ bodyImage: dataUri });
-      dispatch(updateProfileLocally(updated));
-    } catch (err) {
-      logError(err instanceof Error ? err : new Error(String(err)), 'essence/bodyPhoto');
-      setBodyPhotoError(t('styles.bodyPhotoError'));
-    } finally {
-      setIsValidatingBodyPhoto(false);
-    }
-  };
-
-  const handleRemoveBodyImage = async () => {
-    const updated = await updateProfile({ bodyImage: '' });
-    dispatch(updateProfileLocally(updated));
-  };
-
-  const handleColorimetryTest = async () => {
-    const preferred = profile?.bodyImage || profile?.avatarImage;
-    if (!preferred) return;
-    setIsTestingColorimetry(true);
-    setColorimetryError(null);
-    try {
-      const mimeType = preferred.match(/data:(.*);base64,/)?.[1] ?? 'image/jpeg';
-      const base64 = preferred.includes('base64,') ? preferred.split('base64,')[1] : preferred;
-      const result = await analyzeColorimetry({ imageBase64: base64, mimeType });
-      const updated = await updateProfile({
-        colorSeason: result.colorSeason,
-        colorimetryResult: result.description,
-        colorPalette: result.palette,
-      });
-      dispatch(updateProfileLocally(updated));
-      dispatch(loadProfile());
-    } catch (err) {
-      logError(err instanceof Error ? err : new Error(String(err)), 'essence/colorimetry');
-      setColorimetryError(t('styles.colorimetryError'));
-    } finally {
-      setIsTestingColorimetry(false);
-    }
-  };
-
-  const handleAddAvailableTag = async () => {
+  const handleAddTag = () => {
     const tag = newTagInput.trim();
-    if (!tag || (profile?.availableTags ?? []).includes(tag)) {
-      setNewTagInput('');
-      return;
-    }
     setNewTagInput('');
-    const updated = await updateProfile({ availableTags: [...(profile?.availableTags ?? []), tag] });
-    dispatch(updateProfileLocally(updated));
+    if (!tag || availableTags.includes(tag)) return;
+    saveProfile({ availableTags: [...availableTags, tag] });
   };
 
-  const handleDeleteAvailableTag = async (tag: string) => {
-    const updated = await updateProfile({
-      availableTags: (profile?.availableTags ?? []).filter(existing => existing !== tag),
-    });
-    dispatch(updateProfileLocally(updated));
+  const handleDeleteTag = (tag: string) => {
+    saveProfile({ availableTags: availableTags.filter(existing => existing !== tag) });
   };
 
-  const handleAnalyze = async () => {
-    setIsAnalyzing(true);
-    setAnalysisError(null);
-    try {
-      const { summary } = await analyzeStyle({
-        closet: closetItems,
-        savedOutfits: outfits,
-        stylePrompt,
-        gender: profile?.gender ?? null,
-      });
-      dispatch(updateProfileLocally({ styleSummary: summary }));
-      dispatch(loadProfile());
-    } catch (err) {
-      logError(err instanceof Error ? err : new Error(String(err)), 'essence/analyze');
-      setAnalysisError(t('styles.essenceAnalysisError'));
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
+  const toggleIn = <T,>(setter: React.Dispatch<React.SetStateAction<T[]>>, value: T) =>
+    setter(prev => (prev.includes(value) ? prev.filter(x => x !== value) : [...prev, value]));
 
-  const handleGenerateAvatar = async () => {
-    setIsGeneratingAvatar(true);
-    setAvatarError(null);
-    try {
-      const mimeType = avatarRefImage?.match(/data:(.*);base64,/)?.[1] ?? undefined;
-      const base64Ref = avatarRefImage ? avatarRefImage.split(',')[1] : undefined;
-      const result = await generateAvatarImage({
-        description: avatarPrompt,
-        referenceImageBase64: base64Ref,
-        mimeType,
-      });
-      const newAvatarUrl = result.avatarUrl || result.avatarImage;
-      dispatch(updateProfileLocally({ avatarImage: newAvatarUrl, avatarDescription: avatarPrompt }));
-      dispatch(loadProfile());
-    } catch (err) {
-      logError(err instanceof Error ? err : new Error(String(err)), 'essence/generateAvatar');
-      setAvatarError(t('styles.essenceAvatarError'));
-    } finally {
-      setIsGeneratingAvatar(false);
-    }
-  };
+  // ─── Render: Outfits ─────────────────────────────────────────────────────────
 
-  const renderAnalysisResult = (summary: string) => {
-    const cleanText = summary.replace(/#/g, '').replace(/\*\*/g, '');
-    const sections = cleanText.split(/\d+\.\s/).filter(sec => sec.trim().length > 0);
+  const renderSetupBanner = () =>
+    profile && !profile.avatarDescription && !profile.avatarImage ? (
+      <Touchable
+        onPress={() => setActiveTab('body')}
+        borderRadius={10}
+        style={[styles.banner, { backgroundColor: s.setupBannerBackground, borderLeftColor: s.setupBannerBorder }]}
+      >
+        <AlertTriangleIcon size={18} color={s.setupBannerBorder} />
+        <Text style={[styles.bannerText, { color: s.headerTitle }]}>{t('styles.setupAvatar')}</Text>
+        <ArrowRightIcon size={16} color={s.setupBannerBorder} />
+      </Touchable>
+    ) : null;
 
-    const parseSection = (section: string) => {
-      const firstColon = section.indexOf(':');
-      if (firstColon !== -1) {
-        return {
-          title: section.substring(0, firstColon).trim(),
-          content: section.substring(firstColon + 1).trim(),
-        };
-      }
-      return { title: '', content: section.trim() };
-    };
-
-    let styleName = '';
-    let styleDescription = sections[0] ?? '';
-    const section1 = sections[0] ?? '';
-    if (section1.includes(':')) {
-      const parts = section1.split(':');
-      const content = parts.slice(1).join(':').trim();
-      const firstDot = content.indexOf('.');
-      if (firstDot !== -1 && firstDot < 50) {
-        styleName = content.substring(0, firstDot).trim();
-        styleDescription = content.substring(firstDot + 1).trim();
-      } else {
-        styleName = content;
-        styleDescription = '';
-      }
-    }
-
-    const actionKws = ['vacía', 'no tienes', 'falta', 'ningún', 'carga', 'guarda', 'empty', "don't have", 'missing', 'upload', 'save'];
-    const cards = [
-      { ...parseSection(sections[1] ?? ''), bgKey: 'Sky' as const },
-      { ...parseSection(sections[2] ?? ''), bgKey: 'Purple' as const },
-      { ...parseSection(sections[3] ?? ''), bgKey: 'Emerald' as const },
-    ].map(card => {
-      const isAlert = actionKws.some(kw => card.content.toLowerCase().includes(kw));
-      return { ...card, isAlert };
-    });
-
-    return (
-      <View style={essenceStyles.analysisResult}>
-        {/* Hero */}
-        <View style={[essenceStyles.heroCard, { backgroundColor: s.essenceHeroBg, borderColor: s.essenceHeroBorder }]}>
-          <CrownIcon size={48} color={s.essenceIconIndigo} strokeWidth={1.5} />
-          <Text style={[essenceStyles.heroTitle, { color: s.essenceHeroTitle }]}>
-            {styleName || t('styles.essenceTitle')}
-          </Text>
-          {styleDescription ? (
-            <Text style={[essenceStyles.heroSubtitle, { color: s.essenceHeroSubtitle }]}>
-              {styleDescription}
-            </Text>
-          ) : null}
-        </View>
-
-        {/* Cards */}
-        {cards.map((card, idx) => {
-          const bgColor = card.isAlert
-            ? s.essenceCardAlertBg
-            : idx === 0 ? s.essenceCardSkyBg
-            : idx === 1 ? s.essenceCardPurpleBg
-            : s.essenceCardEmeraldBg;
-          const borderColor = card.isAlert
-            ? s.essenceCardAlertBorder
-            : idx === 0 ? s.essenceCardSkyBorder
-            : idx === 1 ? s.essenceCardPurpleBorder
-            : s.essenceCardEmeraldBorder;
-          const titleColor = card.isAlert
-            ? s.essenceCardAlertTitle
-            : idx === 0 ? s.essenceCardSkyTitle
-            : idx === 1 ? s.essenceCardPurpleTitle
-            : s.essenceCardEmeraldTitle;
-
+  const renderFilters = () => (
+    <>
+      <View style={[styles.kindRow, { borderBottomColor: s.outfitCardBorder }]}>
+        {KIND_TABS.map(tab => {
+          const isActive = kindFilter === tab.id;
+          const count = kindCounts[tab.id];
           return (
-            // eslint-disable-next-line react/no-array-index-key
-            <View key={idx} style={[essenceStyles.analysisCard, { backgroundColor: bgColor, borderColor }]}>
-              {card.isAlert ? (
-                <AlertCircleIcon size={20} color={s.essenceCardAlertTitle} />
-              ) : (
-                <SparklesIcon size={20} color={titleColor} strokeWidth={1.5} />
-              )}
-              <View style={essenceStyles.analysisCardText}>
-                {card.title ? (
-                  <Text style={[essenceStyles.analysisCardTitle, { color: titleColor }]}>
-                    {card.title}
+            <Touchable
+              key={tab.id}
+              onPress={() => setKindFilter(tab.id)}
+              borderRadius={8}
+              accessibilityLabel={`${t(tab.labelKey)} (${count})`}
+              style={[styles.kindTab, isActive ? { borderBottomColor: s.kindTabActive } : styles.kindTabIdle]}
+            >
+              <View>
+                <tab.Icon size={21} color={isActive ? s.kindTabActive : s.kindTabInactive} />
+                <View
+                  style={[
+                    styles.kindCount,
+                    { backgroundColor: isActive ? s.kindCountActiveBackground : s.kindCountBackground },
+                  ]}
+                >
+                  <Text style={[styles.kindCountText, { color: isActive ? s.kindCountActiveText : s.kindCountText }]}>
+                    {count}
                   </Text>
-                ) : null}
-                <Text style={[essenceStyles.analysisCardBody, { color: s.essenceCardBody }]}>
-                  {card.content}
-                </Text>
+                </View>
               </View>
-            </View>
+            </Touchable>
           );
         })}
       </View>
-    );
-  };
 
-  const renderPromptTab = () => (
-      <ScrollView
-        style={styles.tabContent}
-        contentContainerStyle={[essenceStyles.scrollContent, { paddingBottom: bottomBarTotalHeight + 32 }]}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ── 1. Personal Vision ───────────────────────────────────── */}
-        <View style={[essenceStyles.section, { backgroundColor: s.essenceSectionBackground, borderColor: s.essenceSectionBorder }]}>
-          <View style={essenceStyles.sectionHeader}>
-            <View style={[essenceStyles.sectionIconBg, { backgroundColor: s.essenceInputBackground }]}>
-              <TargetIcon size={20} color={s.essenceIconIndigo} />
-            </View>
-            <View style={essenceStyles.sectionHeaderText}>
-              <Text style={[essenceStyles.sectionTitle, { color: s.modalTitle }]}>
-                {t('styles.essencePersonalVision')}
-              </Text>
-              <Text style={[essenceStyles.sectionDesc, { color: s.modalSubtitle }]}>
-                {t('styles.essencePersonalVisionDesc')}
-              </Text>
-            </View>
-          </View>
-
-          <TextInput
-            value={stylePrompt}
-            onChangeText={setStylePrompt}
-            multiline
-            numberOfLines={5}
-            placeholder={t('styles.essenceStylePlaceholder')}
-            placeholderTextColor={s.essenceInputPlaceholder}
-            style={[
-              essenceStyles.textarea,
-              {
-                backgroundColor: s.essenceInputBackground,
-                borderColor: s.essenceInputBorder,
-                color: s.essenceInputText,
-              },
-            ]}
-          />
-
-          {/* Reference image */}
-          {stylePromptImage ? (
-            <View style={essenceStyles.refImageContainer}>
-              <Image
-                source={{ uri: stylePromptImage }}
-                style={essenceStyles.refImage}
-                resizeMode="cover"
-              />
-              <Touchable
-                onPress={() => setStylePromptImage('')}
-                borderRadius={20}
-                style={[essenceStyles.removeImageBtn, { backgroundColor: s.modalBackground }]}
-              >
-                <Text style={[essenceStyles.removeImageText, { color: s.actionDangerText }]}>
-                  {t('styles.essenceRemoveImage')}
-                </Text>
-              </Touchable>
-            </View>
-          ) : (
+      <View style={styles.filterRow}>
+        {(['rating', 'tags'] as const).map(id => {
+          const count = id === 'rating' ? selectedRatings.length : selectedTags.length;
+          const isOpen = openFilter === id;
+          const active = count > 0 || isOpen;
+          const color = active ? s.kindCountActiveText : s.filterPillText;
+          const Icon = id === 'rating' ? StarIcon : TagIcon;
+          return (
             <Touchable
-              onPress={handlePickStyleImage}
-              borderRadius={12}
-              style={[essenceStyles.uploadBtn, { borderColor: s.essenceInputBorder, backgroundColor: s.essenceInputBackground }]}
-            >
-              <ImageIcon size={18} color={s.modalSubtitle} />
-              <Text style={[essenceStyles.uploadBtnText, { color: s.modalSubtitle }]}>
-                {t('styles.essenceUploadReference')}
-              </Text>
-            </Touchable>
-          )}
-        </View>
-
-        {/* ── 2. AI Analysis ───────────────────────────────────────── */}
-        <View style={[essenceStyles.section, { backgroundColor: s.essenceSectionBackground, borderColor: s.essenceSectionBorder }]}>
-          <View style={essenceStyles.sectionHeaderRow}>
-            <View style={essenceStyles.sectionHeaderLeft}>
-              <View style={[essenceStyles.sectionIconBg, { backgroundColor: s.essenceInputBackground }]}>
-                <BrainIcon size={20} color={s.essenceIconPurple} />
-              </View>
-              <View style={essenceStyles.sectionHeaderText}>
-                <Text style={[essenceStyles.sectionTitle, { color: s.modalTitle }]}>
-                  {t('styles.essenceAnalysis')}
-                </Text>
-                <Text style={[essenceStyles.sectionDesc, { color: s.modalSubtitle }]}>
-                  {t('styles.essenceAnalysisDesc')}
-                </Text>
-              </View>
-            </View>
-
-            <View style={essenceStyles.analyzeRow}>
-              <View style={[essenceStyles.gemsBadge, { backgroundColor: s.essenceGemsBadgeBackground, borderColor: s.essenceGemsBadgeBorder }]}>
-                <GemIcon size={13} color={s.essenceGemsBadgeText} />
-                <Text style={[essenceStyles.gemsBadgeText, { color: s.essenceGemsBadgeText }]}>4</Text>
-              </View>
-              <Touchable
-                onPress={handleAnalyze}
-                disabled={isAnalyzing}
-                borderRadius={24}
-                style={[
-                  essenceStyles.analyzeBtn,
-                  { backgroundColor: isAnalyzing ? '#6EE7B7' : '#10B981' },
-                  isAnalyzing && essenceStyles.analyzeBtnDisabled,
-                ]}
-              >
-                {isAnalyzing ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <SparklesIcon size={16} color="#fff" />
-                )}
-                <Text style={essenceStyles.analyzeBtnText}>
-                  {isAnalyzing ? t('styles.essenceAnalyzing') : t('styles.essenceAnalyze')}
-                </Text>
-              </Touchable>
-            </View>
-          </View>
-
-          {/* Analysis result or empty state */}
-          {analysisError ? (
-            <View style={[essenceStyles.emptyAnalysis, { backgroundColor: s.essenceAnalysisBackground, borderColor: s.essenceAnalysisBorder }]}>
-              <AlertCircleIcon size={28} color={s.actionDangerText} />
-              <Text style={[essenceStyles.emptyAnalysisText, { color: s.actionDangerText }]}>
-                {analysisError}
-              </Text>
-            </View>
-          ) : profile?.styleSummary ? (
-            renderAnalysisResult(profile.styleSummary)
-          ) : (
-            <View style={[essenceStyles.emptyAnalysis, { backgroundColor: s.essenceAnalysisBackground, borderColor: s.essenceAnalysisBorder }]}>
-              <SparklesIcon size={28} color={s.emptyIcon} strokeWidth={1.5} />
-              <Text style={[essenceStyles.emptyAnalysisTitle, { color: s.emptyText }]}>
-                {t('styles.essenceWaiting')}
-              </Text>
-              <Text style={[essenceStyles.emptyAnalysisText, { color: s.emptySubtitle }]}>
-                {t('styles.essenceWaitingDesc')}
-              </Text>
-            </View>
-          )}
-        </View>
-      </ScrollView>
-  );
-
-  const renderBodyTab = () => {
-    const isVip = profile?.plan === 'vip';
-    const avatarPreview = profile?.avatarImage ?? null;
-    const bodyPreview = profile?.bodyImage || profile?.avatarImage || null;
-
-    return (
-      <ScrollView
-        style={styles.tabContent}
-        contentContainerStyle={[essenceStyles.scrollContent, { paddingBottom: bottomBarTotalHeight + 32 }]}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ── Real body photo ──────────────────────────────────────── */}
-        <View style={[essenceStyles.section, { backgroundColor: s.essenceSectionBackground, borderColor: s.essenceSectionBorder }]}>
-          <View style={essenceStyles.sectionHeader}>
-            <View style={[essenceStyles.sectionIconBg, { backgroundColor: '#ECFDF5' }]}>
-              <PersonStandingIcon size={20} color={s.essenceIconEmerald} />
-            </View>
-            <View style={essenceStyles.sectionHeaderText}>
-              <Text style={[essenceStyles.sectionTitle, { color: s.modalTitle }]}>
-                {t('styles.bodyPhotoTitle')}
-              </Text>
-              <Text style={[essenceStyles.sectionDesc, { color: s.modalSubtitle }]}>
-                {t('styles.bodyPhotoDesc')}
-              </Text>
-            </View>
-          </View>
-
-          <View style={essenceStyles.avatarLayout}>
-            <Touchable
-              onPress={handlePickBodyImage}
-              disabled={isValidatingBodyPhoto}
+              key={id}
+              onPress={() => setOpenFilter(isOpen ? null : id)}
               borderRadius={16}
-              style={[essenceStyles.avatarPreview, { borderColor: s.essenceInputBorder, backgroundColor: s.essenceInputBackground }]}
-            >
-              {bodyPreview ? (
-                <AuthedImage data={bodyPreview} style={essenceStyles.avatarImg} resizeMode="contain" />
-              ) : (
-                <View style={essenceStyles.avatarEmpty}>
-                  {isValidatingBodyPhoto ? (
-                    <ActivityIndicator color={s.essenceIconEmerald} />
-                  ) : (
-                    <UserIcon size={40} color={s.emptyIcon} strokeWidth={1.5} />
-                  )}
-                  <Text style={[essenceStyles.avatarEmptyText, { color: s.emptySubtitle }]}>
-                    {isValidatingBodyPhoto ? t('styles.bodyPhotoValidating') : t('styles.bodyPhotoUpload')}
-                  </Text>
-                </View>
-              )}
-            </Touchable>
-
-            <View style={essenceStyles.avatarInputs}>
-              <Text style={[essenceStyles.sectionDesc, { color: s.modalSubtitle }]}>
-                {t('styles.bodyPhotoHint')}
-              </Text>
-              {profile?.bodyImage ? (
-                <Touchable
-                  onPress={handleRemoveBodyImage}
-                  borderRadius={12}
-                  style={[essenceStyles.uploadBtn, { borderColor: s.buttonDangerBorder, backgroundColor: s.buttonDanger, marginTop: 10 }]}
-                >
-                  <TrashIcon size={16} color={s.actionDangerText} />
-                  <Text style={[essenceStyles.uploadBtnText, { color: s.actionDangerText }]}>
-                    {t('styles.bodyPhotoRemove')}
-                  </Text>
-                </Touchable>
-              ) : null}
-              {bodyPhotoError && (
-                <Text style={[essenceStyles.errorText, { color: s.actionDangerText }]}>
-                  {bodyPhotoError}
-                </Text>
-              )}
-            </View>
-          </View>
-        </View>
-
-        {/* ── Avatar generation (VIP) ──────────────────────────────── */}
-        <View style={[essenceStyles.section, { backgroundColor: s.essenceSectionBackground, borderColor: s.essenceSectionBorder }]}>
-          <View style={essenceStyles.sectionHeader}>
-            <View style={[essenceStyles.sectionIconBg, { backgroundColor: s.essenceInputBackground }]}>
-              <UserIcon size={20} color={s.essenceIconIndigo} />
-            </View>
-            <View style={essenceStyles.sectionHeaderText}>
-              <Text style={[essenceStyles.sectionTitle, { color: s.modalTitle }]}>
-                {t('styles.essenceAvatar')}
-              </Text>
-              <Text style={[essenceStyles.sectionDesc, { color: s.modalSubtitle }]}>
-                {t('styles.essenceAvatarDesc')}
-              </Text>
-            </View>
-          </View>
-
-          <View style={essenceStyles.avatarLayout}>
-            {/* Avatar preview */}
-            <View style={[essenceStyles.avatarPreview, { borderColor: s.essenceInputBorder, backgroundColor: s.essenceInputBackground }]}>
-              {avatarPreview ? (
-                <>
-                  <AuthedImage data={avatarPreview} style={essenceStyles.avatarImg} resizeMode="contain" />
-                  <View style={essenceStyles.avatarActiveBadge}>
-                    <Text style={essenceStyles.avatarActiveBadgeText}>{t('styles.essenceAvatarActive')}</Text>
-                  </View>
-                </>
-              ) : (
-                <View style={essenceStyles.avatarEmpty}>
-                  <UserIcon size={40} color={s.emptyIcon} strokeWidth={1.5} />
-                  <Text style={[essenceStyles.avatarEmptyText, { color: s.emptySubtitle }]}>
-                    {t('styles.essenceAvatarNone')}
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            {/* Inputs */}
-            <View style={essenceStyles.avatarInputs}>
-              <Text style={[essenceStyles.inputLabel, { color: s.modalLabel }]}>
-                {t('styles.essenceAvatarDescLabel').toUpperCase()}
-              </Text>
-              <TextInput
-                value={avatarPrompt}
-                onChangeText={setAvatarPrompt}
-                multiline
-                numberOfLines={4}
-                placeholder={t('styles.essenceAvatarDescPlaceholder')}
-                placeholderTextColor={s.essenceInputPlaceholder}
-                editable={isVip}
-                style={[
-                  essenceStyles.textarea,
-                  {
-                    backgroundColor: s.essenceInputBackground,
-                    borderColor: s.essenceInputBorder,
-                    color: s.essenceInputText,
-                    opacity: isVip ? 1 : 0.5,
-                  },
-                ]}
-              />
-
-              <Text style={[essenceStyles.inputLabel, { color: s.modalLabel, marginTop: 12 }]}>
-                {t('styles.essenceAvatarRefLabel').toUpperCase()}
-              </Text>
-              {avatarRefImage ? (
-                <View style={essenceStyles.refImageContainer}>
-                  <Image source={{ uri: avatarRefImage }} style={essenceStyles.refImageSmall} resizeMode="cover" />
-                  <Touchable
-                    onPress={() => setAvatarRefImage(null)}
-                    borderRadius={20}
-                    style={[essenceStyles.removeImageBtn, { backgroundColor: s.modalBackground }]}
-                  >
-                    <Text style={[essenceStyles.removeImageText, { color: s.actionDangerText }]}>
-                      {t('styles.essenceRemoveImage')}
-                    </Text>
-                  </Touchable>
-                </View>
-              ) : (
-                <Touchable
-                  onPress={handlePickAvatarRefImage}
-                  disabled={!isVip}
-                  borderRadius={12}
-                  style={[
-                    essenceStyles.uploadBtn,
-                    { borderColor: s.essenceInputBorder, backgroundColor: s.essenceInputBackground, opacity: isVip ? 1 : 0.5 },
-                  ]}
-                >
-                  <ImageIcon size={16} color={s.modalSubtitle} />
-                  <Text style={[essenceStyles.uploadBtnText, { color: s.modalSubtitle }]}>
-                    {t('styles.essenceAvatarRefUpload')}
-                  </Text>
-                </Touchable>
-              )}
-
-              {/* Footer: gems + generate button */}
-              <View style={essenceStyles.avatarFooter}>
-                <View style={[essenceStyles.gemsBadge, { backgroundColor: s.essenceGemsBadgeBackground, borderColor: s.essenceGemsBadgeBorder }]}>
-                  <GemIcon size={13} color={s.essenceGemsBadgeText} />
-                  <Text style={[essenceStyles.gemsBadgeText, { color: s.essenceGemsBadgeText }]}>10</Text>
-                </View>
-                <Touchable
-                  onPress={handleGenerateAvatar}
-                  disabled={!isVip || isGeneratingAvatar}
-                  borderRadius={24}
-                  style={[
-                    essenceStyles.generateBtn,
-                    { opacity: !isVip || isGeneratingAvatar ? 0.5 : 1 },
-                  ]}
-                >
-                  {isGeneratingAvatar ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <SparklesIcon size={16} color="#fff" />
-                  )}
-                  <Text style={essenceStyles.generateBtnText}>
-                    {isGeneratingAvatar ? t('styles.essenceAvatarGenerating') : t('styles.essenceAvatarGenerate')}
-                  </Text>
-                </Touchable>
-              </View>
-
-              {!isVip && (
-                <Touchable
-                  onPress={() => setShowVipUpgrade(true)}
-                  borderRadius={12}
-                  style={[essenceStyles.vipOverlay, { backgroundColor: 'rgba(0,0,0,0.04)' }]}
-                >
-                  <View style={[essenceStyles.vipBadge, { backgroundColor: s.essenceGemsBadgeBackground, borderColor: s.essenceGemsBadgeBorder }]}>
-                    <CrownIcon size={14} color={s.essenceGemsBadgeText} />
-                    <Text style={[essenceStyles.vipBadgeText, { color: s.essenceGemsBadgeText }]}>
-                      {t('styles.essenceVipOnly')}
-                    </Text>
-                  </View>
-                </Touchable>
-              )}
-
-              {avatarError && (
-                <Text style={[essenceStyles.errorText, { color: s.actionDangerText }]}>
-                  {avatarError}
-                </Text>
-              )}
-            </View>
-          </View>
-        </View>
-      </ScrollView>
-    );
-  };
-
-  const renderColorimetryTab = () => {
-    const preferred = profile?.bodyImage || profile?.avatarImage || null;
-    const hasResult = Boolean(profile?.colorSeason && profile?.colorimetryResult);
-
-    return (
-      <ScrollView
-        style={styles.tabContent}
-        contentContainerStyle={[essenceStyles.scrollContent, { paddingBottom: bottomBarTotalHeight + 32 }]}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={[essenceStyles.section, { backgroundColor: s.essenceSectionBackground, borderColor: s.essenceSectionBorder }]}>
-          <View style={essenceStyles.sectionHeader}>
-            <View style={[essenceStyles.sectionIconBg, { backgroundColor: s.essenceInputBackground }]}>
-              <PaletteIcon size={20} color="#B45309" />
-            </View>
-            <View style={essenceStyles.sectionHeaderText}>
-              <Text style={[essenceStyles.sectionTitle, { color: s.modalTitle }]}>
-                {t('styles.colorimetryTitle')}
-              </Text>
-              <Text style={[essenceStyles.sectionDesc, { color: s.modalSubtitle }]}>
-                {t('styles.colorimetryDesc')}
-              </Text>
-            </View>
-          </View>
-
-          {!preferred ? (
-            <View style={[essenceStyles.emptyAnalysis, { backgroundColor: s.essenceCardAlertBg, borderColor: s.essenceCardAlertBorder }]}>
-              <AlertTriangleIcon size={28} color={s.essenceCardAlertTitle} />
-              <Text style={[essenceStyles.emptyAnalysisText, { color: s.essenceCardAlertTitle }]}>
-                {t('styles.colorimetryLocked')}
-              </Text>
-            </View>
-          ) : hasResult ? (
-            <View style={[essenceStyles.heroCard, { backgroundColor: s.essenceCardEmeraldBg, borderColor: s.essenceCardEmeraldBorder }]}>
-              <Text style={[essenceStyles.heroTitle, { color: s.essenceCardEmeraldTitle }]}>
-                {profile?.colorSeason}
-              </Text>
-              {profile?.colorPalette && profile.colorPalette.length > 0 && (
-                <View style={essenceStyles.paletteRow}>
-                  {profile.colorPalette.map(hex => (
-                    <View key={hex} style={[essenceStyles.paletteSwatch, { backgroundColor: hex }]} />
-                  ))}
-                </View>
-              )}
-              <Text style={[essenceStyles.heroSubtitle, { color: s.essenceCardBody }]}>
-                {profile?.colorimetryResult}
-              </Text>
-              <Touchable
-                onPress={handleColorimetryTest}
-                disabled={isTestingColorimetry}
-                borderRadius={24}
-                style={[essenceStyles.analyzeBtn, { backgroundColor: '#10B981' }, isTestingColorimetry && essenceStyles.analyzeBtnDisabled]}
-              >
-                {isTestingColorimetry ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <RefreshCwIcon size={16} color="#fff" />
-                )}
-                <Text style={essenceStyles.analyzeBtnText}>
-                  {isTestingColorimetry ? t('styles.colorimetryTesting') : t('styles.colorimetryRetest')}
-                </Text>
-              </Touchable>
-            </View>
-          ) : (
-            <View style={[essenceStyles.emptyAnalysis, { backgroundColor: s.essenceAnalysisBackground, borderColor: s.essenceAnalysisBorder }]}>
-              <PaletteIcon size={32} color={s.emptyIcon} />
-              <Text style={[essenceStyles.emptyAnalysisTitle, { color: s.emptyText }]}>
-                {t('styles.colorimetryEmpty')}
-              </Text>
-              <Touchable
-                onPress={handleColorimetryTest}
-                disabled={isTestingColorimetry}
-                borderRadius={24}
-                style={[essenceStyles.analyzeBtn, { backgroundColor: '#10B981' }, isTestingColorimetry && essenceStyles.analyzeBtnDisabled]}
-              >
-                {isTestingColorimetry ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <SparklesIcon size={16} color="#fff" />
-                )}
-                <Text style={essenceStyles.analyzeBtnText}>
-                  {isTestingColorimetry ? t('styles.colorimetryTesting') : t('styles.colorimetryTest')}
-                </Text>
-              </Touchable>
-            </View>
-          )}
-
-          {colorimetryError && (
-            <Text style={[essenceStyles.errorText, { color: s.actionDangerText }]}>
-              {colorimetryError}
-            </Text>
-          )}
-        </View>
-      </ScrollView>
-    );
-  };
-
-  const renderTagsTab = () => {
-    const availableTags = profile?.availableTags ?? [];
-
-    return (
-      <ScrollView
-        style={styles.tabContent}
-        contentContainerStyle={[essenceStyles.scrollContent, { paddingBottom: bottomBarTotalHeight + 32 }]}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={[essenceStyles.section, { backgroundColor: s.essenceSectionBackground, borderColor: s.essenceSectionBorder }]}>
-          <View style={essenceStyles.sectionHeader}>
-            <View style={[essenceStyles.sectionIconBg, { backgroundColor: s.essenceInputBackground }]}>
-              <TagIcon size={20} color={s.essenceIconIndigo} />
-            </View>
-            <View style={essenceStyles.sectionHeaderText}>
-              <Text style={[essenceStyles.sectionTitle, { color: s.modalTitle }]}>
-                {t('styles.tagsManageTitle')}
-              </Text>
-              <Text style={[essenceStyles.sectionDesc, { color: s.modalSubtitle }]}>
-                {t('styles.tagsManageDesc')}
-              </Text>
-            </View>
-          </View>
-
-          <View style={essenceStyles.tagInputRow}>
-            <TextInput
-              value={newTagInput}
-              onChangeText={setNewTagInput}
-              placeholder={t('styles.tagsPlaceholder')}
-              placeholderTextColor={s.essenceInputPlaceholder}
-              returnKeyType="done"
-              onSubmitEditing={handleAddAvailableTag}
               style={[
-                essenceStyles.tagInput,
-                { backgroundColor: s.essenceInputBackground, borderColor: s.essenceInputBorder, color: s.essenceInputText },
+                styles.filterPill,
+                active
+                  ? { backgroundColor: s.kindCountActiveBackground, borderColor: s.kindTabActive }
+                  : { backgroundColor: s.filterPillBackground, borderColor: s.filterPillBorder },
               ]}
-            />
-            <Touchable
-              onPress={handleAddAvailableTag}
-              disabled={!newTagInput.trim()}
-              borderRadius={12}
-              style={[essenceStyles.tagAddBtn, { backgroundColor: s.buttonPrimary, opacity: newTagInput.trim() ? 1 : 0.5 }]}
             >
-              <PlusCircleIcon size={18} color={s.buttonPrimaryText} />
-            </Touchable>
-          </View>
-
-          {availableTags.length === 0 ? (
-            <View style={[essenceStyles.emptyAnalysis, { backgroundColor: s.essenceAnalysisBackground, borderColor: s.essenceAnalysisBorder }]}>
-              <TagIcon size={28} color={s.emptyIcon} />
-              <Text style={[essenceStyles.emptyAnalysisText, { color: s.emptySubtitle }]}>
-                {t('styles.tagsManageEmpty')}
+              <Icon size={13} color={color} />
+              <Text style={[styles.filterPillText, { color }]}>
+                {id === 'rating' ? t('styles.filterStars') : t('styles.filterTags')}
               </Text>
-            </View>
-          ) : (
-            <View style={essenceStyles.tagsWrapLarge}>
-              {availableTags.map(tag => (
-                <View key={tag} style={[essenceStyles.tagChipLarge, { backgroundColor: s.tagBackground }]}>
-                  <Text style={[essenceStyles.tagChipLargeText, { color: s.tagText }]}>{tag}</Text>
-                  <Touchable onPress={() => handleDeleteAvailableTag(tag)} hitSlop={8} borderRadius={10}>
-                    <CloseIcon size={13} color={s.tagText} />
-                  </Touchable>
+              {count > 0 && (
+                <View style={[styles.filterCount, { backgroundColor: s.buttonPrimary }]}>
+                  <Text style={[styles.filterCountText, { color: s.buttonPrimaryText }]}>{count}</Text>
                 </View>
-              ))}
-            </View>
-          )}
-        </View>
-      </ScrollView>
-    );
-  };
-
-  const TABS: { key: Tab; label: string; Icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }> }[] = [
-    // All five are Google Material Symbols, outlined. Each names what its tab
-    // actually holds: a garment, written words about your style, someone framed
-    // for a photo, a palette, a tag. The original set described the wrong
-    // things — two layout columns, a chatbot, and a stick figure.
-    { key: 'looks', label: t('styles.tabLooks'), Icon: ApparelIcon },
-    { key: 'prompt', label: t('styles.tabPrompt'), Icon: CommentIcon },
-    { key: 'body', label: t('styles.tabBody'), Icon: FramePersonIcon },
-    { key: 'colorimetry', label: t('styles.tabColorimetry'), Icon: PaletteIcon },
-    { key: 'tags', label: t('styles.tabTags'), Icon: TagIcon },
-  ];
-
-  const TAB_HINT_KEYS: Record<Tab, string> = {
-    looks: 'styles.hintLooks',
-    prompt: 'styles.hintPrompt',
-    body: 'styles.hintBody',
-    colorimetry: 'styles.hintColorimetry',
-    tags: 'styles.hintTags',
-  };
-
-  return (
-    <View style={[styles.root, { backgroundColor: s.background }]}>
-
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: s.headerTitle }]}>{t('styles.title')}</Text>
-        <Text style={[styles.headerSubtitle, { color: s.headerSubtitle }]}>
-          {t('styles.subtitle')}
+              )}
+              <ChevronDownIcon size={13} color={color} />
+            </Touchable>
+          );
+        })}
+        <Text style={[styles.resultCount, { color: s.cardMeta }]} numberOfLines={1}>
+          {t('styles.resultCount', { count: visibleOutfits.length })}
         </Text>
       </View>
 
-      {/* Content */}
+      {openFilter && (
+        <View style={[styles.filterPanel, { backgroundColor: s.cardInfoBackground, borderColor: s.outfitCardBorder }]}>
+          {openFilter === 'rating' ? (
+            <View style={styles.chipsWrap}>
+              {RATINGS.map(r => {
+                const isOn = selectedRatings.includes(r);
+                return (
+                  <Touchable
+                    key={r}
+                    onPress={() => toggleIn(setSelectedRatings, r)}
+                    borderRadius={14}
+                    style={[
+                      styles.panelChip,
+                      isOn
+                        ? { backgroundColor: s.starFilled, borderColor: s.starFilled }
+                        : { backgroundColor: s.choiceBackground, borderColor: s.choiceBorder },
+                    ]}
+                  >
+                    <Text style={[styles.panelChipText, { color: isOn ? s.toneOnColor : s.choiceText }]}>{r}</Text>
+                    <StarIcon
+                      size={11}
+                      color={isOn ? s.toneOnColor : s.choiceText}
+                      fill={isOn ? s.toneOnColor : 'none'}
+                      strokeWidth={isOn ? 0 : 2}
+                    />
+                  </Touchable>
+                );
+              })}
+            </View>
+          ) : availableTags.length === 0 ? (
+            <Touchable onPress={() => setActiveTab('tags')} borderRadius={8}>
+              <Text style={[styles.panelLink, { color: s.buttonPrimary }]}>{t('styles.tagsGoCreate')}</Text>
+            </Touchable>
+          ) : (
+            <View style={styles.chipsWrap}>
+              {availableTags.map(tag => {
+                const isOn = selectedTags.includes(tag);
+                return (
+                  <Touchable
+                    key={tag}
+                    onPress={() => toggleIn(setSelectedTags, tag)}
+                    borderRadius={14}
+                    style={[
+                      styles.panelChip,
+                      isOn
+                        ? { backgroundColor: s.buttonPrimary, borderColor: s.buttonPrimary }
+                        : { backgroundColor: s.choiceBackground, borderColor: s.choiceBorder },
+                    ]}
+                  >
+                    {isOn && <CheckIcon size={11} color={s.buttonPrimaryText} />}
+                    <Text style={[styles.panelChipText, { color: isOn ? s.buttonPrimaryText : s.choiceText }]}>{tag}</Text>
+                  </Touchable>
+                );
+              })}
+            </View>
+          )}
+          {activeFilterCount > 0 && (
+            <Touchable
+              onPress={() => {
+                setSelectedRatings([]);
+                setSelectedTags([]);
+              }}
+              borderRadius={8}
+              style={styles.clearFilters}
+            >
+              <Text style={[styles.clearFiltersText, { color: s.cardMeta }]}>{t('styles.filtersClear')}</Text>
+            </Touchable>
+          )}
+        </View>
+      )}
+    </>
+  );
+
+  const renderLooksTab = () => {
+    if (outfitsStatus === 'loading' && outfits.length === 0) {
+      return (
+        <View style={styles.center}>
+          <ActivityIndicator color={s.buttonPrimary} />
+        </View>
+      );
+    }
+
+    if (outfits.length === 0) {
+      return (
+        <View style={[styles.emptyContainer, { paddingBottom: bottomBarTotalHeight + 16 }]}>
+          {renderSetupBanner()}
+          <View style={[styles.dashedBox, { borderColor: s.emptyIcon }]}>
+            <Text style={[styles.emptySub, { color: s.emptySubtitle }]}>{t('styles.noOutfitsSaved')}</Text>
+            <Touchable onPress={startCreate} borderRadius={10} style={[styles.emptyBtn, { backgroundColor: s.buttonPrimary }]}>
+              <Text style={[styles.emptyBtnText, { color: s.buttonPrimaryText }]}>{t('styles.createFirstOutfit')}</Text>
+            </Touchable>
+          </View>
+        </View>
+      );
+    }
+
+    return (
+      <FlatList
+        style={styles.tabContent}
+        data={visibleOutfits}
+        keyExtractor={item => item.id}
+        numColumns={2}
+        columnWrapperStyle={styles.gridRow}
+        contentContainerStyle={[styles.gridContent, { paddingBottom: bottomBarTotalHeight + 16 }]}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <View style={styles.listHeader}>
+            {renderSetupBanner()}
+            {renderFilters()}
+          </View>
+        }
+        ListEmptyComponent={
+          <View style={[styles.noMatches, { borderColor: s.outfitCardBorder }]}>
+            <Text style={[styles.emptySub, { color: s.cardMeta }]}>{t('styles.noMatches')}</Text>
+          </View>
+        }
+        renderItem={({ item }) => (
+          <View style={styles.gridCell}>
+            <OutfitCard
+              outfit={item}
+              hasMissingItems={hasMissingItems(item)}
+              isDressing={dressingOutfitId === item.id}
+              scheduleLocked={!isVip}
+              onOpen={() => openSheet('detail', item)}
+              onTags={() => openSheet('tags', item)}
+              onTechSheet={() => openSheet('techSheet', item)}
+              onSchedule={() => requestSchedule(item)}
+              onTryOn={() => requestTryOn(item)}
+              onDelete={() => requestDelete(item)}
+              onMissingItems={showMissingItems}
+            />
+          </View>
+        )}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+      />
+    );
+  };
+
+  // ─── Render: other submodules ────────────────────────────────────────────────
+
+  const renderScroll = (children: React.ReactNode) => (
+    <ScrollView
+      style={styles.tabContent}
+      contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomBarTotalHeight + 32 }]}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
+      {children}
+    </ScrollView>
+  );
+
+  const renderSectionTitle = (title: string, subtitle: string) => (
+    <View style={styles.sectionHead}>
+      <Text style={[styles.sectionTitle, { color: s.modalTitle }]}>{title}</Text>
+      <Text style={[styles.sectionSub, { color: s.modalSubtitle }]}>{subtitle}</Text>
+    </View>
+  );
+
+  const renderPromptTab = () => (
+    renderScroll(<>
+      {renderSectionTitle(t('styles.tabPromptFull'), t('styles.stylePromptDescription'))}
+      <PresetChips flow="style" value={stylePrompt} onSelect={setStylePrompt} />
+      <TextInput
+        value={stylePrompt}
+        onChangeText={setStylePrompt}
+        multiline
+        textAlignVertical="top"
+        placeholder={t('styles.essenceStylePlaceholder')}
+        placeholderTextColor={s.essenceInputPlaceholder}
+        style={[
+          styles.promptInput,
+          { backgroundColor: s.essenceInputBackground, borderColor: s.essenceInputBorder, color: s.essenceInputText },
+        ]}
+      />
+    </>)
+  );
+
+  const renderBodyTab = () => (
+    renderScroll(<AvatarSection
+        profile={profile}
+        avatarPrompt={avatarPrompt}
+        onChangeAvatarPrompt={setAvatarPrompt}
+        onSaveProfile={saveProfile}
+        onUpgrade={() => setShowVipUpgrade(true)}
+      />)
+  );
+
+  const renderColorimetryTab = () => {
+    const savedSeason = (profile as { colorimetryProfile?: { season?: string } | null } | null)?.colorimetryProfile
+      ?.season;
+    const badge = profile?.colorSeason
+      ? savedSeason
+        ? seasonLabel(t, savedSeason, profile.colorSeason)
+        : profile.colorSeason
+      : null;
+
+    return (
+      renderScroll(<>
+        {renderSectionTitle(t('styles.colorimetryTitle'), t('styles.colorimetryDesc'))}
+        <ColorimetrySection
+          title={t('styles.colorimetry.sectionTitle')}
+          description={t('styles.colorimetry.sectionHint')}
+          badge={badge}
+        >
+          <ColorimetryWizard
+            profile={profile}
+            closet={closetItems}
+            onGoToCloset={onGoToCloset}
+            onUpgrade={() => setShowVipUpgrade(true)}
+          />
+        </ColorimetrySection>
+      </>)
+    );
+  };
+
+  const renderTagsTab = () => (
+    renderScroll(<>
+      {renderSectionTitle(t('styles.tabTags'), t('styles.tagsSubtitle'))}
+      <View style={[styles.tagInputWrap, { backgroundColor: s.essenceSectionBackground, borderColor: s.essenceSectionBorder }]}>
+        <TextInput
+          value={newTagInput}
+          onChangeText={setNewTagInput}
+          placeholder={t('styles.tagsNewPlaceholder')}
+          placeholderTextColor={s.essenceInputPlaceholder}
+          returnKeyType="done"
+          onSubmitEditing={handleAddTag}
+          style={[styles.tagInput, { color: s.essenceInputText }]}
+        />
+        <Touchable
+          onPress={handleAddTag}
+          disabled={!newTagInput.trim()}
+          borderRadius={10}
+          accessibilityLabel={t('styles.tagsCreate')}
+          style={[styles.tagAddBtn, { backgroundColor: s.buttonPrimary }, !newTagInput.trim() && styles.faded]}
+        >
+          <PlusIcon size={18} color={s.buttonPrimaryText} />
+        </Touchable>
+      </View>
+
+      {availableTags.length === 0 ? (
+        <Text style={[styles.tagsEmpty, { color: s.cardMeta }]}>{t('styles.tagsManageEmpty')}</Text>
+      ) : (
+        <View style={styles.chipsWrap}>
+          {availableTags.map(tag => (
+            <View key={tag} style={[styles.manageChip, { backgroundColor: s.tagsChipBackground, borderColor: s.tagsChipBorder }]}>
+              <Text style={[styles.manageChipText, { color: s.tagsChipText }]}>{tag}</Text>
+              <Touchable
+                onPress={() => handleDeleteTag(tag)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                borderRadius={10}
+                accessibilityLabel={`${t('styles.actionDelete')}: ${tag}`}
+              >
+                <CloseIcon size={12} color={s.tagsChipRemove} />
+              </Touchable>
+            </View>
+          ))}
+        </View>
+      )}
+    </>)
+  );
+
+  // ─── Submodule bar ───────────────────────────────────────────────────────────
+
+  // Short labels for the bar, full ones for the coach mark — same split as
+  // zena's `label` / `shortLabel`.
+  const TABS: { key: Tab; label: string; fullLabel: string; hintKey: string; Icon: IconCmp }[] = [
+    { key: 'looks', label: t('styles.tabLooks'), fullLabel: t('styles.tabLooks'), hintKey: 'styles.hintLooks', Icon: ApparelIcon },
+    { key: 'prompt', label: t('styles.tabPrompt'), fullLabel: t('styles.tabPromptFull'), hintKey: 'styles.hintPrompt', Icon: CommentIcon },
+    { key: 'body', label: t('styles.tabBody'), fullLabel: t('styles.tabBodyFull'), hintKey: 'styles.hintBody', Icon: FramePersonIcon },
+    { key: 'colorimetry', label: t('styles.tabColorimetry'), fullLabel: t('styles.tabColorimetryFull'), hintKey: 'styles.hintColorimetry', Icon: PaletteIcon },
+    { key: 'tags', label: t('styles.tabTags'), fullLabel: t('styles.tabTags'), hintKey: 'styles.hintTags', Icon: TagIcon },
+  ];
+
+  // ─── Creation sheet options ──────────────────────────────────────────────────
+
+  const beautyOptions: { key: BeautyKind; label: string; Icon: IconCmp; color: string }[] = [
+    { key: 'hair', label: t('styles.createHaircuts'), Icon: ScissorsIcon, color: s.toneHair },
+    { key: 'makeup', label: t('styles.createMakeup'), Icon: SmileIcon, color: s.toneMakeup },
+    { key: 'nails', label: t('styles.createNails'), Icon: HandIcon, color: s.toneNails },
+  ];
+
+  const methodOptions: {
+    key: Creator;
+    title: string;
+    desc: string;
+    Icon: IconCmp;
+    iconColor: string;
+    bg: string;
+    border: string;
+    titleColor: string;
+    descColor: string;
+  }[] = [
+    {
+      key: 'manual',
+      title: t('styles.createManual'),
+      desc: t('styles.createManualDesc'),
+      Icon: ShirtIcon,
+      iconColor: s.modalTitle,
+      bg: s.outfitCardMosaicBackground,
+      border: s.modalBorder,
+      titleColor: s.modalTitle,
+      descColor: s.modalSubtitle,
+    },
+    {
+      key: 'ai',
+      title: t('styles.createAI'),
+      desc: t('styles.createAIDesc'),
+      Icon: BotIcon,
+      iconColor: s.createAiIcon,
+      bg: s.createAiBackground,
+      border: s.createAiBorder,
+      titleColor: s.createAiTitle,
+      descColor: s.createAiDesc,
+    },
+    {
+      key: 'ideas',
+      title: t('styles.createIdeas'),
+      desc: t('styles.createIdeasDesc'),
+      Icon: LightbulbIcon,
+      iconColor: s.toneIdeas,
+      bg: s.createIdeasBackground,
+      border: s.createIdeasBorder,
+      titleColor: s.createIdeasTitle,
+      descColor: s.createIdeasDesc,
+    },
+  ];
+
+  const beautyCreator: BeautyKind | null =
+    creator === 'hair' || creator === 'makeup' || creator === 'nails' ? creator : null;
+
+  return (
+    <View style={[styles.root, { backgroundColor: s.background }]}>
+      {/* Header — the create action lives next to the title, like Closet */}
+      <View style={styles.header}>
+        <View style={styles.headerText}>
+          <Text style={[styles.title, { color: s.headerTitle }]}>{t('styles.title')}</Text>
+          <Text style={[styles.headerSubtitle, { color: s.headerSubtitle }]} numberOfLines={1}>
+            {t('styles.subtitle')}
+          </Text>
+        </View>
+        <Touchable
+          onPress={startCreate}
+          borderRadius={22}
+          accessibilityLabel={t('styles.createDesign')}
+          style={[styles.createBtn, { backgroundColor: s.fabBackground }]}
+        >
+          <PlusIcon size={22} color={s.fabIcon} />
+        </Touchable>
+      </View>
+
       {activeTab === 'looks' && renderLooksTab()}
       {activeTab === 'prompt' && renderPromptTab()}
       {activeTab === 'body' && renderBodyTab()}
       {activeTab === 'colorimetry' && renderColorimetryTab()}
       {activeTab === 'tags' && renderTagsTab()}
 
-      {/* FAB */}
-      <Touchable
-        onPress={() => { setCreateStep(1); setShowCreate(true); }}
-        borderRadius={28}
-        style={[styles.fab, { backgroundColor: s.fabBackground, bottom: bottomBarTotalHeight + 16 }]}
-      >
-        <Text style={[styles.fabIcon, { color: s.fabIcon }]}>+</Text>
-      </Touchable>
-
       {/* Creation sheet */}
       {showCreate && (
         <BottomSheet
-          onClose={() => { setShowCreate(false); setCreateStep(1); }}
+          onClose={() => {
+            setShowCreate(false);
+            setCreateStep(1);
+          }}
           backgroundColor={s.modalBackground}
           backdropColor={s.modalBackdrop}
         >
-          {/* Sheet header */}
           <View style={[styles.sheetHeader, { borderBottomColor: s.modalBorder }]}>
             {createStep === 2 && (
               <Touchable
                 onPress={() => setCreateStep(1)}
-                hitSlop={8}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 borderRadius={20}
                 style={styles.sheetBack}
               >
                 <ArrowLeftIcon size={20} color={s.modalTitle} />
               </Touchable>
             )}
-            <Text style={[styles.sheetTitle, { color: s.modalTitle, flex: 1, textAlign: createStep === 1 ? 'center' : 'left' }]}>
-              {createStep === 1 ? t('styles.createTitle') : t('styles.createOutfits')}
+            <Text
+              style={[
+                styles.sheetTitle,
+                { color: s.modalTitle },
+                createStep === 1 ? styles.sheetTitleCenter : styles.sheetTitleLeft,
+              ]}
+            >
+              {createStep === 1 ? t('styles.createTitle') : t('styles.createOutfitTitle')}
             </Text>
           </View>
 
-          {/* Step 1 — 4 option grid */}
           {createStep === 1 && (
             <View style={styles.createGrid}>
-              {[
-                { label: t('styles.createOutfits'),  Icon: ShirtIcon,    color: s.createOutfitsIcon, onPress: () => setCreateStep(2),                                               soon: false },
-                { label: t('styles.createHaircuts'), Icon: ScissorsIcon, color: '#F97316', onPress: () => { setShowCreate(false); setShowHaircut(true); },                 soon: true },
-                { label: t('styles.createMakeup'),   Icon: SparklesIcon, color: '#EC4899', onPress: () => { setShowCreate(false); setShowMakeup(true); },                  soon: true },
-                { label: t('styles.createNails'),    Icon: HandIcon,     color: '#14B8A6', onPress: () => { setShowCreate(false); setShowNails(true); },                   soon: true },
-              ].map(opt => (
+              <Touchable
+                onPress={() => setCreateStep(2)}
+                borderRadius={20}
+                style={[styles.createCard, { backgroundColor: s.outfitCardMosaicBackground, borderColor: s.modalBorder }]}
+              >
+                <View style={[styles.createIconCircle, { backgroundColor: s.modalBackground }]}>
+                  <ShirtIcon size={28} color={s.createOutfitsIcon} />
+                </View>
+                <Text style={[styles.createCardLabel, { color: s.modalTitle }]}>{t('styles.createOutfits')}</Text>
+              </Touchable>
+              {beautyOptions.map(opt => (
                 <Touchable
-                  key={opt.label}
-                  onPress={opt.soon ? undefined : opt.onPress}
-                  disabled={opt.soon}
-                  borderRadius={24}
+                  key={opt.key}
+                  onPress={() => openCreator(opt.key)}
+                  borderRadius={20}
                   style={[styles.createCard, { backgroundColor: s.outfitCardMosaicBackground, borderColor: s.modalBorder }]}
                 >
-                  <View style={[styles.createIconCircle, opt.soon && styles.createIconCircleFlat, { backgroundColor: opt.soon ? `${opt.color}22` : s.modalBackground }]}>
+                  <View style={[styles.createIconCircle, { backgroundColor: s.modalBackground }]}>
                     <opt.Icon size={28} color={opt.color} />
                   </View>
                   <Text style={[styles.createCardLabel, { color: s.modalTitle }]}>{opt.label}</Text>
-                  {opt.soon && (
-                    <View style={styles.createCardSoonBadge}>
-                      <Text style={styles.createCardSoonText}>{t('common.comingSoon')}</Text>
-                    </View>
-                  )}
                 </Touchable>
               ))}
+              {/* Full width and last: it isn't another category, it gathers the existing ones */}
+              <Touchable
+                onPress={() => openCreator('mix')}
+                borderRadius={20}
+                style={[styles.createMix, { backgroundColor: s.createMixBackground, borderColor: s.createMixBorder }]}
+              >
+                <View style={[styles.createMixIcon, { backgroundColor: s.modalBackground }]}>
+                  <PersonStandingIcon size={22} color={s.toneMix} />
+                </View>
+                <Text style={[styles.createMixLabel, { color: s.createMixTitle }]}>{t('styles.createMix')}</Text>
+              </Touchable>
             </View>
           )}
 
-          {/* Step 2 — outfit method */}
           {createStep === 2 && (
             <View style={styles.createMethods}>
-              <Text style={[styles.createMethodsHint, { color: s.modalSubtitle }]}>
-                {t('styles.createChooseMethod')}
-              </Text>
-              <Touchable
-                onPress={() => { setShowCreate(false); setCreateStep(1); setShowManualCreator(true); }}
-                borderRadius={16}
-                style={[styles.createMethod, { backgroundColor: s.outfitCardMosaicBackground, borderColor: s.modalBorder }]}
-              >
-                <View style={[styles.createMethodIcon, { backgroundColor: s.modalBackground }]}>
-                  <ShirtIcon size={24} color={s.modalTitle} />
-                </View>
-                <View style={styles.createMethodText}>
-                  <Text style={[styles.createMethodTitle, { color: s.modalTitle }]}>{t('styles.createManual')}</Text>
-                  <Text style={[styles.createMethodDesc, { color: s.modalSubtitle }]}>{t('styles.createManualDesc')}</Text>
-                </View>
-              </Touchable>
-              <Touchable
-                onPress={() => { setShowCreate(false); setCreateStep(1); setShowAICreator(true); }}
-                borderRadius={16}
-                style={[styles.createMethod, { backgroundColor: s.createAiBackground, borderColor: s.createAiBorder }]}
-              >
-                <View style={[styles.createMethodIcon, { backgroundColor: s.modalBackground }]}>
-                  <SparklesIcon size={24} color={s.createAiIcon} />
-                </View>
-                <View style={styles.createMethodText}>
-                  <Text style={[styles.createMethodTitle, { color: s.createAiTitle }]}>{t('styles.createAI')}</Text>
-                  <Text style={[styles.createMethodDesc, { color: s.createAiDesc }]}>{t('styles.createAIDesc')}</Text>
-                </View>
-              </Touchable>
+              <Text style={[styles.createMethodsHint, { color: s.modalSubtitle }]}>{t('styles.createChooseMethod')}</Text>
+              {methodOptions.map(opt => (
+                <Touchable
+                  key={String(opt.key)}
+                  onPress={() => openCreator(opt.key)}
+                  borderRadius={16}
+                  style={[styles.createMethod, { backgroundColor: opt.bg, borderColor: opt.border }]}
+                >
+                  <View style={[styles.createMethodIcon, { backgroundColor: s.modalBackground }]}>
+                    <opt.Icon size={22} color={opt.iconColor} />
+                  </View>
+                  <View style={styles.createMethodText}>
+                    <Text style={[styles.createMethodTitle, { color: opt.titleColor }]}>{opt.title}</Text>
+                    <Text style={[styles.createMethodDesc, { color: opt.descColor }]}>{opt.desc}</Text>
+                  </View>
+                </Touchable>
+              ))}
             </View>
           )}
         </BottomSheet>
       )}
 
-      {/* Bottom tab bar */}
+      {/* Submodule bar */}
       <View
         style={[
           styles.bottomBar,
@@ -1523,18 +1013,9 @@ function Styles() {
           const isActive = activeTab === tab.key;
           const color = isActive ? s.bottomBarActive : s.bottomBarInactive;
           return (
-            <Touchable
-              key={tab.key}
-              onPress={() => setActiveTab(tab.key)}
-              borderRadius={8}
-              style={styles.bottomTabItem}
-            >
-              <tab.Icon
-                size={22}
-                color={color}
-                strokeWidth={isActive ? 2.5 : 1.75}
-              />
-              <Text style={[styles.bottomTabLabel, { color }]}>
+            <Touchable key={tab.key} onPress={() => setActiveTab(tab.key)} borderRadius={8} style={styles.bottomTabItem}>
+              <tab.Icon size={22} color={color} strokeWidth={isActive ? 2.5 : 1.75} />
+              <Text style={[styles.bottomTabLabel, { color }]} numberOfLines={1}>
                 {tab.label}
               </Text>
             </Touchable>
@@ -1545,74 +1026,8 @@ function Styles() {
       <SubmodulesCoachMark
         viewId="stylist"
         barHeight={bottomBarTotalHeight}
-        items={TABS.map(tab => ({
-          id: tab.key,
-          Icon: tab.Icon,
-          label: tab.label,
-          hint: t(TAB_HINT_KEYS[tab.key]),
-        }))}
+        items={TABS.map(tab => ({ id: tab.key, Icon: tab.Icon, label: tab.fullLabel, hint: t(tab.hintKey) }))}
       />
-
-      {/* Filter sheets */}
-      {filterSheet === 'stars' && (
-        <BottomSheet
-          onClose={() => setFilterSheet(null)}
-          backgroundColor={s.modalBackground}
-          backdropColor={s.modalBackdrop}
-        >
-          <View style={[styles.sheetHeader, { borderBottomColor: s.modalBorder }]}>
-            <Text style={[styles.sheetTitle, { color: s.modalTitle }]}>
-              {t('styles.filterStars')}
-            </Text>
-          </View>
-          {([null, 5, 4, 3, 2, 1] as (number | null)[]).map(star => {
-            const isSelected = starFilter === star;
-            return (
-              <Touchable
-                key={star ?? 'all'}
-                onPress={() => { setStarFilter(star); setFilterSheet(null); }}
-                borderRadius={0}
-                style={[styles.sheetOption, { borderBottomColor: s.modalBorder }]}
-              >
-                <Text style={[styles.sheetOptionText, { color: s.modalTitle }]}>
-                  {star != null ? `${star} ★` : t('styles.filterAll')}
-                </Text>
-                {isSelected && <CheckIcon size={18} color={s.buttonPrimary} />}
-              </Touchable>
-            );
-          })}
-        </BottomSheet>
-      )}
-
-      {filterSheet === 'tags' && (
-        <BottomSheet
-          onClose={() => setFilterSheet(null)}
-          backgroundColor={s.modalBackground}
-          backdropColor={s.modalBackdrop}
-        >
-          <View style={[styles.sheetHeader, { borderBottomColor: s.modalBorder }]}>
-            <Text style={[styles.sheetTitle, { color: s.modalTitle }]}>
-              {t('styles.filterTags')}
-            </Text>
-          </View>
-          {([null, ...allTags] as (string | null)[]).map(tag => {
-            const isSelected = tagFilter === tag;
-            return (
-              <Touchable
-                key={tag ?? 'all'}
-                onPress={() => { setTagFilter(tag); setFilterSheet(null); }}
-                borderRadius={0}
-                style={[styles.sheetOption, { borderBottomColor: s.modalBorder }]}
-              >
-                <Text style={[styles.sheetOptionText, { color: s.modalTitle }]}>
-                  {tag ?? t('styles.filterAll')}
-                </Text>
-                {isSelected && <CheckIcon size={18} color={s.buttonPrimary} />}
-              </Touchable>
-            );
-          })}
-        </BottomSheet>
-      )}
 
       {/* Sheets */}
       {activeSheet === 'detail' && selectedOutfit && (
@@ -1621,18 +1036,38 @@ function Styles() {
           loading={sheetLoading}
           onClose={closeSheet}
           onSave={handleDetailSave}
-          onSchedule={() => setActiveSheet('schedule')}
+          onSchedule={
+            selectedOutfit.kind === 'outfit'
+              ? () => {
+                  if (!isVip) {
+                    closeSheet();
+                    setShowVipUpgrade(true);
+                    return;
+                  }
+                  setActiveSheet('schedule');
+                }
+              : undefined
+          }
         />
       )}
 
       {activeSheet === 'tags' && selectedOutfit && (
         <TagSheet
+          outfitName={selectedOutfit.name}
           currentTags={selectedOutfit.tags}
-          allTags={allTags}
+          allTags={availableTags}
           loading={sheetLoading}
           onClose={closeSheet}
           onSave={handleTagsSave}
+          onGoToTags={() => {
+            closeSheet();
+            setActiveTab('tags');
+          }}
         />
+      )}
+
+      {activeSheet === 'techSheet' && selectedOutfit && (
+        <TechSheetSheet outfit={selectedOutfit} onClose={closeSheet} onGenerate={handleGenerateTechSheet} />
       )}
 
       {activeSheet === 'schedule' && selectedOutfit && (
@@ -1644,37 +1079,44 @@ function Styles() {
         />
       )}
 
-      <HaircutCreator
-        visible={showHaircut}
-        profile={profile}
-        onClose={() => setShowHaircut(false)}
-      />
-      <MakeupCreator
-        visible={showMakeup}
-        profile={profile}
-        outfits={outfits}
-        onClose={() => setShowMakeup(false)}
-      />
-      <NailCreator
-        visible={showNails}
-        profile={profile}
-        onClose={() => setShowNails(false)}
-      />
+      {/* Creators */}
+      {beautyCreator && (
+        <BeautyDesignCreator
+          kind={beautyCreator}
+          profile={profile}
+          outfits={outfits}
+          onClose={() => setCreator(null)}
+          onSaved={handleCreatorSaved}
+        />
+      )}
+      {creator === 'ideas' && <OutfitIdeasCreator onClose={() => setCreator(null)} />}
+      {creator === 'mix' && (
+        <MixCreator
+          outfits={outfits}
+          profile={profile}
+          onClose={() => setCreator(null)}
+          onSaved={handleCreatorSaved}
+          onGoToAvatar={() => {
+            setCreator(null);
+            setActiveTab('body');
+          }}
+        />
+      )}
       <ManualOutfitCreator
-        visible={showManualCreator}
+        visible={creator === 'manual'}
         closetItems={closetItems}
         closetLoading={closetStatus === 'loading'}
         saving={creatorSaving}
-        onClose={() => setShowManualCreator(false)}
-        onSave={handleManualSave}
+        onClose={() => setCreator(null)}
+        onSave={(name, itemIds) => handleOutfitSave(name, itemIds, 'manual')}
       />
       <AIOutfitCreator
-        visible={showAICreator}
+        visible={creator === 'ai'}
         closetItems={closetItems}
         closetLoading={closetStatus === 'loading'}
         saving={creatorSaving}
-        onClose={() => setShowAICreator(false)}
-        onSave={handleAISave}
+        onClose={() => setCreator(null)}
+        onSave={(name, itemIds) => handleOutfitSave(name, itemIds, 'ai')}
       />
       <UpgradeModal
         visible={showVipUpgrade}
@@ -1691,274 +1133,213 @@ function Styles() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
 
-  // Header
   header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 10,
-    gap: 4,
   },
-  headerTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  title: { fontSize: 32, fontWeight: '800', letterSpacing: -0.5 },
+  headerText: { flex: 1, gap: 4 },
+  title: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
   headerSubtitle: { fontSize: 14, lineHeight: 20 },
-  addBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  // Tab content
-  tabContent: { flex: 1 },
-
-  // Filter pills
-  categoryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 10,
-    gap: 10,
-  },
-  categoryBtn: {
+  createBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  filterRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 10,
-  },
-  filterPill: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 24,
-    borderWidth: 1,
-  },
-  filterPillText: { fontSize: 14, fontWeight: '600' },
-
-  // Outfit list
-  listContent: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 32, gap: 16 },
-
-  // Card
-  card: {
-    width: '100%',
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
+    marginTop: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 3,
   },
-  cardMedia: {
-    aspectRatio: 1,
-    width: '100%',
-    overflow: 'hidden',
-  },
-  mosaic: {
-    ...StyleSheet.absoluteFillObject,
-    flexDirection: 'column',
-    gap: 1,
-  },
-  mosaicRow: {
-    flex: 1,
-    flexDirection: 'row',
-    gap: 1,
-  },
-  mosaicCell: {
-    flex: 1,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mosaicLabel: {
-    fontSize: 8,
-    fontWeight: '600',
-    textAlign: 'center',
-    padding: 4,
-  },
-  tagsOverlay: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    gap: 3,
-  },
-  tagChip: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  tagChipText: {
-    fontSize: 9,
-    fontWeight: '700',
-  },
-  cardInfo: {
-    padding: 14,
-  },
-  cardRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 6,
-  },
-  cardNameWrap: {
-    flex: 1,
-    minWidth: 0,
-    gap: 3,
-  },
-  cardName: { fontSize: 15, fontWeight: '700' },
-  cardRatingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  cardRatingText: { fontSize: 12, fontWeight: '700' },
-  sourceBadge: {
-    paddingHorizontal: 5,
-    paddingVertical: 3,
-    borderRadius: 4,
-    borderWidth: 1,
-    alignSelf: 'flex-start',
-  },
-  sourceBadgeText: { fontSize: 8, fontWeight: '800', letterSpacing: 0.3 },
 
-  // Card action row
-  cardActions: {
+  tabContent: { flex: 1 },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 8, gap: 14 },
+
+  // Setup banner
+  banner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 10,
+    padding: 12,
+    borderLeftWidth: 4,
+    borderRadius: 10,
   },
-  cardActionBtn: {
-    flex: 1,
+  bannerText: { flex: 1, fontSize: 13, fontWeight: '700' },
+
+  // Kind tabs + filters
+  listHeader: { gap: 10, paddingBottom: 12 },
+  kindRow: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth },
+  kindTab: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderBottomWidth: 3 },
+  kindTabIdle: { borderBottomColor: 'transparent' },
+  kindCount: {
+    position: 'absolute',
+    top: -7,
+    right: -11,
+    minWidth: 17,
+    height: 17,
+    borderRadius: 9,
+    paddingHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: 8,
+  },
+  kindCountText: { fontSize: 9, fontWeight: '700' },
+  filterRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  filterPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  filterPillText: { fontSize: 12, fontWeight: '700' },
+  filterCount: { minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  filterCountText: { fontSize: 10, fontWeight: '700' },
+  resultCount: { flex: 1, textAlign: 'right', fontSize: 12 },
+  filterPanel: { borderRadius: 16, borderWidth: 1, padding: 12, gap: 10 },
+  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  panelChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  panelChipText: { fontSize: 12, fontWeight: '700' },
+  panelLink: { fontSize: 12, fontWeight: '700' },
+  clearFilters: { alignSelf: 'flex-start' },
+  clearFiltersText: { fontSize: 12, fontWeight: '700' },
+
+  // Grid — two columns
+  gridContent: { paddingHorizontal: 16, paddingTop: 4 },
+  gridRow: { gap: 12, marginBottom: 12 },
+  gridCell: { flex: 1, maxWidth: '50%' },
+  noMatches: {
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderRadius: 16,
+    paddingVertical: 40,
+    paddingHorizontal: 16,
+    alignItems: 'center',
   },
 
   // Empty / loading
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, gap: 12 },
-  emptyText: { fontSize: 17, fontWeight: '700', textAlign: 'center' },
-  emptySub: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
-  dashedContainer: {
-    flex: 1,
-    padding: 16,
-  },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
+  emptyContainer: { flex: 1, padding: 16, gap: 12 },
   dashedBox: {
     flex: 1,
     borderWidth: 2,
     borderStyle: 'dashed',
-    borderRadius: 24,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 16,
-    paddingHorizontal: 32,
+    paddingHorizontal: 24,
   },
+  emptySub: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  emptyBtn: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 10 },
+  emptyBtnText: { fontSize: 15, fontWeight: '600' },
 
-  // FAB
-  fab: {
-    position: 'absolute',
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  // Submodules
+  sectionHead: { gap: 4 },
+  sectionTitle: { fontSize: 18, fontWeight: '700' },
+  sectionSub: { fontSize: 13, lineHeight: 18 },
+  promptInput: {
+    minHeight: 220,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  primaryBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 8,
+    gap: 8,
+    paddingVertical: 13,
+    borderRadius: 12,
   },
-  fabIcon: {
-    fontSize: 28,
-    fontWeight: '300',
-    lineHeight: 32,
+  primaryBtnText: { fontSize: 14, fontWeight: '700' },
+  errorText: { fontSize: 13, textAlign: 'center' },
+  tagInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingLeft: 14,
+    paddingRight: 6,
   },
+  tagInput: { flex: 1, fontSize: 14, paddingVertical: 12 },
+  tagAddBtn: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  tagsEmpty: { fontSize: 14, textAlign: 'center', paddingVertical: 20 },
+  manageChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingLeft: 12,
+    paddingRight: 8,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  manageChipText: { fontSize: 12, fontWeight: '700' },
 
   // Creation sheet
-  sheetBack: {
-    marginRight: 8,
-  },
-  createGrid: {
+  sheetHeader: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 16,
-    gap: 12,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  sheetBack: { marginRight: 8 },
+  sheetTitle: { flex: 1, fontSize: 18, fontWeight: '700' },
+  sheetTitleCenter: { textAlign: 'center' },
+  sheetTitleLeft: { textAlign: 'left' },
+  createGrid: { flexDirection: 'row', flexWrap: 'wrap', padding: 16, gap: 12 },
   createCard: {
     width: '47%',
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-    paddingVertical: 24,
+    gap: 10,
+    paddingVertical: 20,
     paddingHorizontal: 12,
-    borderRadius: 24,
+    borderRadius: 20,
     borderWidth: 1,
   },
   createIconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
   },
-  createCardLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  createIconCircleFlat: {
-    elevation: 0,
-    shadowOpacity: 0,
-  },
-  createCardSoonBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    backgroundColor: '#FEF3C7',
-  },
-  createCardSoonText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    color: '#92400E',
-  },
-  createMethods: {
-    padding: 16,
+  createCardLabel: { fontSize: 14, fontWeight: '700', textAlign: 'center' },
+  createMix: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: 12,
+    padding: 14,
+    borderRadius: 20,
+    borderWidth: 1,
   },
-  createMethodsHint: {
-    fontSize: 13,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
+  createMixIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  createMixLabel: { fontSize: 14, fontWeight: '700' },
+  createMethods: { padding: 16, gap: 12 },
+  createMethodsHint: { fontSize: 13, textAlign: 'center', marginBottom: 4 },
   createMethod: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1967,422 +1348,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 14,
   },
-  createMethodIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  createMethodText: { flex: 1 },
+  createMethodIcon: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
+  createMethodText: { flex: 1, gap: 3 },
   createMethodTitle: { fontSize: 15, fontWeight: '700' },
-  createMethodDesc: { fontSize: 12, marginTop: 2, lineHeight: 17 },
+  createMethodDesc: { fontSize: 12, lineHeight: 17 },
 
-  // Filter sheets
-  sheetHeader: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  sheetTitle: { fontSize: 16, fontWeight: '700' },
-  sheetOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingLeft: 16,
-    paddingRight: 20,
-    paddingVertical: 16,
-    gap: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  sheetOptionStars: { flexDirection: 'row', gap: 3 },
-  sheetOptionText: { flex: 1, fontSize: 15, fontWeight: '500' },
-
-  // Bottom tab bar
+  // Submodule bar
   bottomBar: {
     position: 'absolute',
-    bottom: 0,
     left: 0,
     right: 0,
+    bottom: 0,
     flexDirection: 'row',
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  bottomTabItem: {
-    flex: 1,
-    height: BOTTOM_TAB_HEIGHT,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 3,
-  },
-  bottomTabLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-  },
-});
+  bottomTabItem: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, paddingTop: 6 },
+  bottomTabLabel: { fontSize: 10, fontWeight: '600', paddingHorizontal: 2 },
 
-// ─── Essence styles ───────────────────────────────────────────────────────────
-
-const essenceStyles = StyleSheet.create({
-  scrollContent: {
-    padding: 16,
-    gap: 16,
-  },
-  section: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 16,
-    gap: 14,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    flexWrap: 'wrap',
-  },
-  sectionHeaderLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  sectionIconBg: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  sectionHeaderText: {
-    flex: 1,
-    gap: 3,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  sectionDesc: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  textarea: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    fontSize: 14,
-    lineHeight: 20,
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  refImageContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  refImage: {
-    width: 64,
-    height: 64,
-    borderRadius: 10,
-  },
-  refImageSmall: {
-    width: 48,
-    height: 48,
-    borderRadius: 8,
-  },
-  removeImageBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  removeImageText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  uploadBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-  },
-  uploadBtnText: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-
-  // Analysis row (header + button inline)
-  analyzeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flexShrink: 0,
-  },
-  gemsBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  gemsBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  analyzeBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 24,
-  },
-  analyzeBtnDisabled: {
-    opacity: 0.7,
-  },
-  analyzeBtnText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-
-  // Empty analysis placeholder
-  emptyAnalysis: {
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 28,
-    gap: 8,
-  },
-  emptyAnalysisTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  emptyAnalysisText: {
-    fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-
-  // Analysis result
-  analysisResult: {
-    gap: 10,
-  },
-  heroCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 20,
-    alignItems: 'center',
-    gap: 8,
-  },
-  heroTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
-  heroSubtitle: {
-    fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  analysisCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 12,
-  },
-  analysisCardText: {
-    flex: 1,
-    gap: 4,
-  },
-  analysisCardTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  analysisCardBody: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-
-  // Avatar section
-  avatarLayout: {
-    flexDirection: 'row',
-    gap: 14,
-    alignItems: 'flex-start',
-  },
-  avatarPreview: {
-    width: 100,
-    aspectRatio: 3 / 4,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  avatarImg: {
-    width: '100%',
-    height: '100%',
-  },
-  avatarEmpty: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    padding: 8,
-  },
-  avatarEmptyText: {
-    fontSize: 9,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    textAlign: 'center',
-  },
-  avatarActiveBadge: {
-    position: 'absolute',
-    bottom: 6,
-    left: 4,
-    right: 4,
-    backgroundColor: '#10B981',
-    borderRadius: 6,
-    paddingVertical: 3,
-    alignItems: 'center',
-  },
-  avatarActiveBadgeText: {
-    color: '#fff',
-    fontSize: 9,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  avatarInputs: {
-    flex: 1,
-    gap: 6,
-  },
-  inputLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-  },
-  avatarFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 8,
-    marginTop: 8,
-  },
-  generateBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 24,
-    backgroundColor: '#6D28D9',
-  },
-  generateBtnText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  vipOverlay: {
-    alignItems: 'flex-start',
-    marginTop: 4,
-  },
-  vipBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  vipBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  errorText: {
-    fontSize: 12,
-    marginTop: 4,
-  },
-
-  // Colorimetry palette
-  paletteRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'center',
-  },
-  paletteSwatch: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.08)',
-  },
-
-  // Tags management
-  tagInputRow: {
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'center',
-  },
-  tagInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-  },
-  tagAddBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tagsWrapLarge: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  tagChipLarge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  tagChipLargeText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
+  disabled: { opacity: 0.6 },
+  faded: { opacity: 0.3 },
 });
 
 export default Styles;

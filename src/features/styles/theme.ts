@@ -1,4 +1,4 @@
-import commonColors from '@theme/commonColors';
+import commonColors, { tailwindHues } from '@theme/commonColors';
 import { Theme, getCommonTheme } from '@theme/index';
 import { BrandPalette, withAlpha } from '@theme/palettes';
 
@@ -147,6 +147,153 @@ export interface StylesTheme extends Theme {
     essenceGemsBadgeBorder: string;
     essenceGemsBadgeText: string;
     essenceVipOverlay: string;
+
+    // Creation choice + beauty flows. Each kind keeps a fixed semantic tone
+    // (orange hair, pink makeup, teal nails, violet mix, amber ideas, rose
+    // face) exactly like zena — they're category colours, not brand accents.
+    toneHair: string;
+    toneMakeup: string;
+    toneNails: string;
+    toneMix: string;
+    toneIdeas: string;
+    toneFace: string;
+    toneBody: string;
+    toneOnColor: string;
+    toneTechSheet: string;
+    toneSchedule: string;
+    toneTags: string;
+    createMixBackground: string;
+    createMixBorder: string;
+    createMixTitle: string;
+    createIdeasBackground: string;
+    createIdeasBorder: string;
+    createIdeasTitle: string;
+    createIdeasDesc: string;
+
+    // Beauty questionnaire chips
+    choiceBackground: string;
+    choiceBorder: string;
+    choiceText: string;
+    choiceHint: string;
+
+    // Outfits grid
+    kindTabActive: string;
+    kindTabInactive: string;
+    kindCountBackground: string;
+    kindCountText: string;
+    kindCountActiveBackground: string;
+    kindCountActiveText: string;
+    cardInfoBackground: string;
+    cardEyeBackground: string;
+    cardEyeIcon: string;
+    cardSourceManualBackground: string;
+    cardSourceText: string;
+    cardMeta: string;
+    cardMissingBadge: string;
+    imageLoadingOverlay: string;
+    setupBannerBackground: string;
+    setupBannerBorder: string;
+
+    // Avatar submodule
+    bodyReadyBackground: string;
+    bodyReadyBorder: string;
+    bodyReadyText: string;
+    faceReadyBackground: string;
+    faceReadyBorder: string;
+    faceReadyText: string;
+    avatarFrameBorder: string;
+    avatarFrameBackground: string;
+
+    // Tags submodule chips
+    tagsChipBackground: string;
+    tagsChipBorder: string;
+    tagsChipText: string;
+    tagsChipRemove: string;
+
+    // Tech sheet
+    techSheetSummaryBackground: string;
+    techSheetSummaryBorder: string;
+    techSheetRowBackground: string;
+    techSheetStepBadge: string;
+  };
+  /** Guided colour test (port of zena components/colorimetry/*). */
+  colorimetry: {
+    welcomeIconBackground: string;
+    welcomeIconColor: string;
+    title: string;
+    body: string;
+    stepText: string;
+    stepBadgeBackground: string;
+    stepBadgeText: string;
+    primaryButton: string;
+    primaryButtonText: string;
+    ghostButtonText: string;
+    backIcon: string;
+    progressTrack: string;
+    progressFill: string;
+    progressText: string;
+    optionBackground: string;
+    optionBorder: string;
+    optionText: string;
+    optionChosenBackground: string;
+    optionChosenBorder: string;
+    swatchBorder: string;
+    errorBackground: string;
+    errorText: string;
+    errorIcon: string;
+    neutralButtonBackground: string;
+    neutralButtonText: string;
+    cameraFrameBackground: string;
+    cameraLoadingOverlay: string;
+    lightNeutralBackground: string;
+    ovalMask: string;
+    ovalStrokeOk: string;
+    ovalStrokeWarn: string;
+    lightOkBackground: string;
+    lightWarnBackground: string;
+    lightText: string;
+    darkNote: string;
+    spinner: string;
+    analyzingTitle: string;
+    analyzingBody: string;
+    heroBackground: string;
+    heroBorder: string;
+    heroEyebrow: string;
+    heroTitle: string;
+    heroVibe: string;
+    heroSummary: string;
+    factBackground: string;
+    factBorder: string;
+    factLabel: string;
+    factValue: string;
+    sectionHeading: string;
+    favorIcon: string;
+    avoidIcon: string;
+    hint: string;
+    swatchName: string;
+    avoidChipBorder: string;
+    avoidChipText: string;
+    tipBullet: string;
+    tipText: string;
+    sheetBackground: string;
+    sheetBorder: string;
+    sheetBackdrop: string;
+    sheetHandle: string;
+    sheetName: string;
+    sheetHex: string;
+    matchCardBackground: string;
+    matchCardBorder: string;
+    matchName: string;
+    emptyIcon: string;
+    emptyText: string;
+    link: string;
+    cardBackground: string;
+    cardBorder: string;
+    cardTitle: string;
+    cardHint: string;
+    cardChevron: string;
+    badgeBackground: string;
+    badgeText: string;
   };
 }
 
@@ -301,6 +448,144 @@ function buildStylesLight(palette: BrandPalette): StylesTheme {
       essenceGemsBadgeBorder: '#DDD6FE',
       essenceGemsBadgeText: '#6D28D9',
       essenceVipOverlay: 'rgba(250,245,255,0.85)',
+
+      toneHair: '#F97316',
+      toneMakeup: '#EC4899',
+      toneNails: '#14B8A6',
+      toneMix: '#7C3AED',
+      toneIdeas: '#F59E0B',
+      toneFace: '#F43F5E',
+      toneBody: '#059669',
+      toneOnColor: commonColors.white,
+      toneTechSheet: '#9333EA',
+      toneSchedule: '#059669',
+      toneTags: '#2563EB',
+      createMixBackground: '#F5F3FF',
+      createMixBorder: '#DDD6FE',
+      createMixTitle: '#4C1D95',
+      createIdeasBackground: '#FFFBEB',
+      createIdeasBorder: '#FDE68A',
+      createIdeasTitle: '#78350F',
+      createIdeasDesc: '#B45309',
+
+      choiceBackground: commonColors.white,
+      choiceBorder: commonColors.grayLight,
+      choiceText: commonColors.grayDark,
+      choiceHint: commonColors.gray,
+
+      kindTabActive: accent600,
+      kindTabInactive: commonColors.gray,
+      kindCountBackground: '#F3F4F6',
+      kindCountText: commonColors.grayDark,
+      kindCountActiveBackground: palette.accent[100],
+      kindCountActiveText: palette.accent[700],
+      cardInfoBackground: '#F9FAFB',
+      cardEyeBackground: 'rgba(255,255,255,0.85)',
+      cardEyeIcon: '#374151',
+      cardSourceManualBackground: 'rgba(17,24,39,0.8)',
+      cardSourceText: commonColors.white,
+      cardMeta: commonColors.gray,
+      cardMissingBadge: '#EF4444',
+      imageLoadingOverlay: 'rgba(255,255,255,0.8)',
+      setupBannerBackground: withAlpha(accent600, 0.1),
+      setupBannerBorder: accent600,
+
+      bodyReadyBackground: '#ECFDF5',
+      bodyReadyBorder: '#D1FAE5',
+      bodyReadyText: '#064E3B',
+      faceReadyBackground: '#FFF1F2',
+      faceReadyBorder: '#FFE4E6',
+      faceReadyText: '#881337',
+      avatarFrameBorder: commonColors.grayLight,
+      avatarFrameBackground: '#F9FAFB',
+
+      tagsChipBackground: '#EFF6FF',
+      tagsChipBorder: '#DBEAFE',
+      tagsChipText: '#1D4ED8',
+      tagsChipRemove: '#93C5FD',
+
+      techSheetSummaryBackground: palette.accent[50],
+      techSheetSummaryBorder: palette.accent[100],
+      techSheetRowBackground: commonColors.white,
+      techSheetStepBadge: '#F3F4F6',
+    },
+    colorimetry: {
+      welcomeIconBackground: tailwindHues.amber[50],
+      welcomeIconColor: '#D97706',
+      title: palette.primary,
+      body: tailwindHues.gray[500],
+      stepText: tailwindHues.gray[600],
+      stepBadgeBackground: tailwindHues.gray[100],
+      stepBadgeText: tailwindHues.gray[500],
+      primaryButton: accent600,
+      primaryButtonText: commonColors.white,
+      ghostButtonText: tailwindHues.gray[600],
+      backIcon: tailwindHues.gray[400],
+      progressTrack: tailwindHues.gray[100],
+      progressFill: accent600,
+      progressText: tailwindHues.gray[400],
+      optionBackground: commonColors.white,
+      optionBorder: tailwindHues.gray[200],
+      optionText: tailwindHues.gray[800],
+      optionChosenBackground: palette.accent[50],
+      optionChosenBorder: palette.accent[500],
+      swatchBorder: tailwindHues.gray[200],
+      errorBackground: '#FEF2F2',
+      errorText: '#B91C1C',
+      errorIcon: '#FB923C',
+      neutralButtonBackground: tailwindHues.gray[100],
+      neutralButtonText: tailwindHues.gray[700],
+      cameraFrameBackground: tailwindHues.gray[900],
+      cameraLoadingOverlay: withAlpha(tailwindHues.gray[900], 0.8),
+      lightNeutralBackground: withAlpha(tailwindHues.gray[900], 0.7),
+      ovalMask: 'rgba(0,0,0,0.55)',
+      ovalStrokeOk: 'rgba(255,255,255,0.9)',
+      ovalStrokeWarn: tailwindHues.amber[500],
+      lightOkBackground: tailwindHues.emerald[600],
+      lightWarnBackground: tailwindHues.amber[500],
+      lightText: commonColors.white,
+      darkNote: '#D97706',
+      spinner: accent600,
+      analyzingTitle: tailwindHues.gray[700],
+      analyzingBody: tailwindHues.gray[400],
+      heroBackground: tailwindHues.emerald[50],
+      heroBorder: tailwindHues.emerald[100],
+      heroEyebrow: withAlpha(tailwindHues.emerald[700], 0.7),
+      heroTitle: tailwindHues.emerald[700],
+      heroVibe: withAlpha('#065F46', 0.8),
+      heroSummary: tailwindHues.gray[700],
+      factBackground: commonColors.white,
+      factBorder: tailwindHues.gray[100],
+      factLabel: tailwindHues.gray[400],
+      factValue: tailwindHues.gray[900],
+      sectionHeading: tailwindHues.gray[900],
+      favorIcon: palette.accent[500],
+      avoidIcon: tailwindHues.gray[400],
+      hint: tailwindHues.gray[400],
+      swatchName: tailwindHues.gray[500],
+      avoidChipBorder: tailwindHues.gray[200],
+      avoidChipText: tailwindHues.gray[500],
+      tipBullet: palette.accent[500],
+      tipText: tailwindHues.gray[600],
+      sheetBackground: commonColors.white,
+      sheetBorder: tailwindHues.gray[100],
+      sheetBackdrop: 'rgba(0,0,0,0.6)',
+      sheetHandle: tailwindHues.gray[300],
+      sheetName: tailwindHues.gray[900],
+      sheetHex: tailwindHues.gray[400],
+      matchCardBackground: tailwindHues.gray[50],
+      matchCardBorder: tailwindHues.gray[100],
+      matchName: tailwindHues.gray[600],
+      emptyIcon: tailwindHues.gray[200],
+      emptyText: tailwindHues.gray[500],
+      link: accent600,
+      cardBackground: commonColors.white,
+      cardBorder: tailwindHues.gray[100],
+      cardTitle: tailwindHues.gray[900],
+      cardHint: tailwindHues.gray[500],
+      cardChevron: tailwindHues.gray[400],
+      badgeBackground: tailwindHues.emerald[50],
+      badgeText: tailwindHues.emerald[700],
     },
   };
 }
@@ -455,6 +740,144 @@ function buildStylesDark(palette: BrandPalette): StylesTheme {
       essenceGemsBadgeBorder: 'rgba(109,40,217,0.3)',
       essenceGemsBadgeText: '#A78BFA',
       essenceVipOverlay: 'rgba(30,18,60,0.85)',
+
+      toneHair: '#FB923C',
+      toneMakeup: '#F472B6',
+      toneNails: '#2DD4BF',
+      toneMix: '#8B5CF6',
+      toneIdeas: '#F59E0B',
+      toneFace: '#FB7185',
+      toneBody: '#34D399',
+      toneOnColor: commonColors.white,
+      toneTechSheet: '#C084FC',
+      toneSchedule: '#34D399',
+      toneTags: '#60A5FA',
+      createMixBackground: 'rgba(76,29,149,0.2)',
+      createMixBorder: 'rgba(109,40,217,0.4)',
+      createMixTitle: '#DDD6FE',
+      createIdeasBackground: 'rgba(120,53,15,0.2)',
+      createIdeasBorder: 'rgba(146,64,14,0.4)',
+      createIdeasTitle: '#FDE68A',
+      createIdeasDesc: '#FCD34D',
+
+      choiceBackground: commonColors.darkSurface,
+      choiceBorder: commonColors.darkBorder,
+      choiceText: commonColors.offWhite,
+      choiceHint: commonColors.gray,
+
+      kindTabActive: accentDefault,
+      kindTabInactive: commonColors.gray,
+      kindCountBackground: commonColors.darkCard,
+      kindCountText: commonColors.gray,
+      kindCountActiveBackground: withAlpha(accentDefault, 0.4),
+      kindCountActiveText: palette.accent[300],
+      cardInfoBackground: commonColors.darkSurface,
+      cardEyeBackground: 'rgba(17,24,39,0.85)',
+      cardEyeIcon: '#E5E7EB',
+      cardSourceManualBackground: 'rgba(17,24,39,0.8)',
+      cardSourceText: commonColors.white,
+      cardMeta: commonColors.gray,
+      cardMissingBadge: '#EF4444',
+      imageLoadingOverlay: 'rgba(17,24,39,0.8)',
+      setupBannerBackground: withAlpha(accentDefault, 0.2),
+      setupBannerBorder: accentDefault,
+
+      bodyReadyBackground: 'rgba(6,78,59,0.2)',
+      bodyReadyBorder: 'rgba(6,95,70,0.5)',
+      bodyReadyText: '#A7F3D0',
+      faceReadyBackground: 'rgba(136,19,55,0.2)',
+      faceReadyBorder: 'rgba(159,18,57,0.5)',
+      faceReadyText: '#FECDD3',
+      avatarFrameBorder: commonColors.darkBorder,
+      avatarFrameBackground: commonColors.darkSurface,
+
+      tagsChipBackground: 'rgba(30,58,138,0.2)',
+      tagsChipBorder: 'rgba(30,64,175,0.5)',
+      tagsChipText: '#93C5FD',
+      tagsChipRemove: '#60A5FA',
+
+      techSheetSummaryBackground: withAlpha(accentDefault, 0.15),
+      techSheetSummaryBorder: withAlpha(accentDefault, 0.3),
+      techSheetRowBackground: commonColors.darkSurface,
+      techSheetStepBadge: commonColors.darkSurface,
+    },
+    colorimetry: {
+      welcomeIconBackground: withAlpha(tailwindHues.amber[900], 0.3),
+      welcomeIconColor: '#FBBF24',
+      title: tailwindHues.gray[200],
+      body: tailwindHues.gray[400],
+      stepText: tailwindHues.gray[300],
+      stepBadgeBackground: tailwindHues.gray[800],
+      stepBadgeText: tailwindHues.gray[500],
+      primaryButton: accentDefault,
+      primaryButtonText: commonColors.white,
+      ghostButtonText: tailwindHues.gray[300],
+      backIcon: tailwindHues.gray[400],
+      progressTrack: tailwindHues.gray[800],
+      progressFill: accentDefault,
+      progressText: tailwindHues.gray[400],
+      optionBackground: tailwindHues.gray[800],
+      optionBorder: tailwindHues.gray[700],
+      optionText: tailwindHues.gray[100],
+      optionChosenBackground: withAlpha(palette.accent[950], 0.4),
+      optionChosenBorder: palette.accent[500],
+      swatchBorder: tailwindHues.gray[600],
+      errorBackground: withAlpha('#450A0A', 0.3),
+      errorText: '#FCA5A5',
+      errorIcon: '#FB923C',
+      neutralButtonBackground: tailwindHues.gray[700],
+      neutralButtonText: tailwindHues.gray[200],
+      cameraFrameBackground: tailwindHues.gray[900],
+      cameraLoadingOverlay: withAlpha(tailwindHues.gray[900], 0.8),
+      lightNeutralBackground: withAlpha(tailwindHues.gray[900], 0.7),
+      ovalMask: 'rgba(0,0,0,0.55)',
+      ovalStrokeOk: 'rgba(255,255,255,0.9)',
+      ovalStrokeWarn: tailwindHues.amber[500],
+      lightOkBackground: tailwindHues.emerald[600],
+      lightWarnBackground: tailwindHues.amber[500],
+      lightText: commonColors.white,
+      darkNote: '#FBBF24',
+      spinner: accentDefault,
+      analyzingTitle: tailwindHues.gray[200],
+      analyzingBody: tailwindHues.gray[400],
+      heroBackground: withAlpha(tailwindHues.emerald[900], 0.2),
+      heroBorder: withAlpha('#065F46', 0.5),
+      heroEyebrow: withAlpha(tailwindHues.emerald[300], 0.7),
+      heroTitle: tailwindHues.emerald[300],
+      heroVibe: withAlpha(tailwindHues.emerald[200], 0.8),
+      heroSummary: tailwindHues.gray[200],
+      factBackground: tailwindHues.gray[800],
+      factBorder: tailwindHues.gray[700],
+      factLabel: tailwindHues.gray[400],
+      factValue: commonColors.white,
+      sectionHeading: commonColors.white,
+      favorIcon: palette.accent[500],
+      avoidIcon: tailwindHues.gray[400],
+      hint: tailwindHues.gray[400],
+      swatchName: tailwindHues.gray[400],
+      avoidChipBorder: tailwindHues.gray[700],
+      avoidChipText: tailwindHues.gray[400],
+      tipBullet: palette.accent[500],
+      tipText: tailwindHues.gray[300],
+      sheetBackground: tailwindHues.gray[900],
+      sheetBorder: tailwindHues.gray[800],
+      sheetBackdrop: 'rgba(0,0,0,0.6)',
+      sheetHandle: tailwindHues.gray[700],
+      sheetName: commonColors.white,
+      sheetHex: tailwindHues.gray[400],
+      matchCardBackground: tailwindHues.gray[800],
+      matchCardBorder: tailwindHues.gray[800],
+      matchName: tailwindHues.gray[300],
+      emptyIcon: tailwindHues.gray[700],
+      emptyText: tailwindHues.gray[400],
+      link: accentDefault,
+      cardBackground: withAlpha(tailwindHues.gray[800], 0.6),
+      cardBorder: tailwindHues.gray[800],
+      cardTitle: commonColors.white,
+      cardHint: tailwindHues.gray[400],
+      cardChevron: tailwindHues.gray[400],
+      badgeBackground: withAlpha(tailwindHues.emerald[900], 0.3),
+      badgeText: tailwindHues.emerald[300],
     },
   };
 }

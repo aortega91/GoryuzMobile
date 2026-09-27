@@ -1,4 +1,3 @@
-import i18n from '@language/index';
 import { DailyWeather } from '../types';
 
 export async function fetchWeatherForecast(
@@ -25,45 +24,18 @@ export async function fetchWeatherForecast(
   }));
 }
 
-export async function geocodeDestination(
+/**
+ * Loose geocoding, like zena's `fetchCoordinatesFallback`: first Nominatim hit
+ * or null. A destination that can't be located still saves — the plan just
+ * gets no forecast.
+ */
+export async function geocodeCoordinates(
   query: string,
-): Promise<{ lat: number; lon: number; displayName: string } | null> {
-  const city = query.split(',')[0].trim();
-  const countryHint = query.includes(',') ? query.split(',').slice(1).join(',').trim().toLowerCase() : '';
-
-  const lang = i18n.language ?? 'es';
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=5&accept-language=${lang}`;
-  try {
-    const res = await fetch(url, { headers: { 'User-Agent': 'GoryuzMobile/1.0' } });
-    if (!res.ok) return null;
-    const results = (await res.json()) as Array<{
-      lat: string;
-      lon: string;
-      display_name: string;
-      address: {
-        city?: string;
-        town?: string;
-        village?: string;
-        country?: string;
-      };
-    }>;
-    if (results.length === 0) return null;
-
-    const match = countryHint
-      ? results.find(r =>
-          r.address.country?.toLowerCase().includes(countryHint) ||
-          r.display_name.toLowerCase().includes(countryHint),
-        )
-      : results[0];
-    const best = match ?? results[0];
-    if (!best.address.city && !best.address.town && !best.address.village) return null;
-
-    return {
-      lat: parseFloat(best.lat),
-      lon: parseFloat(best.lon),
-      displayName: `${best.address.city ?? best.address.town ?? best.address.village ?? city}, ${best.address.country ?? ''}`.trim(),
-    };
-  } catch {
-    return null;
-  }
+): Promise<{ lat: number; lng: number } | null> {
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
+  const res = await fetch(url, { headers: { 'User-Agent': 'GoryuzMobile/1.0' } });
+  if (!res.ok) throw new Error(`Nominatim error ${res.status}`);
+  const results = (await res.json()) as Array<{ lat: string; lon: string }>;
+  if (!results.length) return null;
+  return { lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon) };
 }

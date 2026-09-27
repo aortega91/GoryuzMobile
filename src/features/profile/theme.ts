@@ -1,4 +1,4 @@
-import commonColors from '@theme/commonColors';
+import commonColors, { tailwindHues } from '@theme/commonColors';
 import { Theme, getCommonTheme } from '@theme/index';
 import { BrandPalette, withAlpha } from '@theme/palettes';
 
@@ -81,6 +81,25 @@ export interface ProfileTheme extends Theme {
     submodulesBarTextInactive: string;
     submodulesBarIconActive: string;
     submodulesBarTextActive: string;
+
+    // Field validation feedback (nickname availability)
+    success: string;
+
+    // Legal section (rows in Profile > Account) + legal document viewer
+    legalRowBorder: string;
+    legalIconBackground: string;
+    legalIcon: string;
+    legalDocBackground: string;
+    legalDocHeaderBorder: string;
+    legalHeading: string;
+    legalBody: string;
+    legalSubsectionBorder: string;
+    legalInfoBackground: string;
+    legalInfoBorder: string;
+    legalInfoIconBackground: string;
+    legalInfoAccent: string;
+    legalInfoText: string;
+    legalInfoMuted: string;
   };
 }
 
@@ -167,6 +186,23 @@ function buildProfileLight(palette: BrandPalette): ProfileTheme {
       submodulesBarTextInactive: commonColors.gray,
       submodulesBarIconActive: accent600,
       submodulesBarTextActive: accent600,
+
+      success: commonColors.successGreen,
+
+      legalRowBorder: tailwindHues.gray[100],
+      legalIconBackground: tailwindHues.gray[100],
+      legalIcon: tailwindHues.gray[600],
+      legalDocBackground: commonColors.white,
+      legalDocHeaderBorder: tailwindHues.gray[100],
+      legalHeading: tailwindHues.gray[900],
+      legalBody: tailwindHues.gray[600],
+      legalSubsectionBorder: tailwindHues.gray[100],
+      legalInfoBackground: palette.accent[50],
+      legalInfoBorder: palette.accent[100],
+      legalInfoIconBackground: commonColors.white,
+      legalInfoAccent: accent600,
+      legalInfoText: palette.accent[900],
+      legalInfoMuted: withAlpha(palette.accent[700], 0.7),
     },
   };
 }
@@ -252,6 +288,23 @@ function buildProfileDark(palette: BrandPalette): ProfileTheme {
       submodulesBarTextInactive: commonColors.gray,
       submodulesBarIconActive: accentDefault,
       submodulesBarTextActive: accentDefault,
+
+      success: commonColors.successGreen,
+
+      legalRowBorder: commonColors.darkBorder,
+      legalIconBackground: tailwindHues.gray[900],
+      legalIcon: commonColors.gray,
+      legalDocBackground: tailwindHues.gray[950],
+      legalDocHeaderBorder: commonColors.darkCard,
+      legalHeading: commonColors.white,
+      legalBody: commonColors.gray,
+      legalSubsectionBorder: commonColors.darkCard,
+      legalInfoBackground: withAlpha(palette.accent[950], 0.3),
+      legalInfoBorder: withAlpha(palette.accent[900], 0.5),
+      legalInfoIconBackground: palette.accent[900],
+      legalInfoAccent: palette.accent[400],
+      legalInfoText: palette.accent[200],
+      legalInfoMuted: withAlpha(palette.accent[300], 0.7),
     },
   };
 }

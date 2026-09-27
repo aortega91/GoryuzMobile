@@ -25,6 +25,9 @@ import FeatureWelcomeModal from '@components/FeatureWelcomeModal';
 import useHomeTheme from '@hooks/useHomeTheme';
 import useLocation from '@hooks/useLocation';
 import useCameraPermission from '@hooks/useCameraPermission';
+import useRequest from '@hooks/useRequest';
+import toast from '@utilities/toast';
+import { markModuleVisited } from '@utilities/onboardingSlice';
 import { RootState, AppDispatch } from '@utilities/store';
 import {
   BookmarkIcon,
@@ -35,7 +38,7 @@ import {
 } from '@assets/icons';
 import { clearSession } from '@features/auth/sessionSlice';
 import Collection from '@features/collection/screens/Collection';
-import Styles from '@features/styles/screens/Styles';
+import Styles, { type StylesTab } from '@features/styles/screens/Styles';
 import Schedule from '@features/schedule/screens/Schedule';
 import Profile from '@features/profile/screens/Profile';
 import Discover from '@features/discover/screens/Discover';
@@ -51,14 +54,22 @@ import {
 } from '@features/notifications/notificationsSlice';
 import { clearPendingDeepLink } from '@features/notifications/deepLinkSlice';
 import { loadEvents } from '@features/schedule/scheduleSlice';
+import { loadCollection } from '@features/collection/collectionSlice';
 import { logError } from '@utilities/crashlytics';
 import { loadProfile } from '../profileSlice';
 import { MOCK_FEED_POSTS, MOCK_OWN_POSTS, MOCK_SAVED_POSTS } from '../mockFeedData';
-import { ActiveModule, FeedPost as FeedPostType } from '../types';
+import { ActiveModule, FeedPost as FeedPostType, TRACKED_MODULES } from '../types';
+import {
+  claimOnboardingReward,
+  fetchOnboardingStatus,
+  OnboardingTaskKey,
+} from '../api/onboardingApi';
 
 import TopBar from '../components/TopBar';
 import DrawerMenu, { DrawerMenuHandle } from '../components/DrawerMenu';
 import FeedPost from '../components/FeedPost';
+import HomePanel from '../components/HomePanel';
+import WelcomeOnboardingSheet from '../components/WelcomeOnboardingSheet';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -241,7 +252,22 @@ function Home() {
 
   const insets = useSafeAreaInsets();
 
-  const [activeModule, setActiveModule] = useState<ActiveModule>('styles');
+  // Inicio is the landing module, as in zena (`viewStore` defaults to "home").
+  const [activeModule, setActiveModule] = useState<ActiveModule>('home');
+  // One-shot entry params for Styles / Closet, set by Home's shortcuts and
+  // checklist tasks and cleared by every other navigation.
+  const [stylesTab, setStylesTab] = useState<StylesTab>('looks');
+  const [closetOpenAdd, setClosetOpenAdd] = useState(false);
+
+  useEffect(() => {
+    if (activeModule !== 'styles') { setStylesTab('looks'); }
+    if (activeModule !== 'closet') { setClosetOpenAdd(false); }
+  }, [activeModule]);
+
+  const openStyles = useCallback((tab: StylesTab = 'looks') => {
+    setStylesTab(tab);
+    setActiveModule('styles');
+  }, []);
   // Which view Community opens into. The TopBar message icon (always visible)
   // opens it straight to `messages`; the drawer opens the default `connections`.
   const [communityView, setCommunityView] = useState<'connections' | 'messages'>('connections');
@@ -254,6 +280,31 @@ function Home() {
   const [unreadMessages, setUnreadMessages] = useState(0);
 
   const gemCount = profile?.tokens ?? 0;
+
+  // ─── Inicio: closet state + "first steps" onboarding ─────────────────────────
+  const closetItemsCount = useSelector((state: RootState) => state.collection.items.length);
+  const closetStatus = useSelector((state: RootState) => state.collection.status);
+  const hasItems = closetStatus === 'succeeded' ? closetItemsCount > 0 : null;
+  const visitedModules = useSelector(
+    (state: RootState) => state.onboarding.visitedModules ?? [],
+  );
+  const hasUnvisitedModules = TRACKED_MODULES.some(m => !visitedModules.includes(m));
+
+  const {
+    data: onboardingData,
+    refetch: refetchOnboarding,
+  } = useRequest(fetchOnboardingStatus);
+  // Hides the checklist as soon as the reward is credited, before the refetch lands.
+  const [rewardClaimedLocally, setRewardClaimedLocally] = useState(false);
+  const [isClaimingReward, setIsClaimingReward] = useState(false);
+  const onboarding = onboardingData && rewardClaimedLocally
+    ? { ...onboardingData, rewardClaimed: true }
+    : onboardingData;
+
+  // zena shows its welcome modal whenever the closet loads empty; here once
+  // per app session so it does not reappear on every refresh.
+  const [showWelcomeSheet, setShowWelcomeSheet] = useState(false);
+  const welcomeShownRef = useRef(false);
 
   // Mi Visión state
   const [ownPosts, setOwnPosts] = useState<FeedPostType[]>(MOCK_OWN_POSTS);
@@ -295,6 +346,37 @@ function Home() {
     detectLocation();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (closetStatus === 'idle') dispatch(loadCollection());
+  }, [dispatch, closetStatus]);
+
+  useEffect(() => {
+    if (closetStatus === 'succeeded' && closetItemsCount === 0 && !welcomeShownRef.current) {
+      welcomeShownRef.current = true;
+      setShowWelcomeSheet(true);
+    }
+  }, [closetStatus, closetItemsCount]);
+
+  // The server derives every task from real data, so the checklist is simply
+  // re-asked each time the user comes back to Inicio (zena refetches after
+  // every mutation). The initial fetch is done by useRequest on mount.
+  const isFirstHomeVisit = useRef(true);
+  useEffect(() => {
+    if (activeModule !== 'home') return;
+    if (isFirstHomeVisit.current) {
+      isFirstHomeVisit.current = false;
+      return;
+    }
+    refetchOnboarding();
+  }, [activeModule, refetchOnboarding]);
+
+  // "Not visited yet" dots in the drawer / on the hamburger (zena useVisitedModules).
+  useEffect(() => {
+    if (TRACKED_MODULES.includes(activeModule)) {
+      dispatch(markModuleVisited(activeModule));
+    }
+  }, [activeModule, dispatch]);
 
   useEffect(() => {
     if (profile?.language && profile.language !== i18n.language) {
@@ -362,6 +444,77 @@ function Home() {
       setIsRefreshing(false);
     }
   }, [dispatch]);
+
+  const handleRefreshHome = useCallback(async () => {
+    setIsRefreshing(true);
+    refetchOnboarding();
+    try {
+      await Promise.all([dispatch(loadProfile()), dispatch(loadCollection())]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [dispatch, refetchOnboarding]);
+
+  const handleClaimReward = useCallback(async () => {
+    setIsClaimingReward(true);
+    try {
+      const result = await claimOnboardingReward();
+      setRewardClaimedLocally(true);
+      toast.success(t('home.onboardingClaimSuccess', { gems: result.rewardGems }));
+      // Gems were credited server-side: pull the authoritative balance.
+      dispatch(loadProfile());
+    } catch {
+      // The API client already logged the failed request to Crashlytics. If
+      // another device claimed first, refreshing is the right move, not retrying.
+      toast.error(t('home.onboardingClaimError'));
+    } finally {
+      setIsClaimingReward(false);
+      refetchOnboarding();
+    }
+  }, [dispatch, refetchOnboarding, t]);
+
+  // Closet empty → the closet; zena also auto-opens its add-items modal there.
+  const handleAddItems = useCallback(() => {
+    setClosetOpenAdd(true);
+    setActiveModule('closet');
+  }, []);
+
+  const handleOnboardingTask = useCallback((task: OnboardingTaskKey) => {
+    switch (task) {
+      case 'firstItem':
+        handleAddItems();
+        break;
+      case 'firstOutfit':
+        openStyles('looks');
+        break;
+      case 'avatar':
+        openStyles('body');
+        break;
+      case 'stylePrompt':
+        openStyles('prompt');
+        break;
+      case 'colorimetry':
+        openStyles('colorimetry');
+        break;
+      case 'firstTrip':
+      case 'scheduleOutfit':
+        setActiveModule('schedule');
+        break;
+      case 'secondLife':
+        setActiveModule('second_life');
+        break;
+      case 'friend':
+        setCommunityView('connections');
+        setActiveModule('community');
+        break;
+      case 'message':
+        setCommunityView('messages');
+        setActiveModule('community');
+        break;
+      default:
+        logError(new Error(`Unknown onboarding task: ${String(task)}`), 'Home.handleOnboardingTask');
+    }
+  }, [handleAddItems, openStyles]);
 
   const handleNavigate = useCallback((module: ActiveModule) => {
     setIsDrawerOpen(false);
@@ -563,7 +716,7 @@ function Home() {
   ];
 
 
-  const statusBarDark = activeModule === 'home' && activeTab === 'feed';
+  const statusBarDark = activeModule === 'lookbook' && activeTab === 'feed';
 
   return (
     <View style={[styles.root, { backgroundColor: homeTokens.background }]}>
@@ -576,8 +729,10 @@ function Home() {
         {/* Top navigation bar — always visible */}
         <TopBar
           onMenuPress={() => { drawerRef.current?.open(); setIsDrawerOpen(true); }}
+          showMenuDot={hasUnvisitedModules}
           avatarUrl={profile?.avatarUrl ?? user?.photoURL}
           gemCount={gemCount}
+          onGemPress={() => setActiveModule('subscription')}
           location={location}
           onLocationPress={detectLocation}
           onAvatarPress={() => setActiveModule('profile')}
@@ -593,6 +748,24 @@ function Home() {
           onLayout={e => setTabContentHeight(e.nativeEvent.layout.height)}
         >
           {activeModule === 'home' && (
+            <HomePanel
+              profile={profile}
+              fallbackName={user?.displayName}
+              hasItems={hasItems}
+              onboarding={onboarding}
+              onClaimReward={handleClaimReward}
+              isClaimingReward={isClaimingReward}
+              isRefreshing={isRefreshing}
+              onRefresh={handleRefreshHome}
+              onOpenStyles={() => openStyles('looks')}
+              onOpenAvatar={() => openStyles('body')}
+              onAddItems={handleAddItems}
+              onOpenCommunity={() => { setCommunityView('connections'); setActiveModule('community'); }}
+              onTaskPress={handleOnboardingTask}
+            />
+          )}
+
+          {activeModule === 'lookbook' && (
             <>
               {activeTab === 'feed' && renderInspirationTab()}
               {activeTab === 'my_posts' && renderMyVisionTab()}
@@ -612,8 +785,8 @@ function Home() {
             </>
           )}
 
-          {activeModule === 'closet' && <Collection />}
-          {activeModule === 'styles' && <Styles />}
+          {activeModule === 'closet' && <Collection openAddOnMount={closetOpenAdd} onOpenStyles={() => handleNavigate('styles')} />}
+          {activeModule === 'styles' && <Styles initialTab={stylesTab} onGoToCloset={() => handleNavigate('closet')} />}
           {activeModule === 'schedule' && <Schedule />}
           {activeModule === 'profile' && (
             <Profile onViewPlans={() => setActiveModule('subscription')} />
@@ -631,12 +804,12 @@ function Home() {
           {activeModule === 'subscription' && <Subscription />}
           {activeModule === 'support' && <Support />}
           {activeModule === 'notifications' && (
-            <Notifications onClose={() => setActiveModule('styles')} />
+            <Notifications onClose={() => setActiveModule('home')} />
           )}
         </View>
 
-        {/* Bottom tab bar — home panel only */}
-        {activeModule === 'home' && (
+        {/* Bottom tab bar — LookBook panel only */}
+        {activeModule === 'lookbook' && (
           <View
             style={[
               styles.tabBar,
@@ -698,7 +871,16 @@ function Home() {
         />
       )}
 
-      {/* Publish sheet — mounted over the home panel */}
+      {/* First-steps welcome — shown when the closet loads empty (zena WelcomeModal) */}
+      {showWelcomeSheet && (
+        <WelcomeOnboardingSheet
+          onboarding={onboarding}
+          onStart={() => { setShowWelcomeSheet(false); setActiveModule('home'); }}
+          onClose={() => setShowWelcomeSheet(false)}
+        />
+      )}
+
+      {/* Publish sheet — mounted over the LookBook panel */}
       {showPublishSheet && (
         <PublishSheet
           onClose={() => setShowPublishSheet(false)}

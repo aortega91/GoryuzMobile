@@ -15,8 +15,9 @@ import { useTranslation } from 'react-i18next';
 import Touchable from '@components/Touchable';
 import useCollectionTheme from '@hooks/useCollectionTheme';
 import { RootState, AppDispatch } from '@utilities/store';
-import { AlertCircleIcon, SearchIcon, ShirtIcon } from '@assets/icons';
+import { AlertCircleIcon, PlusIcon, SearchIcon, ShirtIcon } from '@assets/icons';
 import { loadProfile } from '@features/home/profileSlice';
+import { requestCreateChoice } from '@features/styles/stylesSlice';
 import { addToSecondLife } from '@features/secondLife/api/secondLifeApi';
 import { logError } from '@utilities/crashlytics';
 import toast from '@utilities/toast';
@@ -40,7 +41,14 @@ import RegenerateItemModal from '../components/RegenerateItemModal';
 
 type FilterCategory = ClothingCategory | 'All';
 
-function Collection() {
+interface CollectionProps {
+  /** Switches the app to the Styles module (owned by Home's module state). */
+  onOpenStyles?: () => void;
+  /** Opens the add-items sheet as soon as the closet mounts (Home's "Add items"). */
+  openAddOnMount?: boolean;
+}
+
+function Collection({ onOpenStyles, openAddOnMount = false }: CollectionProps) {
   const theme = useCollectionTheme();
   const tokens = theme.collection;
   const { t } = useTranslation();
@@ -54,7 +62,7 @@ function Collection() {
 
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<FilterCategory>('All');
-  const [showAdd, setShowAdd] = useState(false);
+  const [showAdd, setShowAdd] = useState(openAddOnMount);
   const [renaming, setRenaming] = useState<ClothingItem | null>(null);
   const [deleting, setDeleting] = useState<ClothingItem | null>(null);
   const [secondLife, setSecondLife] = useState<ClothingItem | null>(null);
@@ -97,6 +105,13 @@ function Collection() {
     },
     [dispatch, t],
   );
+
+  // With garments loaded, the next thing is combining them: jump straight to
+  // Styles' outfit creator instead of making the user go back there (zena).
+  const handleCreateOutfit = useCallback(() => {
+    dispatch(requestCreateChoice());
+    onOpenStyles?.();
+  }, [dispatch, onOpenStyles]);
 
   const handleRename = useCallback(
     (item: ClothingItem, name: string) => {
@@ -211,9 +226,39 @@ function Collection() {
           },
         ]}
       >
-        <Text style={[styles.headerTitle, { color: tokens.headerTitle }]}>
-          {t('collection.title')}
-        </Text>
+        <View style={styles.headerTitleRow}>
+          <Text style={[styles.headerTitle, { color: tokens.headerTitle }]}>
+            {t('collection.title')}
+          </Text>
+          <View style={styles.headerActions}>
+          {/* Without a closet there'd be nothing to combine, so it hides */}
+          {onOpenStyles && items.length > 0 && (
+            <Touchable
+              onPress={handleCreateOutfit}
+              borderRadius={20}
+              accessibilityLabel={t('collection.createOutfit')}
+              style={[
+                styles.stylesShortcut,
+                {
+                  backgroundColor: tokens.stylesShortcutBackground,
+                  borderColor: tokens.stylesShortcutBorder,
+                },
+              ]}
+            >
+              <ShirtIcon size={20} color={tokens.stylesShortcutIcon} />
+            </Touchable>
+          )}
+          {/* zena: the add action sits next to the title, icon-only on mobile */}
+          <Touchable
+            onPress={() => setShowAdd(true)}
+            borderRadius={20}
+            accessibilityLabel={t('collection.addItem')}
+            style={[styles.addButton, { backgroundColor: tokens.fabBackground }]}
+          >
+            <PlusIcon size={20} color={tokens.fabIcon} />
+          </Touchable>
+          </View>
+        </View>
         <Text style={[styles.headerSubtitle, { color: tokens.emptySubtitle }]}>
           {t('collection.subtitle')}{' '}
           <Text style={[styles.headerSubtitleLink, { color: tokens.buttonPrimary }]}>
@@ -283,7 +328,7 @@ function Collection() {
           numColumns={2}
           contentContainerStyle={[
             styles.grid,
-            { paddingBottom: insets.bottom + 80 },
+            { paddingBottom: insets.bottom + 24 },
           ]}
           ListEmptyComponent={renderEmpty}
           showsVerticalScrollIndicator={false}
@@ -291,25 +336,11 @@ function Collection() {
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={handleRefresh}
-              tintColor={tokens.textPrimary}
+              tintColor={tokens.headerTitle}
             />
           }
         />
 
-        {/* FAB */}
-        <Touchable
-          onPress={() => setShowAdd(true)}
-          borderRadius={28}
-          style={[
-            styles.fab,
-            {
-              backgroundColor: tokens.fabBackground,
-              bottom: insets.bottom + 16,
-            },
-          ]}
-        >
-          <Text style={[styles.fabIcon, { color: tokens.fabIcon }]}>+</Text>
-        </Touchable>
 
       {/* Modals */}
       {showAdd && (
@@ -366,6 +397,20 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 4,
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  stylesShortcut: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 28,
@@ -454,24 +499,17 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   // FAB
-  fab: {
-    position: 'absolute',
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  addButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  fabIcon: {
-    fontSize: 28,
-    fontWeight: '300',
-    lineHeight: 32,
   },
 });
 

@@ -31,7 +31,7 @@ function ManualOutfitCreator({ visible, closetItems, closetLoading, saving, onCl
     >
       <SafeAreaView style={[styles.root, { backgroundColor: s.background }]} edges={['top', 'bottom']}>
         <View style={[styles.header, { borderBottomColor: s.modalBorder }]}>
-          <Touchable onPress={onClose} hitSlop={8} borderRadius={20} style={styles.backBtn} disabled={saving}>
+          <Touchable onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} borderRadius={20} style={styles.backBtn} disabled={saving}>
             <ArrowLeftIcon size={22} color={s.headerTitle} />
           </Touchable>
           <ShirtIcon size={20} color={s.headerTitle} />

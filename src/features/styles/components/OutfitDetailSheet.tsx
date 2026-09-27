@@ -21,7 +21,8 @@ interface OutfitDetailSheetProps {
   loading: boolean;
   onClose: () => void;
   onSave: (changes: { name: string; rating: number | null }) => void;
-  onSchedule: () => void;
+  /** Omitted for beauty designs and mixes — only garment outfits get scheduled. */
+  onSchedule?: () => void;
 }
 
 function OutfitDetailSheet({
@@ -118,10 +119,12 @@ function OutfitDetailSheet({
           })}
         </View>
 
-        {/* Included items */}
+        {/* Included items — beauty designs and mixes carry none */}
+        {outfit.items.length > 0 && (
         <Text style={[styles.label, { color: s.modalLabel }]}>
           {t('styles.detailItems').toUpperCase()}
         </Text>
+        )}
         <View style={styles.itemsGrid}>
           {outfit.items.map((item, idx) => (
             <View
@@ -146,6 +149,7 @@ function OutfitDetailSheet({
 
       {/* Footer actions */}
       <View style={[styles.footer, { borderTopColor: s.modalBorder }]}>
+        {onSchedule && (
         <Touchable
           onPress={onSchedule}
           disabled={loading}
@@ -157,6 +161,7 @@ function OutfitDetailSheet({
             {t('styles.actionSchedule')}
           </Text>
         </Touchable>
+        )}
 
         <Touchable
           onPress={() => onSave({ name: name.trim() || outfit.name, rating })}

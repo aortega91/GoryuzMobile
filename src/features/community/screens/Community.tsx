@@ -236,6 +236,8 @@ function Community({
   const [searchResults, setSearchResults] = useState<CommunityUser[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [filterQuery, setFilterQuery] = useState('');
+  // Messages list search — client-side filter on the contact name (zena parity).
+  const [chatQuery, setChatQuery] = useState('');
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ─ Following action state ────────────────────────────────────────────────
@@ -390,6 +392,11 @@ function Community({
       !filterQuery ||
       f.name.toLowerCase().includes(filterQuery.toLowerCase()) ||
       f.handle?.toLowerCase().includes(filterQuery.toLowerCase()),
+  );
+
+  const chatTerm = chatQuery.trim().toLowerCase();
+  const filteredConversations = (conversations ?? []).filter(
+    cv => !chatTerm || cv.otherUserName.toLowerCase().includes(chatTerm),
   );
 
   const pendingRequestCount = requests?.length ?? 0;
@@ -576,8 +583,25 @@ function Community({
     return (
       <ScrollView
         style={styles.tabContent}
+        keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={convsLoading} onRefresh={refetchConvs} />}
       >
+        {!!conversations && conversations.length > 0 && (
+          <View style={styles.chatSearchWrap}>
+            <View style={[styles.searchBox, { backgroundColor: c.searchBackground, borderColor: c.searchBorder }]}>
+              <SearchIcon size={18} color={c.searchPlaceholder} strokeWidth={2} />
+              <TextInput
+                style={[styles.searchInput, { color: c.searchText }]}
+                placeholder={t('community.searchChat')}
+                placeholderTextColor={c.searchPlaceholder}
+                value={chatQuery}
+                onChangeText={setChatQuery}
+                returnKeyType="search"
+                autoCorrect={false}
+              />
+            </View>
+          </View>
+        )}
         {convsLoading && !conversations ? (
           <ActivityIndicator style={styles.loader} color={c.tabActiveIndicator} />
         ) : !conversations || conversations.length === 0 ? (
@@ -586,8 +610,13 @@ function Community({
             t('community.noConversations'),
             t('community.noConversationsSub'),
           )
+        ) : filteredConversations.length === 0 ? (
+          renderEmptyState(
+            <SearchIcon size={48} color={c.emptyIcon} strokeWidth={1.5} />,
+            t('community.noChatsFound'),
+          )
         ) : (
-          conversations.map(conv => (
+          filteredConversations.map(conv => (
             <ConvRow key={conv.id} conv={conv} c={c} onPress={() => setActiveChat(conv)} />
           ))
         )}
@@ -785,6 +814,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   searchInput: { flex: 1, fontSize: 14, padding: 0 },
+  chatSearchWrap: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 },
   // List
   list: { gap: 8 },
   // Card

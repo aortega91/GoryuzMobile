@@ -32,6 +32,13 @@ export interface OnboardingState {
   completedTours: TourId[];
   /** Ids of submodule bottom-tab coachmarks the user has already dismissed. */
   seenSubmoduleHints: SubmoduleHintViewId[];
+  /**
+   * Drawer modules the user has opened at least once — drives the "not
+   * visited yet" dot, mirroring zena's `useVisitedModules` (localStorage there).
+   */
+  visitedModules: string[];
+  /** Whether the Home "first steps" checklist is collapsed (zena keeps it in localStorage). */
+  homeChecklistCollapsed: boolean;
 }
 
 // ─── Initial state ────────────────────────────────────────────────────────────
@@ -39,6 +46,8 @@ export interface OnboardingState {
 const initialState: OnboardingState = {
   completedTours: [],
   seenSubmoduleHints: [],
+  visitedModules: [],
+  homeChecklistCollapsed: false,
 };
 
 // ─── Slice ────────────────────────────────────────────────────────────────────
@@ -56,6 +65,14 @@ const onboardingSlice = createSlice({
       if (!state.seenSubmoduleHints.includes(action.payload)) {
         state.seenSubmoduleHints.push(action.payload);
       }
+    },
+    markModuleVisited(state, action: PayloadAction<string>) {
+      if (!state.visitedModules.includes(action.payload)) {
+        state.visitedModules.push(action.payload);
+      }
+    },
+    setHomeChecklistCollapsed(state, action: PayloadAction<boolean>) {
+      state.homeChecklistCollapsed = action.payload;
     },
   },
   extraReducers: builder => {
@@ -77,11 +94,19 @@ const onboardingSlice = createSlice({
         return {
           completedTours: persisted.completedTours ?? initialState.completedTours,
           seenSubmoduleHints: persisted.seenSubmoduleHints ?? initialState.seenSubmoduleHints,
+          visitedModules: persisted.visitedModules ?? initialState.visitedModules,
+          homeChecklistCollapsed:
+            persisted.homeChecklistCollapsed ?? initialState.homeChecklistCollapsed,
         };
       },
     );
   },
 });
 
-export const { markTourCompleted, markSubmoduleHintSeen } = onboardingSlice.actions;
+export const {
+  markTourCompleted,
+  markSubmoduleHintSeen,
+  markModuleVisited,
+  setHomeChecklistCollapsed,
+} = onboardingSlice.actions;
 export default onboardingSlice.reducer;

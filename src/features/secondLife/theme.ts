@@ -72,6 +72,11 @@ export interface SecondLifeTheme extends Theme {
 
     impactEnvBackground: string;
     impactEnvText: string;
+
+    // Month/year filter on the impact history (pill + option sheet).
+    monthOptionText: string;
+    monthOptionActiveBackground: string;
+    monthOptionCheck: string;
   };
 }
 
@@ -153,6 +158,10 @@ function buildSecondLifeLight(palette: BrandPalette): SecondLifeTheme {
 
       impactEnvBackground: '#F0FDF4',
       impactEnvText: '#166534',
+
+      monthOptionText: commonColors.grayDark,
+      monthOptionActiveBackground: withAlpha(accent600, 0.08),
+      monthOptionCheck: accent600,
     },
   };
 }
@@ -237,6 +246,10 @@ function buildSecondLifeDark(palette: BrandPalette): SecondLifeTheme {
 
       impactEnvBackground: 'rgba(22,101,52,0.15)',
       impactEnvText: '#86EFAC',
+
+      monthOptionText: commonColors.offWhite,
+      monthOptionActiveBackground: withAlpha(accentDefault, 0.15),
+      monthOptionCheck: accentDefault,
     },
   };
 }
