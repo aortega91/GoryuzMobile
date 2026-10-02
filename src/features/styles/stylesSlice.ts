@@ -24,6 +24,11 @@ interface StylesState {
    * sheet straight on the outfit-method step, then clears the flag.
    */
   createChoiceRequested: boolean;
+  /**
+   * Non-null while the stylist chat is open (mounted by Home, so Styles and
+   * Agenda can both open it). The string is the text pre-filled in its input.
+   */
+  stylistChatDraft: string | null;
 }
 
 const initialState: StylesState = {
@@ -32,6 +37,7 @@ const initialState: StylesState = {
   outfitsStatus: 'idle',
   closetStatus: 'idle',
   createChoiceRequested: false,
+  stylistChatDraft: null,
 };
 
 // ─── Thunks ───────────────────────────────────────────────────────────────────
@@ -79,6 +85,12 @@ const stylesSlice = createSlice({
     },
     clearCreateChoiceRequest: state => {
       state.createChoiceRequested = false;
+    },
+    openStylistChat: (state, action: PayloadAction<string | undefined>) => {
+      state.stylistChatDraft = action.payload ?? '';
+    },
+    closeStylistChat: state => {
+      state.stylistChatDraft = null;
     },
   },
   extraReducers: builder => {
@@ -153,6 +165,11 @@ const stylesSlice = createSlice({
   },
 });
 
-export const { requestCreateChoice, clearCreateChoiceRequest } = stylesSlice.actions;
+export const {
+  requestCreateChoice,
+  clearCreateChoiceRequest,
+  openStylistChat,
+  closeStylistChat,
+} = stylesSlice.actions;
 
 export default stylesSlice.reducer;

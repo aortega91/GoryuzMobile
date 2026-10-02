@@ -82,7 +82,7 @@ export async function deleteOutfit(id: string): Promise<void> {
 
 /**
  * @deprecated zena never shipped `/outfits/suggest`. Only the dormant Discover
- * module still imports this; Styles uses `completeOutfit` (/gemini/complete-outfit).
+ * module still imports this; the AI suggestions come from the stylist chat (/gemini/chat).
  */
 export async function suggestOutfit(params: {
   prompt: string;

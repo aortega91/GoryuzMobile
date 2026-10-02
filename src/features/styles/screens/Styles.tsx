@@ -65,6 +65,7 @@ import {
   editOutfit,
   removeOutfit,
   clearCreateChoiceRequest,
+  openStylistChat,
 } from '../stylesSlice';
 import { BeautyKind, Outfit, OutfitKind, TechSheet } from '../types';
 import OutfitCard from '../components/OutfitCard';
@@ -73,7 +74,6 @@ import TagSheet from '../components/TagSheet';
 import TechSheetSheet from '../components/TechSheetSheet';
 import ScheduleOutfitSheet from '../components/ScheduleOutfitSheet';
 import ManualOutfitCreator from '../components/ManualOutfitCreator';
-import AIOutfitCreator from '../components/AIOutfitCreator';
 import BeautyDesignCreator from '../components/BeautyDesignCreator';
 import OutfitIdeasCreator from '../components/OutfitIdeasCreator';
 import MixCreator from '../components/MixCreator';
@@ -396,6 +396,11 @@ function Styles({ initialTab = 'looks', onGoToCloset }: StylesProps) {
   const openCreator = (next: Creator) => {
     setShowCreate(false);
     setCreateStep(1);
+    // zena: "Consultar a tu estilista" opens the stylist chat (mounted by Home).
+    if (next === 'ai') {
+      dispatch(openStylistChat());
+      return;
+    }
     setCreator(next);
   };
 
@@ -1109,14 +1114,6 @@ function Styles({ initialTab = 'looks', onGoToCloset }: StylesProps) {
         saving={creatorSaving}
         onClose={() => setCreator(null)}
         onSave={(name, itemIds) => handleOutfitSave(name, itemIds, 'manual')}
-      />
-      <AIOutfitCreator
-        visible={creator === 'ai'}
-        closetItems={closetItems}
-        closetLoading={closetStatus === 'loading'}
-        saving={creatorSaving}
-        onClose={() => setCreator(null)}
-        onSave={(name, itemIds) => handleOutfitSave(name, itemIds, 'ai')}
       />
       <UpgradeModal
         visible={upgradePlan !== null}

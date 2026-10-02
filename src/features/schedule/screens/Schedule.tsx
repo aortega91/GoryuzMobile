@@ -55,6 +55,7 @@ import WeatherBadge, { WeatherIcon, WeatherTemps } from '../components/WeatherBa
 import EventModal from '../components/EventModal';
 import PlanModal, { MAX_PER_DAY } from '../components/PlanModal';
 import OutfitPickerSheet from '../components/OutfitPickerSheet';
+import AddOutfitChoiceSheet from '../components/AddOutfitChoiceSheet';
 import OutfitPreview from '../components/OutfitPreview';
 import DatePickerModal from '../components/DatePickerModal';
 
@@ -97,7 +98,12 @@ function toForecastMap(days: DayWeather[]): ForecastMap {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-function Schedule() {
+interface Props {
+  /** Opens the stylist chat (on Styles) with this text pre-filled — zena's "Sugerencia IA". */
+  onAskStylist: (draft: string) => void;
+}
+
+function Schedule({ onAskStylist }: Props) {
   const { t, i18n } = useTranslation();
   const locale = localeFor(i18n.language);
   const theme = useScheduleTheme();
@@ -132,6 +138,8 @@ function Schedule() {
   // the modal would keep showing the stale copy after saving an edit.
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [pickingForDate, setPickingForDate] = useState<string | null>(null);
+  // Day whose "add outfit" choice (AI suggestion vs saved outfit) is showing.
+  const [choosingForDate, setChoosingForDate] = useState<string | null>(null);
   const [changingOutfitForEvent, setChangingOutfitForEvent] =
     useState<CalendarEvent | null>(null);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
@@ -292,7 +300,24 @@ function Schedule() {
 
   const handleAddOutfit = (dateKey: string) => {
     if ((eventsByDate[dateKey] ?? []).length >= MAX_PER_DAY) { return; }
-    setPickingForDate(dateKey);
+    setChoosingForDate(dateKey);
+  };
+
+  const handleChooseSaved = () => {
+    setPickingForDate(choosingForDate);
+    setChoosingForDate(null);
+  };
+
+  // zena requestOutfitForDate: the stylist chat opens with the day already asked about.
+  const handleChooseAi = () => {
+    if (!choosingForDate) return;
+    const day = fromDateKey(choosingForDate).toLocaleDateString(i18n.language, {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    });
+    setChoosingForDate(null);
+    onAskStylist(t('schedule.askStylistDraft', { date: day }));
   };
 
   const handleOutfitSelected = (outfit: { id: string }) => {
@@ -936,6 +961,14 @@ function Schedule() {
           onUpdate={handleUpdatePlan}
           onDelete={handleDeletePlan}
           onAddOutfit={handlePlanAddOutfit}
+        />
+      )}
+
+      {choosingForDate !== null && (
+        <AddOutfitChoiceSheet
+          onChooseAi={handleChooseAi}
+          onChooseSaved={handleChooseSaved}
+          onClose={() => setChoosingForDate(null)}
         />
       )}
 

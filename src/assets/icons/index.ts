@@ -99,3 +99,6 @@ export { default as FileTextIcon } from './FileTextIcon';
 export { default as LockIcon } from './LockIcon';
 export { default as ShieldCheckIcon } from './ShieldCheckIcon';
 export { default as ThumbsDownIcon } from './ThumbsDownIcon';
+export { default as HistoryIcon } from './HistoryIcon';
+export { default as SaveIcon } from './SaveIcon';
+export { default as RotateCcwIcon } from './RotateCcwIcon';

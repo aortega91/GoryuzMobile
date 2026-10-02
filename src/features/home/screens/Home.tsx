@@ -40,6 +40,8 @@ import { clearSession } from '@features/auth/sessionSlice';
 import Collection from '@features/collection/screens/Collection';
 import Styles, { type StylesTab } from '@features/styles/screens/Styles';
 import Schedule from '@features/schedule/screens/Schedule';
+import StylistChat from '@features/styles/components/stylistChat/StylistChat';
+import { openStylistChat } from '@features/styles/stylesSlice';
 import Profile from '@features/profile/screens/Profile';
 import Discover from '@features/discover/screens/Discover';
 import SecondLife from '@features/secondLife/screens/SecondLife';
@@ -243,6 +245,7 @@ function Home() {
   const profileStatus = useSelector((state: RootState) => state.profile.status);
   const cityName = useSelector((state: RootState) => state.location.cityName);
   const scheduleEvents = useSelector((state: RootState) => state.schedule.events);
+  const stylistChatOpen = useSelector((state: RootState) => state.styles.stylistChatDraft !== null);
   const scheduleStatus = useSelector((state: RootState) => state.schedule.eventsStatus);
   const unreadNotifications = useSelector(
     (state: RootState) => state.notifications.items.filter(n => !n.read).length,
@@ -268,6 +271,12 @@ function Home() {
     setStylesTab(tab);
     setActiveModule('styles');
   }, []);
+
+  // Agenda's "AI suggestion": like zena, it lands on Styles with the stylist chat open.
+  const askStylist = useCallback((draft: string) => {
+    openStyles('looks');
+    dispatch(openStylistChat(draft));
+  }, [dispatch, openStyles]);
   // Which view Community opens into. The TopBar message icon (always visible)
   // opens it straight to `messages`; the drawer opens the default `connections`.
   const [communityView, setCommunityView] = useState<'connections' | 'messages'>('connections');
@@ -787,7 +796,7 @@ function Home() {
 
           {activeModule === 'closet' && <Collection openAddOnMount={closetOpenAdd} onOpenStyles={() => handleNavigate('styles')} />}
           {activeModule === 'styles' && <Styles initialTab={stylesTab} onGoToCloset={() => handleNavigate('closet')} />}
-          {activeModule === 'schedule' && <Schedule />}
+          {activeModule === 'schedule' && <Schedule onAskStylist={askStylist} />}
           {activeModule === 'profile' && (
             <Profile onViewPlans={() => setActiveModule('subscription')} />
           )}
@@ -879,6 +888,9 @@ function Home() {
           onClose={() => setShowWelcomeSheet(false)}
         />
       )}
+
+      {/* Stylist chat — opened from Styles or Agenda, outlives module switches */}
+      {stylistChatOpen && <StylistChat />}
 
       {/* Publish sheet — mounted over the LookBook panel */}
       {showPublishSheet && (

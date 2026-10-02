@@ -132,6 +132,15 @@ export interface ScheduleTheme extends Theme {
     modalSubtitle: string;
     modalBorder: string;
 
+    // Add-outfit choice sheet (zena AddToCalendarChoiceModal)
+    choiceCardBackground: string;
+    choiceCardBorder: string;
+    choiceIconBackground: string;
+    choiceAiIcon: string;
+    choiceSavedIcon: string;
+    choiceTitleIconBackground: string;
+    choiceTitleIcon: string;
+
     inputBackground: string;
     inputBorder: string;
     inputBorderFocus: string;
@@ -297,6 +306,15 @@ function buildScheduleLight(palette: BrandPalette): ScheduleTheme {
       modalSubtitle: commonColors.grayDark,
       modalBorder: commonColors.grayLight,
 
+      // Add-outfit choice sheet (zena AddToCalendarChoiceModal)
+      choiceCardBackground: tailwindHues.gray[50],
+      choiceCardBorder: tailwindHues.gray[100],
+      choiceIconBackground: commonColors.white,
+      choiceAiIcon: palette.accent[500],
+      choiceSavedIcon: tailwindHues.yellow[500],
+      choiceTitleIconBackground: palette.accent[50],
+      choiceTitleIcon: accent600,
+
       inputBackground: commonColors.offWhite,
       inputBorder: commonColors.grayLight,
       inputBorderFocus: accent600,
@@ -456,6 +474,15 @@ function buildScheduleDark(palette: BrandPalette): ScheduleTheme {
       modalTitle: commonColors.offWhite,
       modalSubtitle: commonColors.gray,
       modalBorder: commonColors.darkBorder,
+
+      // Add-outfit choice sheet (zena AddToCalendarChoiceModal)
+      choiceCardBackground: withAlpha(tailwindHues.gray[800], 0.5),
+      choiceCardBorder: withAlpha(tailwindHues.gray[700], 0.5),
+      choiceIconBackground: tailwindHues.gray[800],
+      choiceAiIcon: palette.accent[500],
+      choiceSavedIcon: tailwindHues.yellow[500],
+      choiceTitleIconBackground: withAlpha(palette.accent[950], 0.3),
+      choiceTitleIcon: accent400,
 
       inputBackground: commonColors.darkCard,
       inputBorder: commonColors.darkBorder,

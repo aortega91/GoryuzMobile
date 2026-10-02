@@ -97,6 +97,51 @@ export interface StylesTheme extends Theme {
     createAiTitle: string;
     createAiDesc: string;
 
+    // Stylist chat (zena ChatModal)
+    chatBackground: string;
+    chatHeaderBorder: string;
+    chatTitle: string;
+    chatSubtitle: string;
+    chatBotBackground: string;
+    chatBotIcon: string;
+    chatOnlineDot: string;
+    chatOnlineDotRing: string;
+    chatHeaderIcon: string;
+    chatHeaderIconActive: string;
+    chatGemBarBackground: string;
+    chatGemBarText: string;
+    chatGemIcon: string;
+    chatGemValue: string;
+    chatBotSmallBackground: string;
+    chatBotSmallIcon: string;
+    chatUserBubble: string;
+    chatUserBubbleText: string;
+    chatModelBubble: string;
+    chatModelBubbleBorder: string;
+    chatModelBubbleText: string;
+    chatSuggestionLabel: string;
+    chatGenerateBackground: string;
+    chatGenerateText: string;
+    chatSaveBackground: string;
+    chatSaveBorder: string;
+    chatSaveText: string;
+    chatTypingDot: string;
+    chatInputBackground: string;
+    chatInputBorder: string;
+    chatInputText: string;
+    chatInputPlaceholder: string;
+    chatInputIcon: string;
+    chatSendBackground: string;
+    chatSendDisabledBackground: string;
+    chatSendIcon: string;
+    chatResetText: string;
+    chatHistoryCardBackground: string;
+    chatHistoryCardBorder: string;
+    chatHistoryIconBackground: string;
+    chatHistoryIcon: string;
+    chatHistoryTitle: string;
+    chatHistoryMeta: string;
+
     // Step-1 create-choice grid — "Outfits" icon (the only one of the 4 that's
     // theme-tied in the reference; hair/makeup/nails stay fixed orange/pink/teal)
     createOutfitsIcon: string;
@@ -401,6 +446,51 @@ function buildStylesLight(palette: BrandPalette): StylesTheme {
       createAiTitle: palette.accent[900],
       createAiDesc: palette.accent[700],
 
+      // Stylist chat (zena ChatModal)
+      chatBackground: commonColors.white,
+      chatHeaderBorder: tailwindHues.gray[100],
+      chatTitle: tailwindHues.gray[900],
+      chatSubtitle: tailwindHues.gray[500],
+      chatBotBackground: accent600,
+      chatBotIcon: commonColors.white,
+      chatOnlineDot: tailwindHues.green[500],
+      chatOnlineDotRing: commonColors.white,
+      chatHeaderIcon: tailwindHues.gray[400],
+      chatHeaderIconActive: accent600,
+      chatGemBarBackground: tailwindHues.gray[50],
+      chatGemBarText: tailwindHues.gray[500],
+      chatGemIcon: tailwindHues.orange[500],
+      chatGemValue: tailwindHues.gray[900],
+      chatBotSmallBackground: palette.accent[100],
+      chatBotSmallIcon: accent600,
+      chatUserBubble: accent600,
+      chatUserBubbleText: commonColors.white,
+      chatModelBubble: tailwindHues.gray[100],
+      chatModelBubbleBorder: withAlpha(tailwindHues.gray[200], 0.5),
+      chatModelBubbleText: tailwindHues.gray[800],
+      chatSuggestionLabel: tailwindHues.gray[500],
+      chatGenerateBackground: accent600,
+      chatGenerateText: commonColors.white,
+      chatSaveBackground: commonColors.white,
+      chatSaveBorder: tailwindHues.gray[200],
+      chatSaveText: tailwindHues.gray[800],
+      chatTypingDot: accent400,
+      chatInputBackground: tailwindHues.gray[50],
+      chatInputBorder: tailwindHues.gray[200],
+      chatInputText: tailwindHues.gray[800],
+      chatInputPlaceholder: tailwindHues.gray[400],
+      chatInputIcon: tailwindHues.gray[400],
+      chatSendBackground: accent600,
+      chatSendDisabledBackground: tailwindHues.gray[200],
+      chatSendIcon: commonColors.white,
+      chatResetText: tailwindHues.gray[400],
+      chatHistoryCardBackground: tailwindHues.gray[50],
+      chatHistoryCardBorder: tailwindHues.gray[100],
+      chatHistoryIconBackground: commonColors.white,
+      chatHistoryIcon: palette.accent[500],
+      chatHistoryTitle: tailwindHues.gray[900],
+      chatHistoryMeta: tailwindHues.gray[500],
+
       createOutfitsIcon: palette.accent[500],
 
       fabBackground: accent600,
@@ -692,6 +782,51 @@ function buildStylesDark(palette: BrandPalette): StylesTheme {
       createAiIcon: accent400,
       createAiTitle: palette.accent[200],
       createAiDesc: palette.accent[300],
+
+      // Stylist chat (zena ChatModal)
+      chatBackground: commonColors.darkCard,
+      chatHeaderBorder: tailwindHues.gray[700],
+      chatTitle: tailwindHues.gray[100],
+      chatSubtitle: tailwindHues.gray[400],
+      chatBotBackground: accentDefault,
+      chatBotIcon: commonColors.white,
+      chatOnlineDot: tailwindHues.green[500],
+      chatOnlineDotRing: commonColors.darkCard,
+      chatHeaderIcon: tailwindHues.gray[400],
+      chatHeaderIconActive: accentDefault,
+      chatGemBarBackground: tailwindHues.slate[900],
+      chatGemBarText: tailwindHues.gray[400],
+      chatGemIcon: tailwindHues.orange[400],
+      chatGemValue: tailwindHues.orange[50],
+      chatBotSmallBackground: withAlpha(palette.accent[900], 0.3),
+      chatBotSmallIcon: accentDefault,
+      chatUserBubble: palette.accent[600],
+      chatUserBubbleText: commonColors.white,
+      chatModelBubble: withAlpha(tailwindHues.gray[700], 0.5),
+      chatModelBubbleBorder: withAlpha(tailwindHues.gray[600], 0.3),
+      chatModelBubbleText: tailwindHues.gray[200],
+      chatSuggestionLabel: tailwindHues.gray[400],
+      chatGenerateBackground: accentDefault,
+      chatGenerateText: commonColors.white,
+      chatSaveBackground: withAlpha(commonColors.white, 0.1),
+      chatSaveBorder: withAlpha(commonColors.white, 0.2),
+      chatSaveText: commonColors.white,
+      chatTypingDot: accent400,
+      chatInputBackground: withAlpha(tailwindHues.gray[900], 0.8),
+      chatInputBorder: tailwindHues.gray[700],
+      chatInputText: tailwindHues.gray[100],
+      chatInputPlaceholder: tailwindHues.gray[500],
+      chatInputIcon: tailwindHues.gray[400],
+      chatSendBackground: palette.accent[600],
+      chatSendDisabledBackground: tailwindHues.gray[800],
+      chatSendIcon: commonColors.white,
+      chatResetText: tailwindHues.gray[400],
+      chatHistoryCardBackground: withAlpha(tailwindHues.gray[900], 0.3),
+      chatHistoryCardBorder: tailwindHues.gray[800],
+      chatHistoryIconBackground: tailwindHues.gray[800],
+      chatHistoryIcon: palette.accent[500],
+      chatHistoryTitle: tailwindHues.gray[100],
+      chatHistoryMeta: tailwindHues.gray[400],
 
       createOutfitsIcon: palette.accent[500],
 
