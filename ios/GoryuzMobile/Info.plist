@@ -45,7 +45,7 @@
 		</dict>
 	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>GORYUZ needs camera access to photograph your clothing for your digital wardrobe.</string>
+	<string>GORYUZ needs camera access to photograph your clothing for your digital wardrobe and to take the face photo for your color analysis.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>GORYUZ needs photo library access to add clothing images to your digital wardrobe.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

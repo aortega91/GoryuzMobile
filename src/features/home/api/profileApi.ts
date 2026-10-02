@@ -29,7 +29,7 @@ export interface UserProfile {
   avatarUrl: string | null;
   /** Total spendable tokens (subscriptionTokens + purchasedTokens) */
   tokens: number;
-  plan: 'free' | 'premium' | string;
+  plan: 'free' | 'standard' | 'vip' | string;
   styleSummary: string | null;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;

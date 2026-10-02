@@ -133,6 +133,8 @@ export class ApiError extends Error {
     public readonly status: number,
     public readonly endpoint: string,
     message: string,
+    /** Parsed JSON error body, when the server sent one. */
+    public readonly body?: unknown,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -195,10 +197,15 @@ export async function apiRequest<T>(
       responseBody = await response.text();
     } catch { /* ignore */ }
     console.error(`[API] ${response.status} ${endpoint}`, { responseBody });
+    let parsedBody: unknown;
+    try {
+      parsedBody = JSON.parse(responseBody);
+    } catch { /* not JSON */ }
     const apiError = new ApiError(
       response.status,
       endpoint,
       `HTTP ${response.status} on ${endpoint}`,
+      parsedBody,
     );
     logApiError(endpoint, apiError);
     throw apiError;

@@ -12,8 +12,25 @@ import { CrownIcon, SparklesIcon, ArrowRightIcon } from '@assets/icons';
 import useCommonTheme from '@hooks/useCommonTheme';
 import useActiveThemePalette from '@hooks/useActiveThemePalette';
 import { withAlpha } from '@theme/palettes';
+import { ApiError } from '@api/client';
 
-export type RequiredPlan = 'premium' | 'vip';
+/** Same ids as zena's `SubscriptionPlan` and the server's `requiredPlan`. */
+export type RequiredPlan = 'standard' | 'vip';
+
+/**
+ * The plan to invite to when a request was refused for the user's plan (403),
+ * or null for any other error. zena's middleware answers
+ * `{ code: 'plan_restricted', requiredPlan }`; a 403 that names no plan
+ * falls back to VIP.
+ */
+export function requiredPlanFromError(err: unknown): RequiredPlan | null {
+  if (!(err instanceof ApiError) || err.status !== 403) return null;
+  const body = err.body as { code?: string; requiredPlan?: string | null } | undefined;
+  if (body?.code === 'plan_restricted' && body.requiredPlan && body.requiredPlan !== 'vip') {
+    return 'standard';
+  }
+  return 'vip';
+}
 
 interface Props {
   visible: boolean;
@@ -22,9 +39,10 @@ interface Props {
   onClose: () => void;
 }
 
+// zena's UpgradeModal `planConfig`.
 const PLAN_NAMES: Record<RequiredPlan, string> = {
-  premium: 'GORYUZ Cenit',
-  vip: 'GORYUZ Cenit VIP',
+  standard: 'GORYUZ Glow',
+  vip: 'GORYUZ Cenit',
 };
 
 function UpgradeModal({ visible, requiredPlan, onUpgrade, onClose }: Props) {

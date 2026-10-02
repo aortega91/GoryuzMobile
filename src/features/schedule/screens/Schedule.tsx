@@ -24,7 +24,6 @@ import {
   LuggageIcon,
   MapPinIcon,
   PlusIcon,
-  Wand2Icon,
 } from '@assets/icons';
 import { AppDispatch, RootState } from '@utilities/store';
 import { logError } from '@utilities/crashlytics';
@@ -275,11 +274,6 @@ function Schedule() {
     [trips],
   );
 
-  const weekHasEmptyDay = useMemo(
-    () => weekDays.some(date => (eventsByDate[toDateKey(date)] ?? []).length === 0),
-    [weekDays, eventsByDate],
-  );
-
   // ─── Handlers ─────────────────────────────────────────────────────────────
 
   const navigateDate = (offset: number) => {
@@ -299,24 +293,6 @@ function Schedule() {
   const handleAddOutfit = (dateKey: string) => {
     if ((eventsByDate[dateKey] ?? []).length >= MAX_PER_DAY) { return; }
     setPickingForDate(dateKey);
-  };
-
-  // Fills every empty day of the visible week, rotating through the user's
-  // saved outfits. Local-only — no AI, no gem cost.
-  const handleAutoAssign = () => {
-    if (outfits.length === 0) { return; }
-    let outfitIdx = 0;
-    weekDays.forEach(date => {
-      const dateKey = toDateKey(date);
-      if ((eventsByDate[dateKey] ?? []).length > 0) { return; }
-      const outfit = outfits[outfitIdx % outfits.length];
-      outfitIdx += 1;
-      dispatch(addEvent({
-        date: dateKey,
-        outfitId: outfit.id,
-        weatherSnapshot: weatherSnapshotFor(dateKey),
-      }));
-    });
   };
 
   const handleOutfitSelected = (outfit: { id: string }) => {
@@ -844,8 +820,6 @@ function Schedule() {
     content = renderPlansView();
   }
 
-  const canAutoAssign = outfits.length > 0 && weekHasEmptyDay;
-
   return (
     <View style={[styles.root, { backgroundColor: s.background }]}>
       {/* Header — zena: title + one-line description, round icon actions */}
@@ -859,21 +833,6 @@ function Schedule() {
           </Text>
         </View>
         <View style={styles.headerActions}>
-          {activeTab !== 'plans' && outfits.length > 0 && (
-            <Touchable
-              onPress={handleAutoAssign}
-              disabled={!canAutoAssign}
-              borderRadius={20}
-              accessibilityLabel={t('schedule.autoAssign')}
-              style={[
-                styles.headerIconBtn,
-                { backgroundColor: s.headerSecondaryBackground },
-                !canAutoAssign && styles.disabled,
-              ]}
-            >
-              <Wand2Icon size={20} color={s.headerSecondaryText} />
-            </Touchable>
-          )}
           <Touchable
             onPress={handleNewPlan}
             borderRadius={20}
@@ -1007,7 +966,6 @@ const styles = StyleSheet.create({
   // Lets the content ScrollView own a scroll viewport — required for
   // pull-to-refresh to engage even when the content is shorter than the screen.
   scroll: { flex: 1 },
-  disabled: { opacity: 0.6 },
   tabContent: { paddingHorizontal: SCREEN_PADDING },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   tileImage: { width: '100%', aspectRatio: 3 / 4 },

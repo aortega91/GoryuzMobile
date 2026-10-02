@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import Touchable from '@components/Touchable';
 import useStylesTheme from '@hooks/useStylesTheme';
 import { AlertTriangleIcon, ArrowLeftIcon, CameraIcon, PaletteIcon, SparklesIcon } from '@assets/icons';
-import { ApiError } from '@api/client';
+import { requiredPlanFromError, RequiredPlan } from '@components/UpgradeModal';
 import { ClothingItem } from '@features/collection/types';
 import { UserProfile } from '@features/home/api/profileApi';
 import { loadProfile, updateProfileLocally } from '@features/home/profileSlice';
@@ -28,8 +28,8 @@ interface Props {
   profile: UserProfile | null;
   closet: ClothingItem[];
   onGoToCloset?: () => void;
-  /** A plan restriction (403 `plan_restricted`) opens the upgrade modal. */
-  onUpgrade: () => void;
+  /** A plan restriction (403 `plan_restricted`) opens the upgrade modal for the plan the server names. */
+  onUpgrade: (plan: RequiredPlan) => void;
 }
 
 type Step = 'welcome' | 'questions' | 'camera' | 'analyzing' | 'results';
@@ -101,7 +101,8 @@ function ColorimetryWizard({ profile, closet, onGoToCloset, onUpgrade }: Props) 
       setStep('results');
     } catch (err) {
       logError(err instanceof Error ? err : new Error(String(err)), 'colorimetry/analyze');
-      if (err instanceof ApiError && err.status === 403) onUpgrade();
+      const requiredPlan = requiredPlanFromError(err);
+      if (requiredPlan) onUpgrade(requiredPlan);
       // Out of gems (402) and any other failure: zena's message, back to the camera.
       setError(t('styles.colorimetry.analysisError'));
       setStep('camera');

@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 
 import Touchable from '@components/Touchable';
 import BottomSheet from '@components/BottomSheet';
-import UpgradeModal from '@components/UpgradeModal';
+import UpgradeModal, { RequiredPlan } from '@components/UpgradeModal';
 import SubmodulesCoachMark from '@components/SubmodulesCoachMark';
 import useStylesTheme from '@hooks/useStylesTheme';
 import {
@@ -147,7 +147,7 @@ function Styles({ initialTab = 'looks', onGoToCloset }: StylesProps) {
   const [creator, setCreator] = useState<Creator>(null);
   const [creatorSaving, setCreatorSaving] = useState(false);
   const [dressingOutfitId, setDressingOutfitId] = useState<string | null>(null);
-  const [showVipUpgrade, setShowVipUpgrade] = useState(false);
+  const [upgradePlan, setUpgradePlan] = useState<RequiredPlan | null>(null);
 
   // ─── Load data ───────────────────────────────────────────────────────────────
 
@@ -263,7 +263,7 @@ function Styles({ initialTab = 'looks', onGoToCloset }: StylesProps) {
   const requestSchedule = useCallback(
     (outfit: Outfit) => {
       if (!isVip) {
-        setShowVipUpgrade(true);
+        setUpgradePlan('vip');
         return;
       }
       openSheet('schedule', outfit);
@@ -729,7 +729,7 @@ function Styles({ initialTab = 'looks', onGoToCloset }: StylesProps) {
         avatarPrompt={avatarPrompt}
         onChangeAvatarPrompt={setAvatarPrompt}
         onSaveProfile={saveProfile}
-        onUpgrade={() => setShowVipUpgrade(true)}
+        onUpgrade={() => setUpgradePlan('vip')}
       />)
   );
 
@@ -754,7 +754,7 @@ function Styles({ initialTab = 'looks', onGoToCloset }: StylesProps) {
             profile={profile}
             closet={closetItems}
             onGoToCloset={onGoToCloset}
-            onUpgrade={() => setShowVipUpgrade(true)}
+            onUpgrade={setUpgradePlan}
           />
         </ColorimetrySection>
       </>)
@@ -1041,7 +1041,7 @@ function Styles({ initialTab = 'looks', onGoToCloset }: StylesProps) {
               ? () => {
                   if (!isVip) {
                     closeSheet();
-                    setShowVipUpgrade(true);
+                    setUpgradePlan('vip');
                     return;
                   }
                   setActiveSheet('schedule');
@@ -1119,10 +1119,10 @@ function Styles({ initialTab = 'looks', onGoToCloset }: StylesProps) {
         onSave={(name, itemIds) => handleOutfitSave(name, itemIds, 'ai')}
       />
       <UpgradeModal
-        visible={showVipUpgrade}
-        requiredPlan="vip"
-        onUpgrade={() => setShowVipUpgrade(false)}
-        onClose={() => setShowVipUpgrade(false)}
+        visible={upgradePlan !== null}
+        requiredPlan={upgradePlan ?? 'vip'}
+        onUpgrade={() => setUpgradePlan(null)}
+        onClose={() => setUpgradePlan(null)}
       />
     </View>
   );

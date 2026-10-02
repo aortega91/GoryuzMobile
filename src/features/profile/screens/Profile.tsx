@@ -82,8 +82,10 @@ type LegalDoc = 'terms' | 'privacy' | null;
 
 // ─── Plan helpers ─────────────────────────────────────────────────────────────
 
+// Server plan ids (zena `SubscriptionPlan`); test plans and unknown ids show as free.
 function getPlanName(plan: string, t: (key: string) => string): string {
-  if (plan === 'premium') return t('profile.planPremium');
+  if (plan === 'vip') return t('profile.planVip');
+  if (plan === 'standard') return t('profile.planStandard');
   return t('profile.planFree');
 }
 

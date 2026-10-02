@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -394,9 +394,19 @@ function Community({
       f.handle?.toLowerCase().includes(filterQuery.toLowerCase()),
   );
 
+  // The conversations endpoint only returns the other user's name, so the
+  // handle comes from the following list (keyed by user id).
+  const handleByUserId = useMemo(
+    () => new Map((following ?? []).map(f => [f.id, f.handle?.toLowerCase()])),
+    [following],
+  );
   const chatTerm = chatQuery.trim().toLowerCase();
+  const chatHandleTerm = chatTerm.replace(/^@/, '');
   const filteredConversations = (conversations ?? []).filter(
-    cv => !chatTerm || cv.otherUserName.toLowerCase().includes(chatTerm),
+    cv =>
+      !chatTerm ||
+      cv.otherUserName.toLowerCase().includes(chatTerm) ||
+      (!!chatHandleTerm && !!handleByUserId.get(cv.otherUserId)?.includes(chatHandleTerm)),
   );
 
   const pendingRequestCount = requests?.length ?? 0;

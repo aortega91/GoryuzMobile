@@ -692,7 +692,7 @@ function Discover() {
               <Touchable
                 key={mode}
                 onPress={() => {
-                  if (mode === 'pro' && profile?.plan !== 'premium' && profile?.plan !== 'vip') {
+                  if (mode === 'pro' && profile?.plan !== 'standard' && profile?.plan !== 'vip') {
                     setShowProUpgrade(true);
                   } else {
                     setCombinatorMode(mode);
@@ -1061,7 +1061,7 @@ function Discover() {
 
       <UpgradeModal
         visible={showProUpgrade}
-        requiredPlan="premium"
+        requiredPlan="standard"
         onUpgrade={() => setShowProUpgrade(false)}
         onClose={() => setShowProUpgrade(false)}
       />

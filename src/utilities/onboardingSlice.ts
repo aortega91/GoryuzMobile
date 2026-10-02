@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { REHYDRATE } from 'redux-persist';
 
 import { clearSession } from '@features/auth/sessionSlice';
+import { TRACKED_MODULES } from '@features/home/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -94,7 +95,10 @@ const onboardingSlice = createSlice({
         return {
           completedTours: persisted.completedTours ?? initialState.completedTours,
           seenSubmoduleHints: persisted.seenSubmoduleHints ?? initialState.seenSubmoduleHints,
-          visitedModules: persisted.visitedModules ?? initialState.visitedModules,
+          // No `visitedModules` in a persisted blob means the user had the app
+          // before the dots existed — they already know every module, so the
+          // dots are only for brand-new users.
+          visitedModules: persisted.visitedModules ?? [...TRACKED_MODULES],
           homeChecklistCollapsed:
             persisted.homeChecklistCollapsed ?? initialState.homeChecklistCollapsed,
         };

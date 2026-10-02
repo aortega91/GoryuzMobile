@@ -13,6 +13,7 @@
 		7992D78CD0F7C2B73BBB5BD9 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		A940F9A82F79ED98006B1F3A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = A940F9A72F79ED98006B1F3A /* GoogleService-Info.plist */; };
+		C0FFEE022F90000000A1B2C1 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0FFEE012F90000000A1B2C1 /* InfoPlist.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +29,8 @@
 		B10197C42F8FED0000A1E4C1 /* GoryuzMobile.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = GoryuzMobile.entitlements; path = GoryuzMobile/GoryuzMobile.entitlements; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F09BDE9FB2B0F4A2EEE6F7BA /* Pods_GoryuzMobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_GoryuzMobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0FFEE032F90000000A1B2C1 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = GoryuzMobile/es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C0FFEE042F90000000A1B2C1 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = GoryuzMobile/pt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -48,6 +51,7 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
+				C0FFEE012F90000000A1B2C1 /* InfoPlist.strings */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 				A940F9A72F79ED98006B1F3A /* GoogleService-Info.plist */,
@@ -149,6 +153,8 @@
 			knownRegions = (
 				en,
 				Base,
+				es,
+				pt,
 			);
 			mainGroup = 83CBB9F61A601CBA00E9B192;
 			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
@@ -169,6 +175,7 @@
 				A940F9A82F79ED98006B1F3A /* GoogleService-Info.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				7992D78CD0F7C2B73BBB5BD9 /* PrivacyInfo.xcprivacy in Resources */,
+				C0FFEE022F90000000A1B2C1 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -286,6 +293,18 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		C0FFEE012F90000000A1B2C1 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				C0FFEE032F90000000A1B2C1 /* es */,
+				C0FFEE042F90000000A1B2C1 /* pt */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
