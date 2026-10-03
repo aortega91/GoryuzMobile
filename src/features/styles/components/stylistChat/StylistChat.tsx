@@ -421,7 +421,9 @@ function StylistChat() {
   return (
     <Modal visible animationType="slide" presentationStyle="fullScreen" onRequestClose={endSession}>
       <SafeAreaView style={[styles.root, { backgroundColor: s.chatBackground }]} edges={['top', 'bottom']}>
-        <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        {/* Android: the Modal's window already resizes for the keyboard (adjustResize);
+            a KAV there fights that resize and leaves the input under the keyboard. */}
+        <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           {/* Header — tapping the stylist opens what she can do and what it costs */}
           <View style={[styles.header, { borderBottomColor: s.chatHeaderBorder }]}>
             <Touchable
@@ -526,7 +528,7 @@ function StylistChat() {
                   <Touchable
                     onPress={() => send(input)}
                     disabled={!canSend}
-                    borderRadius={12}
+                    borderRadius={20}
                     accessibilityLabel={t('styles.stylistChat.sendA11y', { cost: STYLIST_CHAT_GEM_COST })}
                     style={[
                       styles.send,
@@ -653,7 +655,7 @@ const styles = StyleSheet.create({
   inputBox: { flexDirection: 'row', alignItems: 'flex-end', borderWidth: 1, borderRadius: 18, padding: 5 },
   inputIcon: { padding: 7 },
   input: { flex: 1, fontSize: 15, maxHeight: 120, paddingHorizontal: 4, paddingVertical: 8 },
-  send: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  send: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   reset: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', padding: 4 },
   resetText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 },
   disabled: { opacity: 0.6 },
