@@ -126,6 +126,7 @@ export interface StylesTheme extends Theme {
     chatSaveBorder: string;
     chatSaveText: string;
     chatTypingDot: string;
+    chatThumbPlaceholder: string;
     chatInputBackground: string;
     chatInputBorder: string;
     chatInputText: string;
@@ -475,6 +476,7 @@ function buildStylesLight(palette: BrandPalette): StylesTheme {
       chatSaveBorder: tailwindHues.gray[200],
       chatSaveText: tailwindHues.gray[800],
       chatTypingDot: accent400,
+      chatThumbPlaceholder: tailwindHues.gray[200],
       chatInputBackground: tailwindHues.gray[50],
       chatInputBorder: tailwindHues.gray[200],
       chatInputText: tailwindHues.gray[800],
@@ -812,6 +814,7 @@ function buildStylesDark(palette: BrandPalette): StylesTheme {
       chatSaveBorder: withAlpha(commonColors.white, 0.2),
       chatSaveText: commonColors.white,
       chatTypingDot: accent400,
+      chatThumbPlaceholder: tailwindHues.gray[800],
       chatInputBackground: withAlpha(tailwindHues.gray[900], 0.8),
       chatInputBorder: tailwindHues.gray[700],
       chatInputText: tailwindHues.gray[100],

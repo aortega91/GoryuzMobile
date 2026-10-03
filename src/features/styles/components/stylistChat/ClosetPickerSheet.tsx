@@ -62,7 +62,13 @@ function ClosetPickerSheet({ closet, onClose, onConfirm }: Props) {
                       { borderColor: selected ? s.closetItemSelectedBorder : s.chatHistoryCardBorder },
                     ]}
                   >
-                    <AuthedImage data={item.imageData} style={styles.tileImage} resizeMode="cover" />
+                    <AuthedImage
+                      data={item.imageData}
+                      style={styles.tileImage}
+                      resizeMode="cover"
+                      loaderColor={s.chatTypingDot}
+                      placeholderColor={s.chatThumbPlaceholder}
+                    />
                     {selected && (
                       <View style={[styles.badge, { backgroundColor: s.closetItemSelectedBadge }]}>
                         <CheckIcon size={12} color={s.chatSendIcon} strokeWidth={3} />

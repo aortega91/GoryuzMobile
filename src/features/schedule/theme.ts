@@ -124,6 +124,9 @@ export interface ScheduleTheme extends Theme {
     weatherTemp: string;
 
     emptyIcon: string;
+    // Spinner tile while outfit images download
+    imageLoader: string;
+    imagePlaceholder: string;
     emptyText: string;
 
     modalBackground: string;
@@ -307,6 +310,8 @@ function buildScheduleLight(palette: BrandPalette): ScheduleTheme {
       weatherTemp: commonColors.grayDark,
 
       emptyIcon: commonColors.grayLight,
+      imageLoader: accent600,
+      imagePlaceholder: tailwindHues.gray[200],
       emptyText: commonColors.gray,
 
       modalBackground: commonColors.white,
@@ -485,6 +490,8 @@ function buildScheduleDark(palette: BrandPalette): ScheduleTheme {
       weatherTemp: commonColors.gray,
 
       emptyIcon: commonColors.darkBorder,
+      imageLoader: accent400,
+      imagePlaceholder: tailwindHues.gray[800],
       emptyText: commonColors.gray,
 
       modalBackground: commonColors.darkCard,

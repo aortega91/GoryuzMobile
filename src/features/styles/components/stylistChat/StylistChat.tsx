@@ -401,7 +401,14 @@ function StylistChat() {
               ) : (
                 <View style={styles.itemGrid}>
                   {item.outfitSuggestion.map(piece => (
-                    <AuthedImage key={piece.id} data={piece.imageData} style={styles.itemThumb} resizeMode="cover" />
+                    <AuthedImage
+                      key={piece.id}
+                      data={piece.imageData}
+                      style={styles.itemThumb}
+                      resizeMode="cover"
+                      loaderColor={s.chatTypingDot}
+                      placeholderColor={s.chatThumbPlaceholder}
+                    />
                   ))}
                 </View>
               )}

@@ -44,7 +44,13 @@ function OutfitPickerSheet({ outfits, onSelect, onClose }: Props) {
               >
                 <View style={styles.imageContainer}>
                   {outfit.imageData ? (
-                    <AuthedImage data={outfit.imageData} style={styles.image} resizeMode="cover" />
+                    <AuthedImage
+                      data={outfit.imageData}
+                      style={styles.image}
+                      resizeMode="cover"
+                      loaderColor={s.imageLoader}
+                      placeholderColor={s.imagePlaceholder}
+                    />
                   ) : outfit.items.length > 0 ? (
                     <View style={styles.grid2x2}>
                       {[0, 1, 2, 3].map(i => (
@@ -54,6 +60,8 @@ function OutfitPickerSheet({ outfits, onSelect, onClose }: Props) {
                               data={outfit.items[i].imageData!}
                               style={styles.gridImage}
                               resizeMode="cover"
+                              loaderColor={s.imageLoader}
+                              placeholderColor={s.imagePlaceholder}
                             />
                           ) : (
                             <View style={[styles.gridImage, { backgroundColor: s.emptyIcon }]} />
