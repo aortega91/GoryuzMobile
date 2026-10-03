@@ -429,7 +429,10 @@
     "addChoice_ai_desc": "Create a look for the occasion",
     "addChoice_saved_title": "Saved Outfit",
     "addChoice_saved_desc": "Pick from your favorites",
-    "askStylistDraft": "Hi, I need an outfit for {{date}}."
+    "askStylistDraft": "Hi, I need an outfit for {{date}}.",
+    "lockedTitle": "Calendar Locked",
+    "lockedDesc": "Plan your outfits and organize your week with the power of the {{plan}} plan.",
+    "lockedCta": "Unlock in Cenit Plan"
   },
   "styles": {
     "tabPromptFull": "How I dress",

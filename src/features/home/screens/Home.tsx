@@ -796,7 +796,7 @@ function Home() {
 
           {activeModule === 'closet' && <Collection openAddOnMount={closetOpenAdd} onOpenStyles={() => handleNavigate('styles')} />}
           {activeModule === 'styles' && <Styles initialTab={stylesTab} onGoToCloset={() => handleNavigate('closet')} />}
-          {activeModule === 'schedule' && <Schedule onAskStylist={askStylist} />}
+          {activeModule === 'schedule' && <Schedule onAskStylist={askStylist} onViewPlans={() => setActiveModule('subscription')} />}
           {activeModule === 'profile' && (
             <Profile onViewPlans={() => setActiveModule('subscription')} />
           )}

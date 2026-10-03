@@ -14,13 +14,16 @@ import { useTranslation } from 'react-i18next';
 
 import Touchable from '@components/Touchable';
 import useScheduleTheme from '@hooks/useScheduleTheme';
+import commonColors from '@theme/commonColors';
 import {
+  ArrowRightIcon,
   CalendarDaysIcon,
   CalendarIcon,
   CalendarRangeIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ClockIcon,
+  CrownIcon,
   LuggageIcon,
   MapPinIcon,
   PlusIcon,
@@ -101,9 +104,11 @@ function toForecastMap(days: DayWeather[]): ForecastMap {
 interface Props {
   /** Opens the stylist chat (on Styles) with this text pre-filled — zena's "Sugerencia IA". */
   onAskStylist: (draft: string) => void;
+  /** Opens Subscription — the way out of the non-VIP lock. */
+  onViewPlans: () => void;
 }
 
-function Schedule({ onAskStylist }: Props) {
+function Schedule({ onAskStylist, onViewPlans }: Props) {
   const { t, i18n } = useTranslation();
   const locale = localeFor(i18n.language);
   const theme = useScheduleTheme();
@@ -118,6 +123,10 @@ function Schedule({ onAskStylist }: Props) {
   const tripsStatus = useSelector((state: RootState) => state.schedule.tripsStatus);
   const latitude = useSelector((state: RootState) => state.location.latitude);
   const longitude = useSelector((state: RootState) => state.location.longitude);
+  // zena: the Agenda is a Cenit (VIP) feature. Only lock once the plan is known,
+  // so VIPs never see the lock flash while the profile loads.
+  const subscriptionPlan = useSelector((state: RootState) => state.profile.data?.plan);
+  const isLocked = subscriptionPlan !== undefined && subscriptionPlan !== 'vip';
 
   const { width: windowWidth } = useWindowDimensions();
 
@@ -847,68 +856,73 @@ function Schedule({ onAskStylist }: Props) {
 
   return (
     <View style={[styles.root, { backgroundColor: s.background }]}>
-      {/* Header — zena: title + one-line description, round icon actions */}
-      <View style={styles.header}>
-        <View style={styles.headerTexts}>
-          <Text style={[styles.title, { color: s.headerTitle }]} numberOfLines={1}>
-            {t('schedule.title')}
-          </Text>
-          <Text style={[styles.subtitle, { color: s.headerSubtitle }]} numberOfLines={1}>
-            {t('schedule.subtitle')}
-          </Text>
-        </View>
-        <View style={styles.headerActions}>
-          <Touchable
-            onPress={handleNewPlan}
-            borderRadius={20}
-            accessibilityLabel={t('schedule.createPlanAria')}
-            style={[styles.headerIconBtn, { backgroundColor: s.buttonPrimary }]}
-          >
-            <PlusIcon size={20} color={s.buttonPrimaryText} />
-          </Touchable>
-        </View>
-      </View>
-
-      {/* Date navigation — only the calendar submodules */}
-      {activeTab !== 'plans' && (
-        <View style={[styles.nav, { backgroundColor: s.navBackground, borderColor: s.navBorder }]}>
-          <Touchable
-            onPress={() => navigateDate(-1)}
-            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-            borderRadius={12}
-            style={styles.navBtn}
-            accessibilityLabel={t('schedule.previousPeriod')}
-          >
-            <ChevronLeftIcon size={20} color={s.navText} />
-          </Touchable>
-          <Touchable
-            onPress={() => setDatePickerVisible(true)}
-            borderRadius={10}
-            style={styles.navLabelBtn}
-            accessibilityLabel={t('schedule.changeDate')}
-          >
-            <Text style={[styles.navLabel, { color: s.navText }]} numberOfLines={1}>
-              {dateLabel}
+      {/* Everything but the lock card is dimmed and inert for non-VIP plans */}
+      <View style={[styles.root, isLocked && styles.locked]} pointerEvents={isLocked ? 'none' : 'auto'}>
+        {/* Header — zena: title + one-line description, round icon actions */}
+        <View style={styles.header}>
+          <View style={styles.headerTexts}>
+            <Text style={[styles.title, { color: s.headerTitle }]} numberOfLines={1}>
+              {t('schedule.title')}
             </Text>
-          </Touchable>
-          <Touchable
-            onPress={() => navigateDate(1)}
-            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-            borderRadius={12}
-            style={styles.navBtn}
-            accessibilityLabel={t('schedule.nextPeriod')}
-          >
-            <ChevronRightIcon size={20} color={s.navText} />
-          </Touchable>
+            <Text style={[styles.subtitle, { color: s.headerSubtitle }]} numberOfLines={1}>
+              {t('schedule.subtitle')}
+            </Text>
+          </View>
+          <View style={styles.headerActions}>
+            <Touchable
+              onPress={handleNewPlan}
+              borderRadius={20}
+              accessibilityLabel={t('schedule.createPlanAria')}
+              style={[styles.headerIconBtn, { backgroundColor: s.buttonPrimary }]}
+            >
+              <PlusIcon size={20} color={s.buttonPrimaryText} />
+            </Touchable>
+          </View>
         </View>
-      )}
 
-      {content}
+        {/* Date navigation — only the calendar submodules */}
+        {activeTab !== 'plans' && (
+          <View style={[styles.nav, { backgroundColor: s.navBackground, borderColor: s.navBorder }]}>
+            <Touchable
+              onPress={() => navigateDate(-1)}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+              borderRadius={12}
+              style={styles.navBtn}
+              accessibilityLabel={t('schedule.previousPeriod')}
+            >
+              <ChevronLeftIcon size={20} color={s.navText} />
+            </Touchable>
+            <Touchable
+              onPress={() => setDatePickerVisible(true)}
+              borderRadius={10}
+              style={styles.navLabelBtn}
+              accessibilityLabel={t('schedule.changeDate')}
+            >
+              <Text style={[styles.navLabel, { color: s.navText }]} numberOfLines={1}>
+                {dateLabel}
+              </Text>
+            </Touchable>
+            <Touchable
+              onPress={() => navigateDate(1)}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+              borderRadius={12}
+              style={styles.navBtn}
+              accessibilityLabel={t('schedule.nextPeriod')}
+            >
+              <ChevronRightIcon size={20} color={s.navText} />
+            </Touchable>
+          </View>
+        )}
+
+        {content}
+      </View>
 
       {/* Bottom submodules bar (week / day / plans) */}
       <View
+        pointerEvents={isLocked ? 'none' : 'auto'}
         style={[
           styles.bottomBar,
+          isLocked && styles.locked,
           {
             height: bottomBarTotalHeight,
             paddingBottom: insets.bottom,
@@ -937,7 +951,32 @@ function Schedule({ onAskStylist }: Props) {
         })}
       </View>
 
-      <SubmodulesCoachMark viewId="agenda" barHeight={bottomBarTotalHeight} items={scheduleTabs} />
+      <SubmodulesCoachMark
+        viewId="agenda"
+        enabled={!isLocked}
+        barHeight={bottomBarTotalHeight}
+        items={scheduleTabs}
+      />
+
+      {isLocked && (
+        <View style={styles.lockOverlay} pointerEvents="box-none">
+          <View style={[styles.lockCard, { backgroundColor: s.lockCardBackground, borderColor: s.lockCardBorder }]}>
+            <CrownIcon size={48} color={s.lockIcon} />
+            <Text style={[styles.lockTitle, { color: s.lockTitle }]}>{t('schedule.lockedTitle')}</Text>
+            <Text style={[styles.lockDesc, { color: s.lockDesc }]}>
+              {t('schedule.lockedDesc', { plan: 'Cenit' })}
+            </Text>
+            <Touchable
+              onPress={onViewPlans}
+              borderRadius={12}
+              style={[styles.lockButton, { backgroundColor: s.lockButtonBackground }]}
+            >
+              <Text style={[styles.lockButtonText, { color: s.lockButtonText }]}>{t('schedule.lockedCta')}</Text>
+              <ArrowRightIcon size={18} color={s.lockButtonText} />
+            </Touchable>
+          </View>
+        </View>
+      )}
 
       {/* Modals */}
       {selectedEvent && (
@@ -1233,6 +1272,38 @@ const styles = StyleSheet.create({
   },
   plansEmptyBtnText: { fontSize: 14, lineHeight: 20, fontWeight: '700' },
   // Bottom submodules bar — `px-2`, items `py-2.5 gap-0.5`, 20px icon, 10px label
+  locked: { opacity: 0.4 },
+  lockOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    paddingTop: 64,
+    paddingHorizontal: 16,
+  },
+  lockCard: {
+    width: '100%',
+    maxWidth: 384,
+    padding: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    shadowColor: commonColors.black,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 16,
+  },
+  lockTitle: { fontSize: 24, fontWeight: '700', marginTop: 16, marginBottom: 8, textAlign: 'center' },
+  lockDesc: { fontSize: 15, lineHeight: 22, marginBottom: 24, textAlign: 'center' },
+  lockButton: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  lockButtonText: { fontSize: 15, fontWeight: '700' },
   bottomBar: {
     position: 'absolute',
     bottom: 0,

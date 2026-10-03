@@ -141,6 +141,15 @@ export interface ScheduleTheme extends Theme {
     choiceTitleIconBackground: string;
     choiceTitleIcon: string;
 
+    // Non-VIP lock over the whole Agenda (zena CalendarView isLocked)
+    lockCardBackground: string;
+    lockCardBorder: string;
+    lockIcon: string;
+    lockTitle: string;
+    lockDesc: string;
+    lockButtonBackground: string;
+    lockButtonText: string;
+
     inputBackground: string;
     inputBorder: string;
     inputBorderFocus: string;
@@ -315,6 +324,15 @@ function buildScheduleLight(palette: BrandPalette): ScheduleTheme {
       choiceTitleIconBackground: palette.accent[50],
       choiceTitleIcon: accent600,
 
+      // Non-VIP lock over the whole Agenda (zena CalendarView isLocked)
+      lockCardBackground: withAlpha(commonColors.white, 0.9),
+      lockCardBorder: withAlpha(commonColors.white, 0.2),
+      lockIcon: tailwindHues.rose[500],
+      lockTitle: tailwindHues.gray[900],
+      lockDesc: tailwindHues.gray[500],
+      lockButtonBackground: tailwindHues.gray[900],
+      lockButtonText: commonColors.white,
+
       inputBackground: commonColors.offWhite,
       inputBorder: commonColors.grayLight,
       inputBorderFocus: accent600,
@@ -483,6 +501,15 @@ function buildScheduleDark(palette: BrandPalette): ScheduleTheme {
       choiceSavedIcon: tailwindHues.yellow[500],
       choiceTitleIconBackground: withAlpha(palette.accent[950], 0.3),
       choiceTitleIcon: accent400,
+
+      // Non-VIP lock over the whole Agenda (zena CalendarView isLocked)
+      lockCardBackground: withAlpha(tailwindHues.gray[900], 0.9),
+      lockCardBorder: tailwindHues.gray[700],
+      lockIcon: tailwindHues.rose[500],
+      lockTitle: commonColors.white,
+      lockDesc: tailwindHues.gray[300],
+      lockButtonBackground: tailwindHues.gray[900],
+      lockButtonText: commonColors.white,
 
       inputBackground: commonColors.darkCard,
       inputBorder: commonColors.darkBorder,

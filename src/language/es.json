@@ -429,7 +429,10 @@
     "addChoice_ai_desc": "Crea un look para la ocasión",
     "addChoice_saved_title": "Atuendo Guardado",
     "addChoice_saved_desc": "Elige de tus favoritos",
-    "askStylistDraft": "Hola, necesito un atuendo para el {{date}}."
+    "askStylistDraft": "Hola, necesito un atuendo para el {{date}}.",
+    "lockedTitle": "Agenda Bloqueada",
+    "lockedDesc": "Planifica tus atuendos y organiza tu semana con el poder del plan {{plan}}.",
+    "lockedCta": "Desbloquear Plan Cenit"
   },
   "styles": {
     "tabPromptFull": "Cómo visto",

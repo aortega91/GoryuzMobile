@@ -429,7 +429,10 @@
     "addChoice_ai_desc": "Crie um look para a ocasião",
     "addChoice_saved_title": "Look Salvo",
     "addChoice_saved_desc": "Escolha entre seus favoritos",
-    "askStylistDraft": "Olá, preciso de um look para {{date}}."
+    "askStylistDraft": "Olá, preciso de um look para {{date}}.",
+    "lockedTitle": "Calendário Bloqueado",
+    "lockedDesc": "Planeje seus looks e organize sua semana com o poder do plano {{plan}}.",
+    "lockedCta": "Desbloquear no Plano Cenit"
   },
   "styles": {
     "tabPromptFull": "Como me visto",
