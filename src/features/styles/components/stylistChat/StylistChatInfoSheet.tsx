@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import BottomSheet from '@components/BottomSheet';
+import BottomSheet, { BottomSheetHandle } from '@components/BottomSheet';
 import Touchable from '@components/Touchable';
 import { BotIcon, GemIcon, MessageIcon, ShirtIcon, SparklesIcon } from '@assets/icons';
 import useStylesTheme from '@hooks/useStylesTheme';
@@ -19,6 +19,7 @@ const EXAMPLE_KEYS = ['example1', 'example2', 'example3', 'example4'];
 function StylistChatInfoSheet({ aiName, onClose }: Props) {
   const { t } = useTranslation();
   const { styles: s } = useStylesTheme();
+  const sheetRef = useRef<BottomSheetHandle>(null);
 
   const steps = [
     { key: 'talk', Icon: MessageIcon, cost: STYLIST_CHAT_GEM_COST },
@@ -27,7 +28,7 @@ function StylistChatInfoSheet({ aiName, onClose }: Props) {
   ];
 
   return (
-    <BottomSheet onClose={onClose} backgroundColor={s.chatBackground}>
+    <BottomSheet ref={sheetRef} onClose={onClose} backgroundColor={s.chatBackground}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={[styles.botIcon, { backgroundColor: s.chatBotBackground }]}>
           <BotIcon size={24} color={s.chatBotIcon} />
@@ -77,7 +78,7 @@ function StylistChatInfoSheet({ aiName, onClose }: Props) {
 
         <Text style={[styles.footer, { color: s.chatSubtitle }]}>{t('styles.stylistChat.infoFooter')}</Text>
 
-        <Touchable onPress={onClose} borderRadius={16} style={[styles.button, { backgroundColor: s.chatSendBackground }]}>
+        <Touchable onPress={() => sheetRef.current?.close()} borderRadius={16} style={[styles.button, { backgroundColor: s.chatSendBackground }]}>
           <Text style={[styles.buttonText, { color: s.chatSendIcon }]}>{t('styles.stylistChat.understood')}</Text>
         </Touchable>
       </ScrollView>

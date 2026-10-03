@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   StyleSheet,
@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 
 import AuthedImage from '@components/AuthedImage';
-import BottomSheet from '@components/BottomSheet';
+import BottomSheet, { BottomSheetHandle } from '@components/BottomSheet';
 import Touchable from '@components/Touchable';
 import useCollectionTheme from '@hooks/useCollectionTheme';
 import { GemIcon } from '@assets/icons';
@@ -34,6 +34,7 @@ interface RegenerateItemModalProps {
 function RegenerateItemModal({
   item, gemCount, onClose, onKeep,
 }: RegenerateItemModalProps) {
+  const sheetRef = useRef<BottomSheetHandle>(null);
   const theme = useCollectionTheme();
   const tokens = theme.collection;
   const { t } = useTranslation();
@@ -65,8 +66,8 @@ function RegenerateItemModal({
     if (newImage) {
       onKeep(newImage);
     }
-    onClose();
-  }, [newImage, onKeep, onClose]);
+    sheetRef.current?.close();
+  }, [newImage, onKeep]);
 
   const renderConfirm = () => (
     <>
@@ -98,7 +99,7 @@ function RegenerateItemModal({
 
       <View style={styles.buttons}>
         <Touchable
-          onPress={onClose}
+          onPress={() => sheetRef.current?.close()}
           borderRadius={8}
           style={[
             styles.btn,
@@ -160,7 +161,7 @@ function RegenerateItemModal({
 
       <View style={styles.buttons}>
         <Touchable
-          onPress={onClose}
+          onPress={() => sheetRef.current?.close()}
           borderRadius={8}
           style={[
             styles.btn,
@@ -205,7 +206,7 @@ function RegenerateItemModal({
   );
 
   return (
-    <BottomSheet onClose={onClose} backgroundColor={tokens.modalBackground}>
+    <BottomSheet ref={sheetRef} onClose={onClose} backgroundColor={tokens.modalBackground}>
       <View style={styles.content}>
         {stage === 'confirm' && renderConfirm()}
         {stage === 'generating' && renderGenerating()}

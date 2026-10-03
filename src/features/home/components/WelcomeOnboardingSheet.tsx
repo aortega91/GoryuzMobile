@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import BottomSheet from '@components/BottomSheet';
+import BottomSheet, { BottomSheetHandle } from '@components/BottomSheet';
 import Touchable from '@components/Touchable';
 import useHomeTheme from '@hooks/useHomeTheme';
 import { GemIcon, ListChecksIcon, SparklesIcon } from '@assets/icons';
@@ -23,6 +23,7 @@ interface WelcomeOnboardingSheetProps {
  * Dismissed by the backdrop or the "explore first" link (no close button).
  */
 function WelcomeOnboardingSheet({ onboarding, onStart, onClose }: WelcomeOnboardingSheetProps) {
+  const sheetRef = useRef<BottomSheetHandle>(null);
   const { t } = useTranslation();
   const theme = useHomeTheme();
   const h = theme.home;
@@ -34,7 +35,7 @@ function WelcomeOnboardingSheet({ onboarding, onStart, onClose }: WelcomeOnboard
   const progress = Math.round((completed / Math.max(1, total)) * 100);
 
   return (
-    <BottomSheet onClose={onClose} backgroundColor={c.onboardingCardBackground}>
+    <BottomSheet ref={sheetRef} onClose={onClose} backgroundColor={c.onboardingCardBackground}>
       <View style={styles.content}>
         <View style={styles.titleRow}>
           <View>
@@ -98,7 +99,7 @@ function WelcomeOnboardingSheet({ onboarding, onStart, onClose }: WelcomeOnboard
           </Text>
         </Touchable>
 
-        <Touchable onPress={onClose} borderRadius={8} style={styles.secondaryButton}>
+        <Touchable onPress={() => sheetRef.current?.close()} borderRadius={8} style={styles.secondaryButton}>
           <Text style={[styles.secondaryButtonText, { color: h.checklistChevron }]}>
             {t('home.welcomeExploreFirst')}
           </Text>

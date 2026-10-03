@@ -1,7 +1,9 @@
 /* eslint-disable react/jsx-props-no-spreading */
 import React, {
+  forwardRef,
   useCallback,
   useEffect,
+  useImperativeHandle,
   useMemo,
   useRef,
   useState,
@@ -37,14 +39,19 @@ interface BottomSheetProps {
   draggable?: boolean;
 }
 
-function BottomSheet({
+export interface BottomSheetHandle {
+  /** Plays the slide-out animation, then calls onClose — for buttons inside the sheet */
+  close: () => void;
+}
+
+const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(({
   onClose,
   children,
   backgroundColor,
   backdropColor = 'rgba(0,0,0,0.55)',
   maxHeightRatio = 0.9,
   draggable = true,
-}: BottomSheetProps) {
+}, ref) => {
   const insets = useSafeAreaInsets();
   const maxHeight = SCREEN_HEIGHT * maxHeightRatio;
   // Use the larger of the reported inset and the safe floor so the sheet
@@ -76,6 +83,8 @@ function BottomSheet({
       onClose();
     });
   }, [slideY, maxHeight, onClose]);
+
+  useImperativeHandle(ref, () => ({ close: slideOut }), [slideOut]);
 
   useEffect(() => {
     slideIn();
@@ -171,7 +180,7 @@ function BottomSheet({
       </Animated.View>
     </Modal>
   );
-}
+});
 
 const styles = StyleSheet.create({
   sheet: {

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   ActivityIndicator,
   StyleSheet,
@@ -8,7 +8,7 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import AuthedImage from '@components/AuthedImage';
-import BottomSheet from '@components/BottomSheet';
+import BottomSheet, { BottomSheetHandle } from '@components/BottomSheet';
 import PermissionModal from '@components/PermissionModal';
 import Touchable from '@components/Touchable';
 import useCollectionTheme from '@hooks/useCollectionTheme';
@@ -48,6 +48,7 @@ interface AddItemSheetProps {
 }
 
 function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
+  const sheetRef = useRef<BottomSheetHandle>(null);
   const theme = useCollectionTheme();
   const tokens = theme.collection;
   const { t } = useTranslation();
@@ -201,7 +202,7 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
 
     try {
       onAdd(validItems);
-      onClose();
+      sheetRef.current?.close();
     } catch (err: unknown) {
       logError(
         err instanceof Error ? err : new Error(String(err)),
@@ -210,7 +211,7 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
       setErrorMsg(t('collection.errorScan'));
       setStage('error');
     }
-  }, [identifiedItems, selected, onAdd, onClose, t]);
+  }, [identifiedItems, selected, onAdd, t]);
 
   const totalCost = selected.size * COST_PER_ITEM;
   const canAfford = gemCount >= totalCost;
@@ -427,7 +428,7 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
 
   return (
     <>
-      <BottomSheet onClose={onClose} backgroundColor={tokens.modalBackground}>
+      <BottomSheet ref={sheetRef} onClose={onClose} backgroundColor={tokens.modalBackground}>
         <View style={styles.content}>
           {stage === 'pick' && renderPick()}
           {stage === 'scanning' && renderScanning()}
@@ -438,7 +439,7 @@ function AddItemSheet({ gemCount, onClose, onAdd }: AddItemSheetProps) {
           {showFooter && (
             <View style={styles.footer}>
               <Touchable
-                onPress={onClose}
+                onPress={() => sheetRef.current?.close()}
                 borderRadius={10}
                 style={[
                   styles.footerBtn,

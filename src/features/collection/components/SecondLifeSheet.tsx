@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import BottomSheet from '@components/BottomSheet';
+import BottomSheet, { BottomSheetHandle } from '@components/BottomSheet';
 import Touchable from '@components/Touchable';
 import useCollectionTheme from '@hooks/useCollectionTheme';
 import { ShoppingBagIcon, GiftIcon, RefreshCwIcon } from '@assets/icons';
@@ -47,6 +47,7 @@ const OPTIONS: ModeOption[] = [
 ];
 
 function SecondLifeSheet({ item, onClose, onContinue }: SecondLifeSheetProps) {
+  const sheetRef = useRef<BottomSheetHandle>(null);
   const theme = useCollectionTheme();
   const tokens = theme.collection;
   const { t } = useTranslation();
@@ -63,7 +64,7 @@ function SecondLifeSheet({ item, onClose, onContinue }: SecondLifeSheetProps) {
   };
 
   return (
-    <BottomSheet onClose={onClose} backgroundColor={tokens.modalBackground}>
+    <BottomSheet ref={sheetRef} onClose={onClose} backgroundColor={tokens.modalBackground}>
       <View style={styles.content}>
         <Text style={[styles.title, { color: tokens.modalTitle }]}>
           {t('collection.secondLifeTitle')}
@@ -115,7 +116,7 @@ function SecondLifeSheet({ item, onClose, onContinue }: SecondLifeSheetProps) {
 
         <View style={styles.buttons}>
           <Touchable
-            onPress={onClose}
+            onPress={() => sheetRef.current?.close()}
             borderRadius={10}
             style={[
               styles.btn,
