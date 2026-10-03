@@ -39,14 +39,16 @@ export interface DeepLinkSource {
 // ─── View → module ────────────────────────────────────────────────────────────
 
 /**
- * Only views that map to a module a user can otherwise reach. `lookbook`
- * (home) and `discover` are deliberately absent: they are hidden from the
- * drawer, and a push should not be the one way back into them.
+ * Only views that map to a module a user can otherwise reach. `lookbook` and
+ * `discover` are deliberately absent: they are hidden from the drawer, and a
+ * push should not be the one way back into them. `home` is zena's Inicio
+ * (HomeView) — where `onboarding_reward` lands.
  *
  * `closet` covers zena's `closet_ready`. The bulk-ingest review it deep-links
  * into is not ported, so that push opens the collection and stops there.
  */
 const VIEW_TO_MODULE: Partial<Record<string, ActiveModule>> = {
+  home: 'home',
   profile: 'profile',
   messages: 'community',
   community: 'community',
