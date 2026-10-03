@@ -27,10 +27,10 @@
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = GoryuzMobile/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		A940F9A72F79ED98006B1F3A /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		B10197C42F8FED0000A1E4C1 /* GoryuzMobile.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = GoryuzMobile.entitlements; path = GoryuzMobile/GoryuzMobile.entitlements; sourceTree = "<group>"; };
-		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		F09BDE9FB2B0F4A2EEE6F7BA /* Pods_GoryuzMobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_GoryuzMobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0FFEE032F90000000A1B2C1 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = GoryuzMobile/es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C0FFEE042F90000000A1B2C1 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = GoryuzMobile/pt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		F09BDE9FB2B0F4A2EEE6F7BA /* Pods_GoryuzMobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_GoryuzMobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
