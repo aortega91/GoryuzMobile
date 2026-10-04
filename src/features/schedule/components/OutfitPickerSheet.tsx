@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import useScheduleTheme from '@hooks/useScheduleTheme';
-import BottomSheet from '@components/BottomSheet';
+import BottomSheet, { BottomSheetHandle } from '@components/BottomSheet';
 import Touchable from '@components/Touchable';
 import AuthedImage from '@components/AuthedImage';
 import { ShirtIcon } from '@assets/icons';
@@ -18,9 +18,10 @@ function OutfitPickerSheet({ outfits, onSelect, onClose }: Props) {
   const { t } = useTranslation();
   const theme = useScheduleTheme();
   const s = theme.schedule;
+  const sheetRef = useRef<BottomSheetHandle>(null);
 
   return (
-    <BottomSheet onClose={onClose} backgroundColor={s.modalBackground}>
+    <BottomSheet ref={sheetRef} onClose={onClose} backgroundColor={s.modalBackground}>
       <View style={styles.content}>
         <Text style={[styles.title, { color: s.modalTitle }]}>
           {t('schedule.pickOutfit')}
@@ -38,7 +39,7 @@ function OutfitPickerSheet({ outfits, onSelect, onClose }: Props) {
             {outfits.map(outfit => (
               <Touchable
                 key={outfit.id}
-                onPress={() => { onSelect(outfit); onClose(); }}
+                onPress={() => sheetRef.current?.close(() => onSelect(outfit))}
                 borderRadius={12}
                 style={[styles.card, { backgroundColor: s.outfitCardBackground, borderColor: s.outfitCardBorder }]}
               >

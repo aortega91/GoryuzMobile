@@ -1,8 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import BottomSheet from '@components/BottomSheet';
+import BottomSheet, { BottomSheetHandle } from '@components/BottomSheet';
 import Touchable from '@components/Touchable';
 import AuthedImage from '@components/AuthedImage';
 import { CheckIcon } from '@assets/icons';
@@ -25,6 +25,7 @@ function ClosetPickerSheet({ closet, onClose, onConfirm }: Props) {
   const { t } = useTranslation();
   const { styles: s } = useStylesTheme();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const sheetRef = useRef<BottomSheetHandle>(null);
 
   const groups = useMemo(
     () =>
@@ -37,10 +38,13 @@ function ClosetPickerSheet({ closet, onClose, onConfirm }: Props) {
   const toggle = (id: string) =>
     setSelectedIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
 
-  const confirm = () => onConfirm(closet.filter(i => selectedIds.includes(i.id)));
+  const confirm = () => {
+    const picked = closet.filter(i => selectedIds.includes(i.id));
+    sheetRef.current?.close(() => onConfirm(picked));
+  };
 
   return (
-    <BottomSheet onClose={onClose} backgroundColor={s.chatBackground}>
+    <BottomSheet ref={sheetRef} onClose={onClose} backgroundColor={s.chatBackground}>
       <Text style={[styles.title, { color: s.chatTitle }]}>{t('styles.stylistChat.pickerTitle')}</Text>
       <ScrollView contentContainerStyle={styles.scroll}>
         {groups.map(({ cat, items }) => (

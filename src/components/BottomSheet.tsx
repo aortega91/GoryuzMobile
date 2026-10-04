@@ -40,8 +40,12 @@ interface BottomSheetProps {
 }
 
 export interface BottomSheetHandle {
-  /** Plays the slide-out animation, then calls onClose — for buttons inside the sheet */
-  close: () => void;
+  /**
+   * Plays the slide-out animation, then calls onClose — for buttons inside the
+   * sheet. Pass `afterClose` for a selection whose handler unmounts the sheet
+   * (it runs after the animation, just before onClose).
+   */
+  close: (afterClose?: () => void) => void;
 }
 
 const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(({
@@ -72,7 +76,8 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(({
     }).start();
   }, [slideY]);
 
-  const slideOut = useCallback(() => {
+  // Takes no event argument: wrap it when used as an onPress handler.
+  const slideOut = useCallback((afterClose?: () => void) => {
     Animated.timing(slideY, {
       toValue: maxHeight,
       useNativeDriver: true,
@@ -80,6 +85,7 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(({
       easing: Easing.in(Easing.quad),
     }).start(() => {
       setIsVisible(false);
+      afterClose?.();
       onClose();
     });
   }, [slideY, maxHeight, onClose]);
@@ -127,10 +133,10 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(({
       transparent
       animationType="none"
       statusBarTranslucent
-      onRequestClose={slideOut}
+      onRequestClose={() => slideOut()}
     >
       {/* Full-screen backdrop */}
-      <TouchableWithoutFeedback onPress={slideOut}>
+      <TouchableWithoutFeedback onPress={() => slideOut()}>
         <View style={[StyleSheet.absoluteFillObject, { backgroundColor: backdropColor }]} />
       </TouchableWithoutFeedback>
 

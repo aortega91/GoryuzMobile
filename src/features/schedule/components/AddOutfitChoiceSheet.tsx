@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import BottomSheet from '@components/BottomSheet';
+import BottomSheet, { BottomSheetHandle } from '@components/BottomSheet';
 import Touchable from '@components/Touchable';
 import { BotIcon, StarIcon } from '@assets/icons';
 import useScheduleTheme from '@hooks/useScheduleTheme';
@@ -20,6 +20,7 @@ interface Props {
 function AddOutfitChoiceSheet({ onChooseAi, onChooseSaved, onClose }: Props) {
   const { t } = useTranslation();
   const s = useScheduleTheme().schedule;
+  const sheetRef = useRef<BottomSheetHandle>(null);
 
   const options = [
     { key: 'ai', Icon: BotIcon, color: s.choiceAiIcon, onPress: onChooseAi },
@@ -27,7 +28,7 @@ function AddOutfitChoiceSheet({ onChooseAi, onChooseSaved, onClose }: Props) {
   ];
 
   return (
-    <BottomSheet onClose={onClose} backgroundColor={s.modalBackground}>
+    <BottomSheet ref={sheetRef} onClose={onClose} backgroundColor={s.modalBackground}>
       <View style={styles.content}>
         <View style={styles.titleRow}>
           <View style={[styles.titleIcon, { backgroundColor: s.choiceTitleIconBackground }]}>
@@ -40,7 +41,7 @@ function AddOutfitChoiceSheet({ onChooseAi, onChooseSaved, onClose }: Props) {
         {options.map(({ key, Icon, color, onPress }) => (
           <Touchable
             key={key}
-            onPress={onPress}
+            onPress={() => sheetRef.current?.close(onPress)}
             borderRadius={16}
             style={[styles.option, { backgroundColor: s.choiceCardBackground, borderColor: s.choiceCardBorder }]}
           >
